@@ -260,6 +260,9 @@ Before submitting changes:
 - [ ] Context API: Not modified (unless explicitly migrating)
 - [ ] Tests: Run on port 3009
 
+## Critical Do's
+1. All ui components either a folder/file must be in `src/components/` (no mixing with `src/app/` or other dirs)
+
 ## Critical Don'ts
 
 1. ❌ DO NOT refactor `src/app/GlobalProvider.tsx`

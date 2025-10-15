@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import RegisterForm from "@/forms/RegisterForm";
+import RegisterForm from "@/components/forms/RegisterForm";
 import GoogleLogin from "@/components/Other/GoogleLogin";
 import { signOut } from "next-auth/react";
 

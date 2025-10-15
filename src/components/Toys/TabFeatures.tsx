@@ -7,7 +7,7 @@ import { Autoplay, Navigation } from 'swiper/modules';
 import 'swiper/css/bundle';
 import Product from '../Product/Product'
 import { ProductType } from '@/type/ProductType'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 
 interface Props {
     data: Array<ProductType>;

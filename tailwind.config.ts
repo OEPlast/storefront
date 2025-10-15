@@ -6,8 +6,6 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
-  mode: 'jit',
-  jit: true,
   theme: {
     extend: {
       backgroundImage: {
@@ -15,13 +13,7 @@ const config: Config = {
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
-    },
-    container: {
-      padding: {
-        DEFAULT: '16px',
-      },
-    },
-    colors: {
+          colors: {
       transparent: 'transparent',
       'green': '#D2EF9A',
       'black': '#1F1F1F',
@@ -39,6 +31,13 @@ const config: Config = {
       'surface2': 'rgba(255, 255, 255, 0.2)',
       'surface1': 'rgba(255, 255, 255, 0.1)',
     },
+    },
+    container: {
+      padding: {
+        DEFAULT: '16px',
+      },
+    },
+
   },
   plugins: [],
 }

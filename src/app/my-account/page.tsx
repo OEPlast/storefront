@@ -7,7 +7,7 @@ import MenuOne from '@/components/Header/Menu/MenuOne'
 import Breadcrumb from '@/components/Breadcrumb/Breadcrumb'
 import Footer from '@/components/Footer/Footer'
 import * as Icon from "@phosphor-icons/react/dist/ssr";
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 
 const MyAccount = () => {
     const [activeTab, setActiveTab] = useState<string | undefined>('dashboard')

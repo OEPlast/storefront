@@ -5,7 +5,7 @@ import Product from '../Product/Product'
 import { ProductType } from '@/type/ProductType'
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import 'swiper/css/bundle';
 
 interface Props {

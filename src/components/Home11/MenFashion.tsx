@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Product from '../Product/Product'
 import { ProductType } from '@/type/ProductType'
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 
 interface Props {
     data: Array<ProductType>;

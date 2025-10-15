@@ -7,9 +7,10 @@ import { CompareProvider } from '@/context/CompareContext'
 import { ModalCompareProvider } from '@/context/ModalCompareContext'
 import { ModalSearchProvider } from '@/context/ModalSearchContext'
 import { ModalQuickviewProvider } from '@/context/ModalQuickviewContext'
-
+import ReactQueryProvider from '@/provider/react-query'
 const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return (
+        <ReactQueryProvider>
         <CartProvider>
             <ModalCartProvider>
                 <WishlistProvider>
@@ -27,6 +28,7 @@ const GlobalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) =
                 </WishlistProvider>
             </ModalCartProvider>
         </CartProvider>
+        </ReactQueryProvider>
     )
 }
 

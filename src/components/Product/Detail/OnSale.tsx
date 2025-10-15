@@ -29,7 +29,7 @@ interface Props {
 }
 
 const OnSale: React.FC<Props> = ({ data, productId }) => {
-    const swiperRef: any = useRef();
+    const swiperRef: any = useRef(undefined);
     const [photoIndex, setPhotoIndex] = useState(0)
     const [openPopupImg, setOpenPopupImg] = useState(false)
     const [openSizeGuide, setOpenSizeGuide] = useState<boolean>(false)

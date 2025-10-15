@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { ProductType } from '@/type/ProductType';
-import { motion } from 'framer-motion'
+import { motion } from 'motion/react'
 import Product from '../Product/Product';
 
 interface Props {

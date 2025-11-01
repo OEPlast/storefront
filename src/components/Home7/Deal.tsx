@@ -46,11 +46,12 @@ const Deal: React.FC<Props> = ({ data, start, limit }) => {
                         <Link href={'/shop/breadcrumb-img'} className='text-button pb-1 border-b-2 border-black'>View All Deals</Link>
                     </div>
 
-                    <div className="list-product show-product-sold grid lg:grid-cols-4 grid-cols-2 sm:gap-[30px] gap-[20px] md:mt-10 mt-6">
+                    <div className="list-product show-product-sold grid lg:grid-cols-5 grid-cols-2 sm:gap-[30px] gap-[20px] md:mt-10 mt-6">
                         {data.slice(start, limit).map((prd, index) => (
                             <Product key={index} data={prd} type='grid' />
                         ))}
                     </div>
+
                 </div>
             </div>
         </>

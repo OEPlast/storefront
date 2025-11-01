@@ -18,6 +18,16 @@ const nextConfig = {
                 hostname: 'oeptest.b-cdn.net',
                 pathname: '/**',
             },
+            {
+                protocol: 'https',
+                hostname: 'isomorphic-furyroad.s3.amazonaws.com',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'via.placeholder.com',
+                pathname: '/**',
+            },
         ],
     },
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ProductType } from '@/type/ProductType'
@@ -15,6 +15,17 @@ import { useModalQuickviewContext } from '@/context/ModalQuickviewContext'
 import { useRouter } from 'next/navigation'
 import Marquee from 'react-fast-marquee'
 import Rate from '../Other/Rate'
+import { getCdnUrl } from '@/libs/cdn-url'
+import Color from 'color'
+import {
+    calculateBestSale,
+    formatPrice,
+    calculateSoldFromSale,
+    calculateAvailableFromSale,
+    calculateSaleProgress,
+    shouldShowSaleMarquee,
+    shouldShowSaleProgress
+} from '@/utils/calculateSale'
 
 interface ProductProps {
     data: ProductType
@@ -34,6 +45,77 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
     const { openQuickview } = useModalQuickviewContext()
     const router = useRouter()
 
+    // Narrow types for optional new fields without changing global ProductType
+    type AttrChild = { name: string; colorCode?: string }
+    type Attr = { name: string; children: AttrChild[] }
+    type WithAttributes = { attributes?: Attr[] }
+    type PackSize = { label: string; quantity: number; price?: number; enableAttributes?: boolean }
+    type WithPackSizes = { packSizes?: PackSize[] }
+
+    const hasAttributes = (obj: unknown): obj is WithAttributes =>
+        typeof obj === 'object' && obj !== null && 'attributes' in (obj as Record<string, unknown>)
+
+    const hasPackSizes = (obj: unknown): obj is WithPackSizes =>
+        typeof obj === 'object' && obj !== null && 'packSizes' in (obj as Record<string, unknown>)
+
+    const attributes: Attr[] = useMemo(() => {
+        return hasAttributes(data) && Array.isArray((data as WithAttributes).attributes)
+            ? ((data as WithAttributes).attributes as Attr[])
+            : []
+    }, [data])
+
+    const colors = useMemo(() => {
+        const colorAttr = attributes.find(
+            (a) => a.name.toLowerCase() === 'color' || a.name.toLowerCase() === 'colors'
+        )
+        if (!colorAttr) return [] as { label: string; hex: string; value: string }[]
+        return colorAttr.children.map((child) => {
+            let hex = child.colorCode
+            if (!hex) {
+                try {
+                    hex = Color(child.name).hex()
+                } catch {
+                    hex = '#000000'
+                }
+            }
+            return { label: child.name, hex, value: child.name }
+        })
+    }, [attributes])
+
+    const sizes = useMemo(() => {
+        const sizeAttr = attributes.find(
+            (a) => a.name.toLowerCase() === 'size' || a.name.toLowerCase() === 'sizes'
+        )
+        return sizeAttr ? sizeAttr.children.map((c) => c.name) : []
+    }, [attributes])
+
+    // Check if there are non-color attributes (to determine quick shop vs add to cart)
+    const hasNonColorAttributes = useMemo(() => {
+        return attributes.some(
+            (a) => a.name.toLowerCase() !== 'color' && a.name.toLowerCase() !== 'colors'
+        )
+    }, [attributes])
+
+    const packSizes: PackSize[] = useMemo(() => {
+        return hasPackSizes(data) && Array.isArray((data as WithPackSizes).packSizes)
+            ? ((data as WithPackSizes).packSizes as PackSize[])
+            : []
+    }, [data])
+
+    const singlePack = useMemo(() => {
+        return packSizes.find((p) => p.label?.toLowerCase() === 'single')
+    }, [packSizes])
+
+    // Initialize defaults for color/size when available
+    useEffect(() => {
+        if (!activeColor && colors.length > 0) {
+            setActiveColor(colors[0].label)
+        }
+        if (!activeSize && sizes.length > 0) {
+            setActiveSize(sizes[0])
+        }
+    }, [colors, sizes, activeColor, activeSize])
+
     const handleActiveColor = (item: string) => {
         setActiveColor(item)
     }
@@ -43,11 +125,20 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
     }
 
     const handleAddToCart = () => {
+        // If product has pack sizes, only allow quick add when a "Single" pack exists
+        if (packSizes.length > 0 && !singlePack) {
+            // Redirect to PDP for selection if Single pack doesn't exist
+            handleDetailProduct(data.id)
+            return
+        }
+
+        const qty = singlePack?.quantity ?? data.quantityPurchase
+
         if (!cartState.cartArray.find(item => item.id === data.id)) {
             addToCart({ ...data });
-            updateCart(data.id, data.quantityPurchase, activeSize, activeColor)
+            updateCart(data.id, qty, activeSize, activeColor)
         } else {
-            updateCart(data.id, data.quantityPurchase, activeSize, activeColor)
+            updateCart(data.id, qty, activeSize, activeColor)
         }
         openModalCart()
     };
@@ -88,21 +179,48 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
         router.push(`/product/default?id=${productId}`);
     };
 
-    let percentSale = Math.floor(100 - ((data.price / data.originPrice) * 100))
-    let percentSold = Math.floor((data.sold / data.quantity) * 100)
+    // Calculate the best sale discount for this product
+    const saleInfo = useMemo(() => {
+        return calculateBestSale(data.sale, data.price);
+    }, [data.sale, data.price]);
+
+    // Calculate sold quantity from sale variants (cumulative boughtCount)
+    const soldQuantity = useMemo(() => {
+        return calculateSoldFromSale(data.sale);
+    }, [data.sale]);
+
+    // Calculate available quantity from sale variants (maxBuys - boughtCount)
+    const availableStock = useMemo(() => {
+        return calculateAvailableFromSale(data.sale);
+    }, [data.sale]);
+
+    // Calculate sold percentage based on maxBuys and boughtCount
+    const percentSold = useMemo(() => {
+        return calculateSaleProgress(data.sale);
+    }, [data.sale])
+
+    // Check if should show sale marquee (isHot = true and not sold out)
+    const showSaleMarquee = useMemo(() => {
+        return shouldShowSaleMarquee(data.sale);
+    }, [data.sale]);
+
+    // Check if should show sold/available progress (isHot = true and not sold out)
+    const showSaleProgress = useMemo(() => {
+        return shouldShowSaleProgress(data.sale);
+    }, [data.sale]);
 
     return (
         <>
             {type === "grid" ? (
-                <div className="product-item grid-type">
+                <div className={`product-item grid-type ${colors.length > 0 ? 'has-colors' : ''}`}>
                     <div onClick={() => handleDetailProduct(data.id)} className="product-main cursor-pointer block">
-                        <div className="product-thumb bg-white relative overflow-hidden rounded-2xl">
+                        <div className="product-thumb bg-white relative overflow-hidden rounded-2xl  outline outline-1 outline-line">
                             {data.new && (
                                 <div className="product-tag text-button-uppercase bg-green px-3 py-0.5 inline-block rounded-full absolute top-3 left-3 z-[1]">
                                     New
                                 </div>
                             )}
-                            {data.sale && (
+                            {saleInfo.hasActiveSale && (
                                 <div className="product-tag text-button-uppercase text-white bg-red px-3 py-0.5 inline-block rounded-full absolute top-3 left-3 z-[1]">
                                     Sale
                                 </div>
@@ -139,17 +257,17 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
                                 </div>
                             </div>
                             <div className="product-img w-full h-full aspect-[3/4]">
-                                {activeColor ? (
+                                <Image
+                                    src={getCdnUrl(data.images.find((img) => img.cover_image)?.url)}
+                                    width={500}
+                                    height={500}
+                                    alt={data.name}
+                                    priority={true}
+                                    className='w-full h-full object-cover duration-700'
+                                />
+                                {/* {activeColor ? (
                                     <>
                                         {
-                                            <Image
-                                                src={data.variation.find(item => item.color === activeColor)?.image ?? ''}
-                                                width={500}
-                                                height={500}
-                                                alt={data.name}
-                                                priority={true}
-                                                className='w-full h-full object-cover duration-700'
-                                            />
                                         }
                                     </>
                                 ) : (
@@ -168,20 +286,20 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
                                             ))
                                         }
                                     </>
-                                )}
+                                )} */}
                             </div>
-                            {data.sale && (
+                            {showSaleMarquee && (
                                 <>
                                     <Marquee className='banner-sale-auto bg-black absolute bottom-0 left-0 w-full py-1.5'>
-                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {percentSale}% OFF</div>
+                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {saleInfo.percentOff}% OFF</div>
                                         <Icon.Lightning weight='fill' className='text-red' />
-                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {percentSale}% OFF</div>
+                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {saleInfo.percentOff}% OFF</div>
                                         <Icon.Lightning weight='fill' className='text-red' />
-                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {percentSale}% OFF</div>
+                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {saleInfo.percentOff}% OFF</div>
                                         <Icon.Lightning weight='fill' className='text-red' />
-                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {percentSale}% OFF</div>
+                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {saleInfo.percentOff}% OFF</div>
                                         <Icon.Lightning weight='fill' className='text-red' />
-                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {percentSale}% OFF</div>
+                                        <div className={`caption2 font-semibold uppercase text-white px-2.5`}>Hot Sale {saleInfo.percentOff}% OFF</div>
                                         <Icon.Lightning weight='fill' className='text-red' />
                                     </Marquee>
                                 </>
@@ -196,7 +314,7 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
                                 >
                                     Quick View
                                 </div>
-                                {data.action === 'add to cart' ? (
+                                {!hasNonColorAttributes ? (
                                     <div
                                         className="add-cart-btn w-full text-button-uppercase py-2 text-center rounded-full duration-500 bg-white hover:bg-black hover:text-white"
                                         onClick={e => {
@@ -223,17 +341,19 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
                                                 e.stopPropagation()
                                             }}
                                         >
-                                            <div className="list-size flex items-center justify-center flex-wrap gap-2">
-                                                {data.sizes.map((item, index) => (
-                                                    <div
-                                                        className={`size-item w-10 h-10 rounded-full flex items-center justify-center text-button bg-white border border-line ${activeSize === item ? 'active' : ''}`}
-                                                        key={index}
-                                                        onClick={() => handleActiveSize(item)}
-                                                    >
-                                                        {item}
-                                                    </div>
-                                                ))}
-                                            </div>
+                                            {sizes.length > 0 && (
+                                                <div className="list-size flex items-center justify-center flex-wrap gap-2">
+                                                    {sizes.map((item, index) => (
+                                                        <div
+                                                            className={`size-item ${item !== 'freesize' ? 'w-10 h-10' : 'h-10 px-4'} flex items-center justify-center text-button bg-white rounded-full border border-line ${activeSize === item ? 'active' : ''}`}
+                                                            key={index}
+                                                            onClick={() => handleActiveSize(item)}
+                                                        >
+                                                            {item}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                             <div
                                                 className="button-main w-full text-center rounded-full py-3 mt-4"
                                                 onClick={() => {
@@ -269,76 +389,73 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
                             </div>
                         </div>
                         <div className="product-infor mt-4 lg:mb-7">
-                            <div className="product-sold sm:pb-4 pb-2">
-                                <div className="progress bg-line h-1.5 w-full rounded-full overflow-hidden relative">
-                                    <div
-                                        className={`progress-sold bg-red absolute left-0 top-0 h-full`}
-                                        style={{ width: `${percentSold}%` }}
-                                    >
+                            {showSaleProgress && (
+                                <div className="product-sold sm:pb-4 pb-2">
+                                    <div className="progress bg-line h-1.5 w-full rounded-full overflow-hidden relative">
+                                        <div
+                                            className={`progress-sold bg-red absolute left-0 top-0 h-full`}
+                                            style={{ width: `${percentSold}%` }}
+                                        >
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3 gap-y-1 flex-wrap mt-2">
+                                        <div className="text-button-uppercase">
+                                            <span className='text-secondary2 max-sm:text-xs'>Sold: </span>
+                                            <span className='max-sm:text-xs'>{soldQuantity}</span>
+                                        </div>
+                                        <div className="text-button-uppercase">
+                                            <span className='text-secondary2 max-sm:text-xs'>Available: </span>
+                                            <span className='max-sm:text-xs'>{availableStock}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between gap-3 gap-y-1 flex-wrap mt-2">
-                                    <div className="text-button-uppercase">
-                                        <span className='text-secondary2 max-sm:text-xs'>Sold: </span>
-                                        <span className='max-sm:text-xs'>{data.sold}</span>
-                                    </div>
-                                    <div className="text-button-uppercase">
-                                        <span className='text-secondary2 max-sm:text-xs'>Available: </span>
-                                        <span className='max-sm:text-xs'>{data.quantity - data.sold}</span>
-                                    </div>
-                                </div>
-                            </div>
+                            )}
                             <div className="product-name text-title duration-300">{data.name}</div>
-                            {data.variation.length > 0 && data.action === 'add to cart' && (
+                            {colors.length > 0 && !hasNonColorAttributes && (
                                 <div className="list-color py-2 max-md:hidden flex items-center gap-3 flex-wrap duration-500">
-                                    {data.variation.map((item, index) => (
+                                    {colors.map((item, index) => (
                                         <div
                                             key={index}
-                                            className={`color-item w-8 h-8 rounded-full duration-300 relative ${activeColor === item.color ? 'active' : ''}`}
-                                            style={{ backgroundColor: `${item.colorCode}` }}
+                                            className={`color-item w-8 h-8 rounded-full duration-300 relative ${activeColor === item.label ? 'active' : ''}`}
+                                            style={{ backgroundColor: item.hex }}
                                             onClick={(e) => {
                                                 e.stopPropagation()
-                                                handleActiveColor(item.color)
+                                                handleActiveColor(item.label)
                                             }}>
-                                            <div className="tag-action bg-black text-white caption2 capitalize px-1.5 py-0.5 rounded-sm">{item.color}</div>
+                                            <div className="tag-action bg-black text-white caption2 capitalize px-1.5 py-0.5 rounded-sm">{item.label}</div>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                            {data.variation.length > 0 && data.action === 'quick shop' && (
+                            {colors.length > 0 && hasNonColorAttributes && (
                                 <div className="list-color-image max-md:hidden flex items-center gap-3 flex-wrap duration-500">
-                                    {data.variation.map((item, index) => (
+                                    {colors.map((item, index) => (
                                         <div
-                                            className={`color-item w-12 h-12 rounded-xl duration-300 relative ${activeColor === item.color ? 'active' : ''}`}
+                                            className={`color-item w-12 h-12 rounded-xl duration-300 relative ${activeColor === item.label ? 'active' : ''}`}
                                             key={index}
                                             onClick={(e) => {
                                                 e.stopPropagation()
-                                                handleActiveColor(item.color)
+                                                handleActiveColor(item.label)
                                             }}
                                         >
-                                            <Image
-                                                src={item.colorImage}
-                                                width={100}
-                                                height={100}
-                                                alt='color'
-                                                priority={true}
-                                                className='rounded-xl w-full h-full object-cover'
-                                            />
-                                            <div className="tag-action bg-black text-white caption2 capitalize px-1.5 py-0.5 rounded-sm">{item.color}</div>
+                                            <div className='rounded-xl w-full h-full' style={{ backgroundColor: item.hex }} />
+                                            <div className="tag-action bg-black text-white caption2 capitalize px-1.5 py-0.5 rounded-sm">{item.label}</div>
                                         </div>
                                     ))}
                                 </div>
                             )}
 
                             <div className="product-price-block flex items-center gap-2 flex-wrap mt-1 duration-300 relative z-[1]">
-                                <div className="product-price text-title">${data.price}.00</div>
-                                {percentSale > 0 && (
+                                {saleInfo.hasActiveSale ? (
                                     <>
-                                        <div className="product-origin-price caption1 text-secondary2"><del>${data.originPrice}.00</del></div>
+                                        <div className="product-price text-title">{formatPrice(saleInfo.discountedPrice)}</div>
+                                        <div className="product-origin-price caption1 text-secondary2"><del>{formatPrice(saleInfo.originalPrice)}</del></div>
                                         <div className="product-sale caption1 font-medium bg-green px-3 py-0.5 inline-block rounded-full">
-                                            -{percentSale}%
+                                            -{saleInfo.percentOff}%
                                         </div>
                                     </>
+                                ) : (
+                                    <div className="product-price text-title">{formatPrice(data.price)}</div>
                                 )}
                             </div>
                         </div>
@@ -356,16 +473,16 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
                                                 New
                                             </div>
                                         )}
-                                        {data.sale && (
+                                        {saleInfo.hasActiveSale && (
                                             <div className="product-tag text-button-uppercase text-white bg-red px-3 py-0.5 inline-block rounded-full absolute top-3 left-3 z-[1]">
                                                 Sale
                                             </div>
                                         )}
                                         <div className="product-img w-full aspect-[3/4] rounded-2xl overflow-hidden">
-                                            {data.thumbImage.map((img, index) => (
+                                            {data.images.map((img, index) => (
                                                 <Image
                                                     key={index}
-                                                    src={img}
+                                                    src={getCdnUrl(img.url)}
                                                     width={500}
                                                     height={500}
                                                     priority={true}
@@ -408,12 +525,16 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
                                         <div className="product-infor max-sm:w-full">
                                             <div onClick={() => handleDetailProduct(data.id)} className="product-name heading6 inline-block duration-300">{data.name}</div>
                                             <div className="product-price-block flex items-center gap-2 flex-wrap mt-2 duration-300 relative z-[1]">
-                                                <div className="product-price text-title">${data.price}.00</div>
-                                                <div className="product-origin-price caption1 text-secondary2"><del>${data.originPrice}.00</del></div>
-                                                {data.originPrice && (
-                                                    <div className="product-sale caption1 font-medium bg-green px-3 py-0.5 inline-block rounded-full">
-                                                        -{percentSale}%
-                                                    </div>
+                                                {saleInfo.hasActiveSale ? (
+                                                    <>
+                                                        <div className="product-price text-title">{formatPrice(saleInfo.discountedPrice)}</div>
+                                                        <div className="product-origin-price caption1 text-secondary2"><del>{formatPrice(saleInfo.originalPrice)}</del></div>
+                                                        <div className="product-sale caption1 font-medium bg-green px-3 py-0.5 inline-block rounded-full">
+                                                            -{saleInfo.percentOff}%
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="product-price text-title">{formatPrice(data.price)}</div>
                                                 )}
                                             </div>
                                             {data.variation.length > 0 && data.action === 'add to cart' ? (
@@ -530,7 +651,7 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
             {type === 'marketplace' ? (
                 <div className="product-item style-marketplace p-4 border border-line rounded-2xl" onClick={() => handleDetailProduct(data.id)}>
                     <div className="bg-img relative w-full">
-                        <Image className='w-full aspect-square' width={5000} height={5000} src={data.thumbImage[0]} alt="img" />
+                        <Image className='w-full aspect-square' width={5000} height={5000} src={getCdnUrl(data.images.find((img) => img.cover_image)!.url)} alt="img" />
                         <div className="list-action flex flex-col gap-1 absolute top-0 right-0">
                             <span
                                 className={`add-wishlist-btn w-8 h-8 bg-white flex items-center justify-center rounded-full box-shadow-sm duration-300 ${wishlistState.wishlistArray.some(item => item.id === data.id) ? 'active' : ''}`}
@@ -584,7 +705,16 @@ const Product: React.FC<ProductProps> = ({ data, type }) => {
                         <div className="flex gap-0.5 mt-1">
                             <Rate currentRate={data.rate} size={16} />
                         </div>
-                        <span className="text-title inline-block mt-1">${data.price}.00</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            {saleInfo.hasActiveSale ? (
+                                <>
+                                    <span className="text-title inline-block">{formatPrice(saleInfo.discountedPrice)}</span>
+                                    <span className="text-secondary2 line-through text-sm">{formatPrice(saleInfo.originalPrice)}</span>
+                                </>
+                            ) : (
+                                <span className="text-title inline-block">{formatPrice(data.price)}</span>
+                            )}
+                        </div>
                     </div>
                 </div>
             ) : (

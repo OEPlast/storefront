@@ -1,3 +1,5 @@
+import { ProductDescriptionImage, ProductSale } from "@/types/product";
+
 interface Variation {
     color: string;
     colorCode: string;
@@ -7,12 +9,10 @@ interface Variation {
 
 export interface ProductType {
     id: string,
-    category: string,
     type: string,
     name: string,
     gender: string,
     new: boolean,
-    sale: boolean,
     rate: number,
     price: number,
     originPrice: number,
@@ -22,9 +22,21 @@ export interface ProductType {
     quantityPurchase: number,
     sizes: Array<string>,
     variation: Variation[],
-    thumbImage: Array<string>,
-    images: Array<string>,
+    images: Array<ProductDescriptionImage>,
     description: string,
     action: string,
     slug: string
+
+    ///new
+    _id: string;
+    category: {
+        _id: string;
+        name: string;
+        image: string;
+        slug: string;
+    };
+    sku: number;
+    stock: number;
+    originStock: number;
+    sale: ProductSale | null;
 }

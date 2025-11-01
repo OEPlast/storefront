@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ApiResponse } from '@/libs/api/axios';
+import { ApiResponse, ApiResponseWithMeta } from '@/libs/api/axios';
 
 /**
  * Server-side API client for prefetching data
@@ -48,5 +48,20 @@ export async function serverGet<T>(url: string): Promise<T | null> {
   } catch (error) {
     console.error(`[Server API] Failed to fetch ${url}:`, error);
     return null;
+  }
+}
+
+
+/**
+ * Server-side typed GET request
+ * Automatically unwraps response.data.data → response.data
+ */
+export async function serverGetWithMeta<T>(url: string): Promise<{ data: T | []; meta: any }> {
+  try {
+    const response = await serverApiClient.get<ApiResponseWithMeta<T>>(url);
+    return { data: response.data.data, meta: response.data.meta };
+  } catch (error) {
+    console.error(`[Server API] Failed to fetch ${url}:`, error);
+    return { data: [], meta: null };
   }
 }

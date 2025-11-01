@@ -9,7 +9,7 @@ export interface ApiResponse<T = undefined> {
 
 export interface ApiResponseWithMeta<T = undefined, M = undefined> {
   message: string;
-  data: T | null;
+  data: T | [];
   meta?: M;
 }
 

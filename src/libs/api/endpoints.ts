@@ -27,9 +27,12 @@ export const api = {
     byCategory: (categoryId: string) => `/products/category/${categoryId}`,
     byCategorySlug: (slug: string) => `/products/category/${slug}`,
     search: '/products/search',
-    week: '/products/week',
+    autocomplete: '/products/autocomplete',
+    newProducts: '/products/new-products', 
+    week: '/products/top-week',
     topSold: '/products/top-sold',
     hotSales: '/products/hot-sales',
+    dealsOfTheDay: '/products/deals-of-the-day',
     topCategories: '/products/top-categories',
     recommendations: '/products/recommendation4u',
     recommendationsByProduct: (productId: string) =>

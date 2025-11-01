@@ -185,30 +185,6 @@
         }
     }
 
-    &:hover {
-        &.grid-type {
-            @media (min-width: 1024px) {
-                .product-main {
-                    .product-infor {
-                        .product-name {
-                            opacity: 0;
-                            visibility: hidden;
-                        }
-
-                        .list-color,
-                        .list-color-image {
-                            opacity: 1;
-                        }
-
-                        .product-price-block {
-                            transform: translateY(28px);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     &.style-marketplace {
         overflow: hidden;
         cursor: pointer;
@@ -245,6 +221,32 @@
 
                 .add-cart-btn {
                     transition: all 0.3s ease, transform 0.3s ease 0.18s;
+                }
+            }
+        }
+    }
+}
+
+.has-colors{
+        &:hover {
+        &.grid-type {
+            @media (min-width: 1024px) {
+                .product-main {
+                    .product-infor {
+                        .product-name {
+                            opacity: 0;
+                            visibility: hidden;
+                        }
+
+                        .list-color,
+                        .list-color-image {
+                            opacity: 1;
+                        }
+
+                        .product-price-block {
+                            transform: translateY(28px);
+                        }
+                    }
                 }
             }
         }

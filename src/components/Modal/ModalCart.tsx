@@ -59,8 +59,9 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                                 <div key={product.id} className='item py-5 flex items-center justify-between gap-3 border-b border-line'>
                                     <div className="infor flex items-center gap-5">
                                         <div className="bg-img">
+                                            {/* fix */}
                                             <Image
-                                                src={product.images[0]}
+                                                src={product.images.find(img => img.cover_image)?.url!}
                                                 width={300}
                                                 height={300}
                                                 alt={product.name}
@@ -79,7 +80,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                                         className="text-xl bg-white w-10 h-10 rounded-xl border border-black flex items-center justify-center duration-300 cursor-pointer hover:bg-black hover:text-white"
                                         onClick={e => {
                                             e.stopPropagation();
-                                            handleAddToCart(product)
+                                            // handleAddToCart(product)
                                         }}
                                     >
                                         <Icon.Handbag />
@@ -123,7 +124,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                                     <div className="infor flex items-center gap-3 w-full">
                                         <div className="bg-img w-[100px] aspect-square flex-shrink-0 rounded-lg overflow-hidden">
                                             <Image
-                                                src={product.images[0]}
+                                                src={product.images.find(img => img.cover_image)?.url!}
                                                 width={300}
                                                 height={300}
                                                 alt={product.name}

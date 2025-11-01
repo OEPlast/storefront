@@ -6,14 +6,13 @@ import MenuOne from '@/components/Header/Menu/MenuOne'
 import BreadcrumbProduct from '@/components/Breadcrumb/BreadcrumbProduct'
 import VariableProduct from '@/components/Product/Detail/VariableProduct';
 import Footer from '@/components/Footer/Footer'
-import productData from '@/data/Product.json'
 
 const ProductVariableProduct = () => {
     const searchParams = useSearchParams()
     let productId = searchParams.get('id')
 
     if (productId === null) {
-        productId = '1'
+        return <div>Product ID is missing in the URL</div>;
     }
 
     return (

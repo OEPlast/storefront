@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,10 @@ import { useCart } from '@/context/CartContext';
 import NavCategoriesComponent from './NavCategoriesComponent';
 import NavCategoriesMobile from './NavCategoriesMobile';
 import { useCartCount } from '@/hooks/useCartCount';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
+import { useProductSearchAutocomplete } from '@/hooks/queries/useProducts';
+import AutocompleteDropdown from '@/components/Search/AutocompleteDropdown';
 
 // Data constants
 
@@ -98,10 +102,33 @@ const MenuEight = () => {
 
     const [searchKeyword, setSearchKeyword] = useState('');
     const router = useRouter();
+    const debounced = useDebouncedValue(searchKeyword, 200);
+    const { history, add: addHistory, clear: clearHistory } = useSearchHistory();
+    const [openAutocomplete, setOpenAutocomplete] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
+    // Separate refs for desktop and mobile input+dropdown containers
+    const desktopInputAnchorRef = useRef<HTMLDivElement>(null);
+    const mobileInputAnchorRef = useRef<HTMLDivElement>(null);
+
+    const { data: suggestions = [], isFetching } = useProductSearchAutocomplete(debounced, 8);
+
+    // Only show dropdown if there are suggestions (>=2 chars) or we have history
+    const shouldShowDropdown = useMemo(() => {
+        const hasMinChars = searchKeyword.trim().length >= 2;
+        const hasHistory = history.length > 0;
+        return openAutocomplete && (hasMinChars || hasHistory);
+    }, [openAutocomplete, searchKeyword, history]);
 
     const handleSearch = (value: string) => {
         router.push(`/search-result?query=${value}`);
+        addHistory(value);
         setSearchKeyword('');
+        setOpenAutocomplete(false);
+    };
+
+    const handleSelectSuggestion = (name: string) => {
+        // Navigate to search results using the suggestion name
+        handleSearch(name);
     };
 
     const handleOpenSubNavMobile = (index: number) => {
@@ -124,17 +151,29 @@ const MenuEight = () => {
         };
     }, [lastScrollPosition]);
 
-    const handleGenderClick = (gender: string) => {
-        router.push(`/shop/breadcrumb1?gender=${gender}`);
-    };
+    // Close autocomplete when clicking outside input+dropdown (desktop or mobile containers)
+    useEffect(() => {
+        function handleOutside(event: MouseEvent | TouchEvent) {
+            if (!openAutocomplete) return;
+            const target = event.target as Node | null;
+            const desktopEl = desktopInputAnchorRef.current;
+            const mobileEl = mobileInputAnchorRef.current;
+            const clickedInsideDesktop = desktopEl ? desktopEl.contains(target as Node) : false;
+            const clickedInsideMobile = mobileEl ? mobileEl.contains(target as Node) : false;
+            if (!clickedInsideDesktop && !clickedInsideMobile) {
+                setOpenAutocomplete(false);
+                setActiveIndex(-1);
+            }
+        }
 
-    const handleCategoryClick = (category: string) => {
-        router.push(`/shop/breadcrumb1?category=${category}`);
-    };
+        document.addEventListener('mousedown', handleOutside);
+        document.addEventListener('touchstart', handleOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleOutside);
+            document.removeEventListener('touchstart', handleOutside);
+        };
+    }, [openAutocomplete]);
 
-    const handleTypeClick = (type: string) => {
-        router.push(`/shop/breadcrumb1?type=${type}`);
-    };
 
     return (
         <>
@@ -151,21 +190,49 @@ const MenuEight = () => {
                         <div className="form-search w-2/3 pl-8 flex items-center h-[44px] max-lg:hidden">
                             <div className="category-block relative h-full">
                                 <div className="category-btn bg-black relative flex items-center gap-6 py-2 px-4 h-full rounded-l w-fit cursor-pointer">
-                                    <div className="text-button text-white whitespace-nowrap">All Categories</div>
-                                    <Icon.CaretDown color='#ffffff' />
+                                    <div className="text-button text-white whitespace-nowrap">All</div>
                                 </div>
                             </div>
                             <div className='w-full flex items-center h-full'>
-                                <input
-                                    type="text"
-                                    className="search-input h-full px-4 w-full border border-line"
-                                    placeholder="What are you looking for today?"
-                                    value={searchKeyword}
-                                    onChange={(e) => setSearchKeyword(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchKeyword)}
-                                />
+                                <div className="relative w-full h-full flex" ref={desktopInputAnchorRef}>
+                                    <input
+                                        type="text"
+                                        className="search-input h-full px-4 w-full border border-line"
+                                        placeholder="What are you looking for today?"
+                                        value={searchKeyword}
+                                        onChange={(e) => setSearchKeyword(e.target.value)}
+                                        onFocus={() => setOpenAutocomplete(true)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleSearch(searchKeyword);
+                                            } else if (e.key === 'ArrowDown') {
+                                                e.preventDefault();
+                                                setActiveIndex((prev) => Math.min(prev + 1, (suggestions?.length ?? 0) - 1));
+                                            } else if (e.key === 'ArrowUp') {
+                                                e.preventDefault();
+                                                setActiveIndex((prev) => Math.max(prev - 1, -1));
+                                            } else if (e.key === 'Escape') {
+                                                setOpenAutocomplete(false);
+                                            }
+                                        }}
+                                    />
+                                    {shouldShowDropdown && (
+                                        <AutocompleteDropdown
+                                            open={shouldShowDropdown}
+                                            loading={isFetching}
+                                            suggestions={searchKeyword.trim().length >= 2 ? suggestions : []}
+                                            history={searchKeyword.trim().length < 2 ? history : []}
+                                            activeIndex={activeIndex}
+                                            anchorRef={desktopInputAnchorRef}
+                                            onSelectSuggestion={(item) => handleSelectSuggestion(item.name)}
+                                            onSelectHistory={(term) => handleSearch(term)}
+                                            onClearHistory={() => clearHistory()}
+                                        />
+                                    )}
+                                </div>
                                 <button
-                                    className="search-button button-main bg-black h-full flex items-center px-7 rounded-none rounded-r"
+                                    className="search-button button-main bg-black h-full flex items-center px-7 rounded-none rounded-r "
                                     onClick={() => handleSearch(searchKeyword)}
                                 >
                                     Search
@@ -325,9 +392,37 @@ const MenuEight = () => {
                                 </div>
                                 <Link href={'/'} className='logo text-3xl font-semibold text-center'>OEPlast</Link>
                             </div>
-                            <div className="form-search relative mt-2">
+                            <div className="form-search relative mt-2" ref={mobileInputAnchorRef}>
                                 <Icon.MagnifyingGlass size={20} className='absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer' />
-                                <input type="text" placeholder='What are you looking for?' className=' h-12 rounded-lg border border-line text-sm w-full pl-10 pr-4' />
+                                <input
+                                    type="text"
+                                    placeholder='What are you looking for?'
+                                    className=' h-12 rounded-lg border border-line text-sm w-full pl-10 pr-4'
+                                    value={searchKeyword}
+                                    onChange={(e) => setSearchKeyword(e.target.value)}
+                                    onFocus={() => setOpenAutocomplete(true)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleSearch(searchKeyword);
+                                        }
+                                    }}
+                                />
+                                {shouldShowDropdown && (
+                                    <div className="absolute left-0 right-0">
+                                        <AutocompleteDropdown
+                                            open={shouldShowDropdown}
+                                            loading={isFetching}
+                                            suggestions={searchKeyword.trim().length >= 2 ? suggestions : []}
+                                            history={searchKeyword.trim().length < 2 ? history : []}
+                                            activeIndex={activeIndex}
+                                            anchorRef={mobileInputAnchorRef}
+                                            onSelectSuggestion={(item) => handleSelectSuggestion(item.name)}
+                                            onSelectHistory={(term) => handleSearch(term)}
+                                            onClearHistory={() => clearHistory()}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className="list-nav mt-6">
                                 <ul>

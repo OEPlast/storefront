@@ -59,12 +59,16 @@ function purgeExpiredItems(items: GuestCartItem[]): GuestCartItem[] {
 }
 
 /**
- * Read guest cart from localStorage
+ * Read guest cart from localStorage (SSR-safe)
  * Automatically purges expired items
  */
 export function getGuestCart(): GuestCart {
   try {
-    const stored = localStorage.getItem(GUEST_CART_KEY);
+    if (typeof window === 'undefined') {
+      // SSR render path: return empty cart to avoid window access
+      return { items: [], lastUpdated: new Date().toISOString() };
+    }
+    const stored = window.localStorage.getItem(GUEST_CART_KEY);
     if (!stored) {
       return { items: [], lastUpdated: new Date().toISOString() };
     }
@@ -80,7 +84,7 @@ export function getGuestCart(): GuestCart {
         items: validItems,
         lastUpdated: new Date().toISOString(),
       };
-      localStorage.setItem(GUEST_CART_KEY, JSON.stringify(updatedCart));
+      window.localStorage.setItem(GUEST_CART_KEY, JSON.stringify(updatedCart));
       return updatedCart;
     }
 
@@ -96,7 +100,8 @@ export function getGuestCart(): GuestCart {
  */
 function saveGuestCart(cart: GuestCart): void {
   try {
-    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
     // Dispatch custom event to notify all components
     window.dispatchEvent(new CustomEvent('guestCartUpdated', { detail: cart }));
   } catch (error) {
@@ -254,7 +259,8 @@ export function removeFromGuestCart(itemId: string): boolean {
  */
 export function clearGuestCart(): void {
   try {
-    localStorage.removeItem(GUEST_CART_KEY);
+    if (typeof window === 'undefined') return;
+    window.localStorage.removeItem(GUEST_CART_KEY);
   } catch (error) {
     console.error('Error clearing guest cart:', error);
   }

@@ -6,6 +6,7 @@ import { CaretDownIcon, DotsThreeIcon } from '@phosphor-icons/react';
 import { useCategories } from '@/hooks/queries/useCategories';
 import { ApiCategory } from '@/types/category';
 import { getCdnUrl } from '@/libs/cdn-url';
+import { usePathname } from 'next/navigation';
 
 
 
@@ -17,21 +18,48 @@ interface NavCategoriesComponentProps {
 
 const NavCategoriesComponent = ({ isOpen }: NavCategoriesComponentProps) => {
     const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
-    const [hoveredCategory, setHoveredCategory] = useState<ApiCategory | null>(null);
     const { data: _CATEGORIES } = useCategories();
     const CATEGORIES = useMemo(() => _CATEGORIES || [], [_CATEGORIES]);
+    const [hoveredCategory, setHoveredCategory] = useState<ApiCategory | null>(CATEGORIES[0]);
+    const pathname = usePathname();
+    const showFixedCategories = useMemo(() => pathname === '/', [pathname]);
+    const [showNavCategories, setShowNavCategories] = useState(false);
+    const hideCategoryPanel = () => {
+        if (!showFixedCategories) {
+            setShowNavCategories(false)
+        }
+        setIsCategoryExpanded(false);
+        setHoveredCategory(CATEGORIES[0]);
+    }
+    const hideCategoryPanelSecondary = () => {
+        if (showFixedCategories) {
+            setShowNavCategories(false)
+        }
+    }
+    const toggleNavCategories = () => {
+        setShowNavCategories((prev) => !prev);
+        setIsCategoryExpanded(true)
+    }
+
+    const showCategoryAndExpand = () => {
+        if (!showFixedCategories) {
+            setShowNavCategories(true)
+        }
+        setIsCategoryExpanded(true)
+    }
     return (
         <div className="menu-department-block h-full">
-            <div className="menu-department-btn relative flex h-full min-w-[215px] flex-1 cursor-pointer items-center gap-4 bg-black px-4 sm:gap-16">
+            <div
+                onClick={toggleNavCategories}
+                onMouseOver={() => setIsCategoryExpanded(true)}
+                onMouseLeave={hideCategoryPanel}
+                className="menu-department-btn relative flex h-full min-w-[215px] flex-1 cursor-pointer items-center gap-4 bg-black px-4 sm:gap-16">
                 <div className="text-button-uppercase whitespace-nowrap text-white">All Categories</div>
             </div>
             <div
-                onMouseOver={() => setIsCategoryExpanded(true)}
-                onMouseLeave={() => {
-                    setIsCategoryExpanded(false);
-                    setHoveredCategory(null);
-                }}
-                className={`sub-menu-department absolute left-0 top-[43px] h-max rounded-b-2xl bg-white transition-all duration-200 open ${isCategoryExpanded
+                onMouseOver={showCategoryAndExpand}
+                onMouseLeave={hideCategoryPanel}
+                className={`sub-menu-department absolute left-0 top-[43px] h-max rounded-b-2xl bg-white transition-all duration-200 ${showFixedCategories ? 'open' : ''} ${showNavCategories ? 'open' : ''} ${isCategoryExpanded
                     ? 'w-full border border-line border-t-0 max-h-[70vh] overflow-hidden'
                     : 'w-[215px]'
                     }`}

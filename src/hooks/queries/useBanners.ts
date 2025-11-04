@@ -80,12 +80,13 @@ export const useBannersByCategory = (category: BannerCategory) => {
  * Returns an object with categories as keys and banner arrays as values
  * @returns Query result with banners grouped by category (A, B, C, D, E)
  */
-export const useGroupedBanners = () => {
+export const useGroupedBanners = (allow: boolean) => {
   return useQuery<GroupedBanners>({
     queryKey: ['banners', 'grouped'],
     queryFn: fetchGroupedBannersClient,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    enabled: allow
   });
 };

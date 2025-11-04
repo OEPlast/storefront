@@ -8,7 +8,7 @@ import {
   ProductDetail,
   ProductListItem,
   SearchProduct,
-  AutocompleteSuggestion,
+  AutocompleteProduct,
   ProductListMeta,
   ProductListParams,
   SearchProductParams,
@@ -426,18 +426,18 @@ export const useNewProducts = (page = 1, limit = 20) => {
 };
 
 /**
- * Hook for search autocomplete suggestions
- * Returns AutocompleteSuggestion (minimal: name, optional slug) for fast autocomplete
+ * Hook for search autocomplete suggestions (non-cached, cancellable)
+ * Returns AutocompleteProduct[] for richer display (optional image/category)
  * @param query - Search query string (min 2 characters)
  * @param limit - Maximum number of suggestions
- * @returns Query result with autocomplete suggestions
  */
-export const useProductAutocomplete = (query: string, limit = 10) => {
-  return useQuery<AutocompleteSuggestion[]>({
+export const useProductSearchAutocomplete = (query: string, limit = 10) => {
+  return useQuery<AutocompleteProduct[]>({
     queryKey: ['products', 'autocomplete', query, limit],
-    queryFn: async () => {
-      const response = await apiClient.get<AutocompleteSuggestion[]>(api.products.autocomplete, {
+    queryFn: async ({ signal }) => {
+      const response = await apiClient.get<AutocompleteProduct[]>(api.products.autocomplete, {
         params: { q: query, limit },
+        signal,
       });
       if (!response.data) {
         throw new Error('No data returned from server');
@@ -445,7 +445,11 @@ export const useProductAutocomplete = (query: string, limit = 10) => {
       return response.data;
     },
     enabled: !!query && query.trim().length >= 2,
-    staleTime: 30 * 1000, // 30 seconds (short cache for autocomplete)
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
     refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };

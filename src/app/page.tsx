@@ -13,11 +13,6 @@ import HomeClient from './HomeClient';
 export default function Home() {
   return (
     <>
-      <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
-      <div id="header" className='relative w-full style-nine'>
-        <MenuEight />
-        <SliderNine />
-      </div>
       <TrendingNow />
 
       {/* Product sections fetched from API */}

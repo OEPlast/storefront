@@ -10,6 +10,9 @@ import ModalCompare from "@/components/Modal/ModalCompare";
 import CountdownTimeType from "@/type/CountdownType";
 import { countdownTime } from "@/store/countdownTime";
 import NextTopLoader from "nextjs-toploader";
+import TopNavOne from "@/components/Header/TopNav/TopNavOne";
+import MenuEight from "@/components/Header/Menu/MenuEight";
+import SliderNine from "@/components/Slider/SliderNine";
 
 const serverTimeLeft: CountdownTimeType = countdownTime();
 
@@ -35,6 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             easing="ease"
             speed={200}
           />
+          <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
+          <div id="header" className='relative w-full style-nine'>
+            <MenuEight />
+            <SliderNine />
+          </div>
           {children}
           <ModalCart serverTimeLeft={serverTimeLeft} />
           <ModalWishlist />

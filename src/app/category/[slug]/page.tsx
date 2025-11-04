@@ -36,10 +36,6 @@ export default async function CategoryPage({
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
-            <div id="header" className="relative w-full">
-                <MenuOne props="bg-transparent" />
-            </div>
             <RouteClient slug={slug} searchParams={serverSearchParams} />
             <Footer />
         </HydrationBoundary>

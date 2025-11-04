@@ -9,15 +9,18 @@ import 'swiper/css/bundle';
 import 'swiper/css/effect-fade';
 import { useAllBanners, useGroupedBanners } from '@/hooks/queries/useBanners';
 import { getCdnUrl } from '@/libs/cdn-url';
+import { usePathname } from 'next/navigation';
 
 
 const SliderNine = () => {
-    const { data } = useGroupedBanners()
+    const isHomePage = usePathname();
+
+    if (isHomePage !== '/') return null;
+    const { data } = useGroupedBanners(isHomePage === '/');
+    console.log('SliderNine banners data:', isHomePage === '/', data);
+    const TopGroupBanners = data?.A || [];
+
     if (!data) return null;
-
-    const TopGroupBanners = data.A || [];
-
-    console.log(TopGroupBanners);
     if (TopGroupBanners.length === 0) return null;
 
 

@@ -229,6 +229,23 @@ export interface CategoryBySlugParams {
   subcategory?: string;
 }
 
+/**
+ * Product list params for filtered product pages (new products, week, top sold)
+ * Same filter structure as campaigns/categories
+ */
+export interface ProductListParams {
+  page?: number;
+  limit?: number;
+  sort?: SortOption[];
+  // Filters
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  packSize?: string;
+  tags?: string[];
+  attributes?: Record<string, string[]>;
+}
+
 export interface CategoryBySlugMeta extends ProductListMeta {
   slug: string;
   hasSubcategories: boolean;

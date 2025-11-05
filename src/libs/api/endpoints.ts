@@ -26,11 +26,15 @@ export const api = {
     bySlug: (slug: string) => `/products/by-slug/${slug}`,
     byCategory: (categoryId: string) => `/products/category/${categoryId}`,
     byCategorySlug: (slug: string) => `/products/category/${slug}`,
+    byCampaignSlug: (slug: string) => `/products/campaign/${slug}`,
     search: '/products/search',
     autocomplete: '/products/autocomplete',
     newProducts: '/products/new-products',
+    newProductsFilters: '/products/new-products/filters',
     week: '/products/top-week',
+    weekProductsFilters: '/products/top-week/filters',
     topSold: '/products/top-sold',
+    topSoldProductsFilters: '/products/top-sold/filters',
     hotSales: '/products/hot-sales',
     dealsOfTheDay: '/products/deals-of-the-day',
     topCategories: '/products/top-categories',
@@ -97,6 +101,13 @@ export const api = {
     byId: (id: string) => `/categories/${id}`,
     bySlug: (slug: string) => `/categories/slug/${slug}`,
     filtersBySlug: (slug: string) => `/categories/slug/${slug}/filters`,
+  },
+
+  // Campaign endpoints
+  campaigns: {
+    list: '/campaigns/all',
+    info: (slug: string) => `/campaigns/slug/${slug}`, // Campaign metadata only
+    filtersBySlug: (slug: string) => `/campaigns/slug/${slug}/filters`, // Campaign product filters
   },
 
   // Banner endpoints

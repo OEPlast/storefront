@@ -36,41 +36,49 @@ export default function HomeClient() {
             {!isLoadingDeals && dealsOfTheDay && dealsOfTheDay.data.length > 0 && (
                 <ProductSection
                     data={convertProducts(dealsOfTheDay)}
+                    showCountdown={true}
                     start={0}
-                    limit={20}
+                    limit={13}
                     header="Deals of the Day"
-                    viewAllLink="/deals-of-the-day"
+                    viewAllLink="/campaigns/deals-of-the-day"
                 />
             )}
 
             {/* New Products Section */}
             {!isLoadingNew && newProducts && (
                 <ProductSection
+                    start={0}
+                    limit={7}
                     data={convertProducts(newProducts)}
                     header="New Arrivals"
-                    viewAllLink="/shop"
+                    viewAllLink="/new-products"
                 />
             )}
 
             <CatB_Banner />
 
-            {/* Week Products Section */}
-            {!isLoadingWeek && weekProducts && (
-                <ProductSection
-                    data={convertProducts(weekProducts)}
-                    header="Top of the Week"
-                    viewAllLink="/shop"
-                />
-            )}
-
             {/* Top Sold Products Section */}
             {!isLoadingTopSold && topSoldProducts && (
                 <ProductSection
+                    start={0}
+                    limit={11}
                     data={convertProducts(topSoldProducts)}
                     header="Best Sellers"
-                    viewAllLink="/shop"
+                    viewAllLink="/top-sold-products"
                 />
             )}
+
+            {/* Week Products Section */}
+            {!isLoadingWeek && weekProducts && (
+                <ProductSection
+                    start={0}
+                    limit={9}
+                    data={convertProducts(weekProducts)}
+                    header="Top of the Week"
+                    viewAllLink="/week-products"
+                />
+            )}
+
         </>
     );
 }

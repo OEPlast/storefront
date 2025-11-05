@@ -4,19 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { countdownTime } from '@/store/countdownTime';
 
 interface CountdownTimerProps {
-    start?: number;
-    limit?: number;
+    showCountdown: boolean;
 }
 
 /**
  * CountdownTimer - Displays a countdown timer for sales/deals
  * Only renders when both start and limit dates are provided
  */
-const CountdownTimer: React.FC<CountdownTimerProps> = ({ start, limit }) => {
+const CountdownTimer: React.FC<CountdownTimerProps> = ({ showCountdown }) => {
     const [timeLeft, setTimeLeft] = useState(countdownTime());
 
-    // Only show countdown if both start and limit are defined
-    const showCountdown = start !== undefined && limit !== undefined;
 
     useEffect(() => {
         if (!showCountdown) return;

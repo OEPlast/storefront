@@ -1,182 +1,182 @@
 [
-    {
-        "id": "1",
-        "category": "fashion",
-        "title": "Variety of Styles!",
-        "name": "Fukuda E.",
-        "avatar": "/images/avatar/1.png",
-        "date": "November 10, 2023",
-        "address": "Tokyo, Japan",
-        "description": "Anvouge's exceptional customer service and attention to detail make shopping with them a pleasure. They understand my fashion needs and help me find the perfect pieces every time.",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 5
-    },
-    {
-        "id": "2",
-        "category": "fashion",
-        "title": "Quality of Clothing!",
-        "name": "Georgina S.",
-        "avatar": "/images/avatar/2.png",
-        "date": "November 11, 2023",
-        "address": "Madrid, Spain",
-        "description": "I absolutely love this shop! The products are high-quality and the customer service is excellent. I always leave with exactly what I need and a smile on my face.",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 5
-    },
-    {
-        "id": "3",
-        "category": "fashion",
-        "title": "Customer Service!",
-        "name": "Elizabeth A.",
-        "avatar": "/images/avatar/3.png",
-        "date": "November 13, 2023",
-        "address": "Manchester, UK",
-        "description": "I love this shop! The products are always top-quality, and the staff is incredibly friendly and helpful. They go out of their way to make sure that I'm satisfied with my purchase.",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 4
-    },
-    {
-        "id": "4",
-        "category": "fashion",
-        "title": "Quality of Clothing!",
-        "name": "Christin H.",
-        "avatar": "/images/avatar/4.png",
-        "date": "November 15, 2023",
-        "address": "California, USA",
-        "description": "I can't get enough of Anvouge's high-quality clothing. It's comfortable, stylish, and always on-trend. The products are high-quality and the customer service is excellent.",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 5
-    },
-    {
-        "id": "5",
-        "category": "fashion",
-        "title": "Customer Service!",
-        "name": "Emily G.",
-        "avatar": "/images/avatar/5.png",
-        "date": "November 18, 2023",
-        "address": "Paris, France",
-        "description": "Fantastic shop! Great selection, fair prices, and friendly staff. Highly recommended. The quality of the products is exceptional, and the prices are very reasonable!",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 4
-    },
-    {
-        "id": "6",
-        "category": "fashion",
-        "title": "Variety of Styles!",
-        "name": "Carolina C.",
-        "avatar": "/images/avatar/6.png",
-        "date": "November 19, 2023",
-        "address": "London, UK",
-        "description": "Anvouge's fashion collection is a game-changer! Their unique and trendy pieces have completely transformed my style. It's comfortable, stylish, and always on-trend.",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 5
-    },
-    {
-        "id": "7",
-        "category": "yoga",
-        "title": "Quality of Clothing!",
-        "name": "Christin H.",
-        "avatar": "/images/avatar/4.png",
-        "date": "November 15, 2023",
-        "address": "California, USA",
-        "description": "Their unique and trendy pieces have completely transformed my style.",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 5
-    },
-    {
-        "id": "8",
-        "category": "yoga",
-        "title": "Customer Service!",
-        "name": "Emily G.",
-        "avatar": "/images/avatar/5.png",
-        "date": "November 18, 2023",
-        "address": "Paris, France",
-        "description": "Exceptional customer service and attention to detail make shopping with them a pleasure",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 5
-    },
-    {
-        "id": "9",
-        "category": "yoga",
-        "title": "Variety of Styles!",
-        "name": "Carolina C.",
-        "avatar": "/images/avatar/6.png",
-        "date": "November 19, 2023",
-        "address": "London, UK",
-        "description": "I can't get enough of OEPlast high-quality clothing. It's comfortable, stylish, and always on-trend.",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 4
-    },
-    {
-        "id": "10",
-        "category": "yoga",
-        "title": "Variety of Styles!",
-        "name": "Fukuda E.",
-        "avatar": "/images/avatar/1.png",
-        "date": "November 10, 2023",
-        "address": "Tokyo, Japan",
-        "description": "Exceptional customer service and attention to detail make shopping with them a pleasure",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 4
-    },
-    {
-        "id": "11",
-        "category": "yoga",
-        "title": "Quality of Clothing!",
-        "name": "Georgina S.",
-        "avatar": "/images/avatar/2.png",
-        "date": "November 11, 2023",
-        "address": "Madrid, Spain",
-        "description": "I love this shop! The products are high-quality, the customer service is excellent",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 5
-    },
-    {
-        "id": "12",
-        "category": "yoga",
-        "title": "Customer Service!",
-        "name": "Elizabeth A.",
-        "avatar": "/images/avatar/3.png",
-        "date": "November 13, 2023",
-        "address": "Manchester, UK",
-        "description": "The products are always top-quality, and the staff is incredibly friendly and helpful",
-        "images": [
-            "/images/product/1000x1000.png",
-            "/images/product/1000x1000.png"
-        ],
-        "star": 5
-    }
+  {
+    "id": "1",
+    "category": "household",
+    "title": "Bulk Purchase Made Easy!",
+    "name": "Oluwaseun A.",
+    "avatar": "/images/avatar/1.png",
+    "date": "November 10, 2023",
+    "address": "Ikeja, Lagos",
+    "description": "Buying in bulk has never been easier! The ordering process was smooth, delivery was on time, and everything arrived neatly packed. The kegs and containers were top-quality, perfect for my store.",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 5
+  },
+  {
+    "id": "2",
+    "category": "household",
+    "title": "Great Value for Money!",
+    "name": "Ngozi M.",
+    "avatar": "/images/avatar/2.png",
+    "date": "November 11, 2023",
+    "address": "Enugu, Nigeria",
+    "description": "I ordered several cartons of plastic buckets and basins for my shop and got amazing value for my money. The prices are unbeatable for the quality you get. Highly recommended for bulk buyers!",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 5
+  },
+  {
+    "id": "3",
+    "category": "industrial",
+    "title": "Fast and Reliable Delivery!",
+    "name": "Tunde F.",
+    "avatar": "/images/avatar/3.png",
+    "date": "November 13, 2023",
+    "address": "Ibadan, Nigeria",
+    "description": "I ordered large quantities of 25L kegs and drums for my water business and got everything faster than expected. The delivery was smooth, and the products were exactly as described.",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 4
+  },
+  {
+    "id": "4",
+    "category": "industrial",
+    "title": "Excellent Wholesale Prices!",
+    "name": "Babatunde K.",
+    "avatar": "/images/avatar/4.png",
+    "date": "November 15, 2023",
+    "address": "Abeokuta, Nigeria",
+    "description": "I got wholesale rates on multiple drum sizes for my cleaning business. The plastics are durable and strong, and I saved so much compared to the open market. Excellent experience overall!",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 5
+  },
+  {
+    "id": "5",
+    "category": "household",
+    "title": "Perfect for Event Planners!",
+    "name": "Aisha L.",
+    "avatar": "/images/avatar/5.png",
+    "date": "November 18, 2023",
+    "address": "Abuja, Nigeria",
+    "description": "I bought plates, cups, and takeaway packs in bulk for a wedding event. Everything came on time, neatly packaged, and the quality was impressive. Saved me multiple trips to the market!",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 4
+  },
+  {
+    "id": "6",
+    "category": "household",
+    "title": "Trusted Plastic Supplier!",
+    "name": "Joy I.",
+    "avatar": "/images/avatar/6.png",
+    "date": "November 19, 2023",
+    "address": "Port Harcourt, Nigeria",
+    "description": "I’ve been buying from them for my retail shop for months now. Their plastic containers and bowls are always high-quality, and delivery has never failed. I recommend them to all my customers!",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 5
+  },
+  {
+    "id": "7",
+    "category": "packaging",
+    "title": "Smooth Wholesale Process!",
+    "name": "Samuel A.",
+    "avatar": "/images/avatar/4.png",
+    "date": "November 15, 2023",
+    "address": "Onitsha, Nigeria",
+    "description": "Their wholesale ordering process is so easy! I bought plastic takeaway packs for my restaurant and got them delivered quickly without stress. I’ll definitely order again.",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 5
+  },
+  {
+    "id": "8",
+    "category": "packaging",
+    "title": "Impressive Customer Service!",
+    "name": "Kemi O.",
+    "avatar": "/images/avatar/5.png",
+    "date": "November 18, 2023",
+    "address": "Benin City, Nigeria",
+    "description": "Their customer service was exceptional! I made a bulk order and they followed up till delivery. Everything arrived in good condition and exactly as ordered.",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 5
+  },
+  {
+    "id": "9",
+    "category": "industrial",
+    "title": "Top-Quality Plastic Drums!",
+    "name": "Chinedu E.",
+    "avatar": "/images/avatar/6.png",
+    "date": "November 19, 2023",
+    "address": "Warri, Nigeria",
+    "description": "I can’t get enough of their high-quality plastic drums. They’re thick, durable, and perfect for storing liquid products. Saved me a lot compared to local market prices!",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 4
+  },
+  {
+    "id": "10",
+    "category": "household",
+    "title": "Stress-Free Shopping Experience!",
+    "name": "Hassan M.",
+    "avatar": "/images/avatar/1.png",
+    "date": "November 10, 2023",
+    "address": "Kano, Nigeria",
+    "description": "Instead of going all the way to the Lagos market, I ordered wholesale plastics from here. It was so convenient, affordable, and stress-free. Delivery came right to my shop!",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 4
+  },
+  {
+    "id": "11",
+    "category": "packaging",
+    "title": "Affordable and Reliable!",
+    "name": "Ruth E.",
+    "avatar": "/images/avatar/2.png",
+    "date": "November 11, 2023",
+    "address": "Asaba, Nigeria",
+    "description": "I ordered cartons of plastic takeaway packs and cups. Everything came neatly packed, and prices were the best I’ve found anywhere. Reliable supplier for business owners!",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 5
+  },
+  {
+    "id": "12",
+    "category": "household",
+    "title": "Bulk Order Delivered Fast!",
+    "name": "Chisom D.",
+    "avatar": "/images/avatar/3.png",
+    "date": "November 13, 2023",
+    "address": "Owerri, Nigeria",
+    "description": "I placed a large order of storage containers for resale, and they delivered within 3 days! Excellent service and quality products. I’ll keep buying from them in bulk.",
+    "images": [
+      "/images/product/1000x1000.png",
+      "/images/product/1000x1000.png"
+    ],
+    "star": 5
+  }
 ]

@@ -12,9 +12,10 @@ interface Props {
     limit?: number;
     header: string;
     viewAllLink: string;
+    showCountdown?: boolean;
 }
 
-const ProductSection: React.FC<Props> = ({ data, start, limit, header, viewAllLink }) => {
+const ProductSection: React.FC<Props> = ({ data, start, limit, header, viewAllLink, showCountdown = false }) => {
     return (
         <>
             <div className="tab-features-block md:pt-20 pt-10">
@@ -22,9 +23,9 @@ const ProductSection: React.FC<Props> = ({ data, start, limit, header, viewAllLi
                     <div className="heading flex items-center justify-between gap-5 flex-wrap">
                         <div className="left flex items-center gap-6 gap-y-3 flex-wrap">
                             <div className="heading3">{header}</div>
-                            <CountdownTimer start={start} limit={limit} />
+                            <CountdownTimer showCountdown={showCountdown} />
                         </div>
-                        <Link href={viewAllLink} className='text-button pb-1 border-b-2 border-black'>View All Deals</Link>
+                        <Link href={viewAllLink} className='text-button pb-1 border-b-2 border-black'>View All</Link>
                     </div>
 
                     <div className="list-product show-product-sold grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 grid-cols-2 sm:gap-[30px] gap-[20px] md:mt-10 mt-6">

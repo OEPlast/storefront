@@ -86,6 +86,7 @@ export const useGroupedBanners = (allow: boolean) => {
     queryFn: fetchGroupedBannersClient,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false,
+        placeholderData: { A: [], B: [], C: [], D: [], E: [] },
     refetchOnWindowFocus: false,
     enabled: allow
   });

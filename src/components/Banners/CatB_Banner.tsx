@@ -39,9 +39,9 @@ const CatB_Banner = () => {
                                     <div className="text-base text-gray-100 font-light relative py-2">
                                         {banner.mainText || ''}
                                     </div>
-                                    <Link href={banner.pageLink} className="caption1 text-white font-semibold relative inline-block pb-1 border-b-2 border-white duration-500 mt-2">
+                                    <div className="caption1 text-white font-semibold relative inline-block pb-1 border-b-2 border-white duration-500 mt-2">
                                         {banner.CTA || 'Shop Now'}
-                                    </Link>
+                                    </div>
                                 </div>
                             </Link>
                         ))}

@@ -15,7 +15,7 @@ import { useModalSearchContext } from '@/context/ModalSearchContext';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useRouter } from 'next/navigation';
-import { useCartCount } from '@/hooks/useCartCount';
+import { useCartCount } from '@/hooks/useCart';
 
 
 const MenuTwo = () => {

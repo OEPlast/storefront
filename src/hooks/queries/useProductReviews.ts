@@ -1,6 +1,7 @@
 'use client';
 
 import { useInfiniteQuery, UseInfiniteQueryOptions } from '@tanstack/react-query';
+import { apiClient } from '@/libs/api/axios';
 import api from '@/libs/api/endpoints';
 
 // Review Interface
@@ -12,11 +13,14 @@ export interface Review {
   images?: string[];
   likes: string[]; // Array of user IDs who liked
   likesCount: number;
+  repliesCount: number;
+  isLikedByUser: boolean;
   createdAt: string;
   reviewBy: {
     _id: string;
     firstName: string;
     lastName: string;
+    image?: string;
   };
   transactionId?: string;
   orderId?: string;
@@ -26,10 +30,8 @@ interface ReviewsResponse {
   message: string;
   data: Review[];
   meta: {
-    total: number;
-    page: number;
-    limit: number;
-    pages: number;
+    nextCursor: string | null;
+    count: number;
   };
 }
 
@@ -43,7 +45,16 @@ interface UseProductReviewsOptions
   filters?: {
     rating?: 1 | 2 | 3 | 4 | 5;
     hasImages?: boolean;
-    sortBy?: 'recent' | 'helpful' | 'rating-high' | 'rating-low';
+    sortBy?:
+      | 'newest'
+      | 'helpful'
+      | 'rating-high'
+      | 'rating-low'
+      | '5star'
+      | '4star'
+      | '3star'
+      | '2star'
+      | '1star';
   };
 }
 
@@ -88,12 +99,16 @@ export const useProductReviews = ({
 }: UseProductReviewsOptions) => {
   return useInfiniteQuery<ReviewsResponse, Error>({
     queryKey: ['product-reviews', productId, limit, filters],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam }) => {
       // Build query params
       const params = new URLSearchParams({
-        page: String(pageParam),
         limit: String(limit),
       });
+
+      // Add cursor if not first page
+      if (pageParam) {
+        params.append('cursor', String(pageParam));
+      }
 
       if (filters?.rating) {
         params.append('rating', String(filters.rating));
@@ -105,26 +120,30 @@ export const useProductReviews = ({
         params.append('sortBy', filters.sortBy);
       }
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL}${api.products.reviews(productId)}?${params.toString()}`;
-      const response = await fetch(url);
+      const response = await apiClient.getWithMeta<
+        Review[],
+        { nextCursor: string | null; count: number }
+      >(`${api.reviews.byProduct(productId)}?${params.toString()}`);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch reviews');
+      if (!response.data) {
+        throw new Error('Failed to fetch reviews');
       }
 
-      const result = await response.json();
-      return result as ReviewsResponse;
+      return {
+        message: response.message,
+        data: response.data,
+        meta: response.meta || { nextCursor: null, count: 0 },
+      };
     },
-    initialPageParam: 1,
+    initialPageParam: undefined,
     getNextPageParam: (lastPage) => {
-      const { page, pages } = lastPage.meta;
-      return page < pages ? page + 1 : undefined;
+      // Return nextCursor if it exists, otherwise undefined (no more pages)
+      return lastPage.meta?.nextCursor || undefined;
     },
     enabled: enabled ?? !!productId,
-    staleTime: staleTime ?? 2 * 60 * 1000, // 2 minutes
-    refetchOnMount: refetchOnMount ?? false,
-    refetchOnWindowFocus: refetchOnWindowFocus ?? false,
-    retry: retry ?? 3,
+    staleTime: staleTime ?? 20 * 60 * 1000, // 20 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 };

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
+import { UnboxingIcon } from '@/components/Icons';
 
 export default function NotFound() {
     return (
@@ -7,8 +8,8 @@ export default function NotFound() {
             <div className="container">
                 <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
                     {/* Icon */}
-                    <div className="w-32 h-32 flex items-center justify-center rounded-full bg-gray-100 mb-8">
-                        <Icon.Package size={64} weight="light" className="text-gray-400" />
+                    <div className="min-w-[200px] w-[20vw] flex items-center justify-center">
+                        <UnboxingIcon className="text-gray-400 " />
                     </div>
 
                     {/* Heading */}
@@ -24,9 +25,8 @@ export default function NotFound() {
                     <div className="flex items-center gap-4 flex-wrap justify-center">
                         <Link
                             href="/shop"
-                            className="button-main bg-black text-white hover:bg-gray-800"
+                            className="button-main"
                         >
-                            <Icon.Storefront size={20} className="mr-2" />
                             Browse All Products
                         </Link>
 
@@ -34,7 +34,6 @@ export default function NotFound() {
                             href="/"
                             className="button-main bg-white text-black border border-black hover:bg-gray-50"
                         >
-                            <Icon.House size={20} className="mr-2" />
                             Go to Homepage
                         </Link>
                     </div>

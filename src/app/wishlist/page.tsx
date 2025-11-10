@@ -8,13 +8,10 @@ import WishlistClient from './WishlistClient';
 const Wishlist = () => {
     return (
         <>
-            <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
-            <div id="header" className='relative w-full'>
-                <MenuOne props="bg-transparent" />
-                <Breadcrumb heading='Wish list' subHeading='Wish list' />
+            <div className='py-14 px-4 md:px-8 lg:px-16'>
+                <div className="heading2 text-center">Wishlist</div>
             </div>
             <WishlistClient />
-            <Footer />
         </>
     );
 };

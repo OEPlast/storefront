@@ -14,16 +14,12 @@ import { redirect } from "next/navigation";
 const Register = async () => {
 
   const session = await auth();
-  if(session?.user){
+  if (session?.user) {
     redirect('/');
   }
-  
+
   return (
     <>
-      <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
-      <div id="header" className="relative w-full">
-        <MenuOne props="bg-transparent" />
-      </div>
       <div className="register-block md:py-20 py-10 border-y">
         <div className="container !max-w-[650px]">
           <RegisterClient />

@@ -1,24 +1,26 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ProductType } from '@/type/ProductType';
+import { ProductDetail } from '@/types/product';
 import { ProductListItem } from '@/types/product';
+import { OptimisticWishlistProduct } from '@/types/wishlist';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { useCart } from '@/context/CartContext';
 import { useModalCartContext } from '@/context/ModalCartContext';
-import { useIsInWishlist } from '@/hooks/queries/useWishlist';
+import { useWishlistStore } from '@/store/useWishlistStore';
 import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/mutations/useWishlistMutations';
 import { useModalWishlistContext } from '@/context/ModalWishlistContext';
 import { useCompare } from '@/context/CompareContext';
 import { useModalCompareContext } from '@/context/ModalCompareContext';
 import { useModalQuickviewContext } from '@/context/ModalQuickviewContext';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Marquee from 'react-fast-marquee';
 import Rate from '../Other/Rate';
 import { getCdnUrl } from '@/libs/cdn-url';
 import Color from 'color';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import {
     calculateBestSale,
     formatPrice,
@@ -31,24 +33,24 @@ import {
 import { ProductVariant, ProductVariantChild } from '@/types/product';
 import { CheckCircleIcon } from '@phosphor-icons/react';
 import { useSession } from 'next-auth/react';
-import { useAddToCart } from '@/hooks/mutations/useCart';
-import { useGuestCart } from '@/hooks/useGuestCart';
+import { useCart as useUnifiedCart } from '@/hooks/useCart';
 
 interface ProductProps {
-    data: ProductType | ProductListItem;
+    data: ProductDetail | ProductListItem;
     type: 'grid' | 'list' | 'marketplace';
 }
 
 // Type guard to check if data is ProductListItem
-function isProductListItem(data: ProductType | ProductListItem): data is ProductListItem {
+function isProductListItem(data: ProductDetail | ProductListItem): data is ProductListItem {
     return 'images' in data && Array.isArray(data.images);
 }
 
 const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
-    // Normalize data to ensure compatibility with legacy ProductType fields
-    const data = useMemo<ProductType>(() => {
+    const pathname = usePathname();
+    // Normalize data to ensure compatibility with legacy ProductDetail fields
+    const data = useMemo<ProductDetail>(() => {
         if (isProductListItem(rawData)) {
-            // Convert ProductListItem to ProductType for component compatibility
+            // Convert ProductListItem to ProductDetail for component compatibility
             return {
                 ...rawData,
                 id: rawData._id,
@@ -67,7 +69,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                 description_images: [], // not in ProductListItem
                 action: 'add to cart',
                 createdAt: '', // not in ProductListItem
-            } as ProductType;
+            } as ProductDetail;
         }
         return rawData;
     }, [rawData]);
@@ -76,7 +78,16 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
     const [openQuickShop, setOpenQuickShop] = useState<boolean>(false);
     const { addToCart, updateCart, cartState } = useCart();
     const { openModalCart } = useModalCartContext();
-    const { isInWishlist, wishlistItemId } = useIsInWishlist(data._id);
+
+    // Zustand store for client-side wishlist state
+    const isInWishlist = useWishlistStore(state => state.isInWishlist(data._id));
+    const wishlistItems = useWishlistStore(state => state.items);
+    const wishlistItem = wishlistItems.find(item => item.productId === data._id);
+    const wishlistItemId = wishlistItem?._id;
+    const addToWishlistStore = useWishlistStore(state => state.addItem);
+    const removeFromWishlistStore = useWishlistStore(state => state.removeItem);
+
+    // React Query mutations for server sync
     const { mutate: addToWishlistMutation } = useAddToWishlist();
     const { mutate: removeFromWishlistMutation } = useRemoveFromWishlist();
     const { openModalWishlist } = useModalWishlistContext();
@@ -86,11 +97,10 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
     const router = useRouter();
     const { data: session } = useSession();
 
-    // Cart operations - ALWAYS use localStorage for current session
-    // Server cart is only for cross-device/session sync, not for active session
-    const { addItem: addToLocalCart } = useGuestCart();
+    // Unified cart hook (localStorage-first, server sync in background when authenticated)
+    const { addItem } = useUnifiedCart();
 
-    // Narrow types for optional new fields without changing global ProductType
+    // Narrow types for optional new fields without changing global ProductDetail
     type AttrChild = { name: string; colorCode?: string; };
     type Attr = { name: string; children: AttrChild[]; };
     type WithAttributes = { attributes?: Attr[]; };
@@ -190,54 +200,119 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
             attributes.push({ name: 'Size', value: activeSize });
         }
 
-        // ALWAYS use localStorage for current session (whether guest or authenticated)
-        // Server cart is only for cross-device/session sync
-        try {
-            addToLocalCart(
-                data._id || data.id,
-                qty,
-                attributes,
-                {
-                    name: data.name,
-                    price: data.price,
-                    sku: data.sku || data.id,
-                    image: data.images?.[0]?.url || '',
-                },
-                data.price, // unitPrice
-                data.sale?._id, // sale ID if active
-                undefined // saleVariantIndex - would need to calculate from active variant
-            );
-            openModalCart();
-        } catch (error) {
-            console.error('Failed to add to cart:', error);
-            alert('Failed to add item to cart. Please try again.');
-        }
+        // Pass full product object - hook handles all serialization/calculations
+        addItem({
+            product: data,
+            qty,
+            attributes,
+        });
+        openModalCart();
     };
 
-    const handleAddToWishlist = () => {
+    // Debounce state for wishlist toggle
+    const [wishlistPending, setWishlistPending] = useState(false);
+
+    const handleAddToWishlist = useCallback(() => {
+        // Prevent rapid-fire clicks
+        if (wishlistPending) return;
+
+        setWishlistPending(true);
+
         // if product existed in wishlist, remove from wishlist
         if (isInWishlist && wishlistItemId) {
-            removeFromWishlistMutation(wishlistItemId);
-        } else {
-            // else, add to wishlist with optimistic product data
-            addToWishlistMutation({
-                productId: data._id,
-                product: {
-                    _id: data._id,
-                    name: data.name,
-                    slug: data.slug,
-                    price: data.price,
-                    images: data.images || [],
-                    category: data.category,
-                    stock: data.stock,
-                    originStock: data.originStock,
-                    sku: data.sku,
-                    sale: null,
+            // Optimistically remove from Zustand
+            removeFromWishlistStore(data._id);
+
+            // Send to server
+            removeFromWishlistMutation(wishlistItemId, {
+                onSuccess: () => {
+                    setWishlistPending(false);
+                },
+                onError: () => {
+                    // Rollback on error - re-add to Zustand
+                    if (wishlistItem) {
+                        addToWishlistStore(data._id, wishlistItem.product);
+                    }
+                    setWishlistPending(false);
                 },
             });
+        } else {
+            // Build product data for optimistic update
+            const productImages = isProductListItem(rawData)
+                ? rawData.images
+                : rawData.description_images || [];
+
+            const productCategory = isProductListItem(rawData)
+                ? rawData.category
+                : {
+                    _id: '',
+                    name: '',
+                    image: '',
+                    slug: '',
+                };
+
+            const optimisticProduct: ProductListItem = {
+                _id: data._id,
+                name: data.name,
+                slug: data.slug,
+                price: data.price,
+                images: productImages.map(img => ({
+                    url: img.url,
+                    cover_image: img.cover_image ?? false,
+                })),
+                description_images: productImages.map(img => ({
+                    url: img.url,
+                    cover_image: img.cover_image ?? false,
+                })),
+                category: {
+                    _id: productCategory._id,
+                    name: productCategory.name,
+                    image: productCategory.image || '',
+                    slug: productCategory.slug,
+                },
+                stock: data.stock,
+                originStock: data.originStock,
+                sku: data.sku,
+                sale: null,
+            };
+
+            // Optimistically add to Zustand
+            addToWishlistStore(data._id, optimisticProduct);
+
+            // Send to server (just needs productId)
+            const optimisticPayload: OptimisticWishlistProduct = {
+                _id: optimisticProduct._id,
+                name: optimisticProduct.name,
+                slug: optimisticProduct.slug,
+                price: optimisticProduct.price,
+                images: optimisticProduct.images,
+                category: optimisticProduct.category,
+                stock: optimisticProduct.stock,
+                originStock: optimisticProduct.originStock,
+                sku: optimisticProduct.sku,
+                sale: null,
+            };
+
+            addToWishlistMutation(
+                { productId: data._id, product: optimisticPayload },
+                {
+                    onSuccess: () => {
+                        setWishlistPending(false);
+                    },
+                    onError: () => {
+                        // Rollback on error - remove from Zustand
+                        removeFromWishlistStore(data._id);
+                        setWishlistPending(false);
+                    },
+                }
+            );
         }
-        openModalWishlist();
-    };
+        if (pathname !== '/wishlist') {
+            openModalWishlist();
+        }
+    }, [wishlistPending, isInWishlist, wishlistItemId, data, rawData, wishlistItem,
+        removeFromWishlistStore, removeFromWishlistMutation, addToWishlistStore,
+        addToWishlistMutation, openModalWishlist, pathname]);
 
     const handleAddToCompare = () => {
         // if product existed in wishlit, remove from wishlist and set state to false
@@ -354,7 +429,10 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                             </div>
                             <Link href={`/product/${data.slug}`} className="product-img w-full h-full aspect-[3/4] block">
                                 <Image
-                                    src={getCdnUrl(data.images ? data.images.find((img) => img.cover_image)?.url : data.description_images.find((img) => img.cover_image)?.url || '')}
+                                    src={getCdnUrl(isProductListItem(rawData)
+                                        ? rawData.images.find((img) => img.cover_image)?.url || rawData.images[0]?.url || ''
+                                        : data.description_images?.find((img) => img.cover_image)?.url || data.description_images?.[0]?.url || ''
+                                    )}
                                     width={500}
                                     height={500}
                                     alt={data.name}

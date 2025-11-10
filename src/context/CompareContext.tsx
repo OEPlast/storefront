@@ -1,24 +1,24 @@
-'use client'
+'use client';
 
 // CompareContext.tsx
 import React, { createContext, useContext, useState, useReducer, useEffect } from 'react';
-import { ProductType } from '@/type/ProductType';
+import { ProductDetail } from '@/types/product';
 
-interface CompareItem extends ProductType {
+interface CompareItem extends ProductDetail {
 }
 
 interface CompareState {
-    compareArray: CompareItem[]
+    compareArray: CompareItem[];
 }
 
 type CompareAction =
-    | { type: 'ADD_TO_WISHLIST'; payload: ProductType }
-    | { type: 'REMOVE_FROM_WISHLIST'; payload: string }
-    | { type: 'LOAD_WISHLIST'; payload: CompareItem[] }
+    | { type: 'ADD_TO_WISHLIST'; payload: ProductDetail; }
+    | { type: 'REMOVE_FROM_WISHLIST'; payload: string; }
+    | { type: 'LOAD_WISHLIST'; payload: CompareItem[]; };
 
 interface CompareContextProps {
     compareState: CompareState;
-    addToCompare: (item: ProductType) => void;
+    addToCompare: (item: ProductDetail) => void;
     removeFromCompare: (itemId: string) => void;
 }
 
@@ -47,10 +47,10 @@ const CompareReducer = (state: CompareState, action: CompareAction): CompareStat
     }
 };
 
-export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CompareProvider: React.FC<{ children: React.ReactNode; }> = ({ children }) => {
     const [compareState, dispatch] = useReducer(CompareReducer, { compareArray: [] });
 
-    const addToCompare = (item: ProductType) => {
+    const addToCompare = (item: ProductDetail) => {
         dispatch({ type: 'ADD_TO_WISHLIST', payload: item });
     };
 

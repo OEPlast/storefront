@@ -14,7 +14,7 @@ import useMenuMobile from '@/store/useMenuMobile';
 import { useModalCartContext } from '@/context/ModalCartContext';
 import { useModalWishlistContext } from '@/context/ModalWishlistContext';
 import { useCart } from '@/context/CartContext';
-import { useCartCount } from '@/hooks/useCartCount';
+import { useCartCount } from '@/hooks/useCart';
 
 const MenuOrganic = () => {
     const pathname = usePathname();

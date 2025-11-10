@@ -9,7 +9,12 @@ import { credentialsLogin } from "@/actions/login";
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { FieldInfo } from "@/components/Form/FieldInfo";
 
-export default function LoginForm() {
+interface LoginFormProps {
+  onLoginSuccess?: () => void;
+  redirectPath?: string;
+}
+
+export default function LoginForm({ onLoginSuccess, redirectPath }: LoginFormProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -32,14 +37,18 @@ export default function LoginForm() {
         );
 
         if (result.success) {
-          // Check if email is verified
+          const nextRoute = redirectPath && result.emailVerified ? redirectPath : "/";
+
           if (!result.emailVerified) {
-            // Redirect to OTP verification page
             router.push("/verify-otp");
           } else {
-            // Redirect to homepage if email is verified
-            router.push("/");
+            if (redirectPath) {
+
+              router.push(nextRoute);
+            }
           }
+
+          onLoginSuccess?.();
           router.refresh();
         } else {
           setSubmitError(result.error || "Invalid credentials. Please try again.");
@@ -60,17 +69,15 @@ export default function LoginForm() {
       }}
       className="md:mt-7 mt-4">
       {/* Email */}
-      <form.Field
-        name="email"
-        children={(field) => {
+      <form.Field name="email">
+        {(field) => {
           const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
 
           return (
             <div>
               <input
-                className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${
-                  hasError ? "border-red-600" : ""
-                }`}
+                className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? "border-red-600" : ""
+                  }`}
                 id={field.name}
                 name={field.name}
                 type="email"
@@ -84,20 +91,18 @@ export default function LoginForm() {
             </div>
           );
         }}
-      />
+      </form.Field>
 
       {/* Password */}
-      <form.Field
-        name="password"
-        children={(field) => {
+      <form.Field name="password">
+        {(field) => {
           const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
 
           return (
             <div className="mt-5">
               <input
-                className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${
-                  hasError ? "border-red-600" : ""
-                }`}
+                className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? "border-red-600" : ""
+                  }`}
                 id={field.name}
                 name={field.name}
                 type="password"
@@ -111,13 +116,12 @@ export default function LoginForm() {
             </div>
           );
         }}
-      />
+      </form.Field>
 
       {/* Remember Me & Forgot Password */}
       <div className="flex items-center justify-between mt-5">
-        <form.Field
-          name="rememberMe"
-          children={(field) => (
+        <form.Field name="rememberMe">
+          {(field) => (
             <div className="flex items-center">
               <div className="block-input">
                 <input
@@ -135,7 +139,7 @@ export default function LoginForm() {
               </label>
             </div>
           )}
-        />
+        </form.Field>
         <Link href="/forgot-password" className="font-semibold text-sm hover:underline">
           Forgot Your Password?
         </Link>
@@ -150,24 +154,24 @@ export default function LoginForm() {
 
       {/* Submit Button */}
       <div className="block-button md:mt-7 mt-4">
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-          children={([canSubmit, isSubmitting]) => (
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+          {([canSubmit, isSubmitting]) => (
             <button
               type="submit"
               disabled={!canSubmit || isSubmitting}
-              className="button-main w-full disabled:opacity-50 disabled:cursor-not-allowed">
+              className="button-main w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {isSubmitting ? "Logging in..." : "Login"}
             </button>
           )}
-        />
+        </form.Subscribe>
       </div>
-            <div className="mt-2 text-center text-sm text-secondary2">
-              {`Don't have an account? `}
-              <Link href="/register" className="text-black hover:underline">
-                Register
-              </Link>
-            </div>
+      <div className="mt-2 text-center text-sm text-secondary2">
+        {`Don't have an account? `}
+        <Link href="/register" className="text-black hover:underline">
+          Register
+        </Link>
+      </div>
     </form>
   );
 }

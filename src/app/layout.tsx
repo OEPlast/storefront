@@ -7,12 +7,15 @@ import ModalWishlist from "@/components/Modal/ModalWishlist";
 import ModalSearch from "@/components/Modal/ModalSearch";
 import ModalQuickview from "@/components/Modal/ModalQuickview";
 import ModalCompare from "@/components/Modal/ModalCompare";
+import ModalLogin from "@/components/Modal/ModalLogin";
 import CountdownTimeType from "@/type/CountdownType";
 import { countdownTime } from "@/store/countdownTime";
 import NextTopLoader from "nextjs-toploader";
 import TopNavOne from "@/components/Header/TopNav/TopNavOne";
 import MenuEight from "@/components/Header/Menu/MenuEight";
 import SliderNine from "@/components/Slider/SliderNine";
+import 'react-quill-new/dist/quill.snow.css';
+import Footer from "@/components/Footer/Footer";
 
 const serverTimeLeft: CountdownTimeType = countdownTime();
 
@@ -23,13 +26,13 @@ export const metadata: Metadata = {
   description: "Multipurpose eCommerce Template",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode; }) {
   return (
     <GlobalProvider>
       <html lang="en">
         <body className={instrument.className}>
           <NextTopLoader
-            color="#56ff2b"
+            color="#81e62e"
             initialPosition={0.08}
             crawlSpeed={200}
             height={3}
@@ -44,6 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SliderNine />
           </div>
           {children}
+          <Footer />
+          <ModalLogin />
           <ModalCart serverTimeLeft={serverTimeLeft} />
           <ModalWishlist />
           <ModalSearch />

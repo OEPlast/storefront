@@ -10,6 +10,7 @@ import MainProduct from '@/components/Product/Detail/MainProduct';
 import Footer from '@/components/Footer/Footer';
 import BreadcrumbProduct from '@/components/Breadcrumb/BreadcrumbProduct';
 import type { ProductDetail } from '@/hooks/queries/useProduct';
+import removeMarkdown from "markdown-to-text";
 
 interface ProductPageProps {
     params: Promise<{ slug: string; }>;
@@ -69,7 +70,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
         : `$${product.price.toFixed(2)}`;
 
     const description = product.description
-        ? `${product.description.substring(0, 155)}...`
+        ? `${removeMarkdown(product.description).substring(0, 155)}...`
         : `Buy ${product.name} at OEPlast. ${priceText}. ${product.category?.name || 'Quality products'}.`;
 
     return {
@@ -77,7 +78,6 @@ export async function generateMetadata({ params }: ProductPageProps) {
         description,
         keywords: [
             product.name,
-            product.brand,
             product.category?.name,
             ...(product.tags || []),
         ].filter(Boolean).join(', '),
@@ -107,7 +107,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
         // Product-specific metadata for e-commerce
         other: {
             'product:price:amount': product.price.toString(),
-            'product:price:currency': 'USD',
+            'product:price:currency': 'NGN',
             'product:availability': product.stock > 0 ? 'in stock' : 'out of stock',
             ...(product.brand && { 'product:brand': product.brand }),
             ...(product.category?.name && { 'product:category': product.category.name }),
@@ -118,7 +118,6 @@ export async function generateMetadata({ params }: ProductPageProps) {
 export default async function ProductPage({ params }: ProductPageProps) {
     const { slug } = await params;
     const { queryClient, product } = await prefetchProduct(slug);
-    console.log(slug);
     // If product not found, trigger Next.js not-found page
     if (!product) {
         notFound();
@@ -128,7 +127,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <HydrationBoundary state={dehydrate(queryClient)}>
             <BreadcrumbProduct product={product} />
             <MainProduct slug={slug} />
-            <Footer />
+            {/* <Footer /> */}
         </HydrationBoundary>
     );
 }

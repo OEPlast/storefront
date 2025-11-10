@@ -1,54 +1,54 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { ProductType } from '@/type/ProductType'
-import Product from '../Product'
-import Rate from '@/components/Other/Rate'
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ProductType } from '@/type/ProductType';
+import Product from '../Product';
+import Rate from '@/components/Other/Rate';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Thumbs, Pagination } from 'swiper/modules';
 import 'swiper/css/bundle';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import SwiperCore from 'swiper/core';
-import { useCart } from '@/context/CartContext'
-import { useModalCartContext } from '@/context/ModalCartContext'
-import { useWishlist } from '@/context/WishlistContext'
-import { useModalWishlistContext } from '@/context/ModalWishlistContext'
-import { useCompare } from '@/context/CompareContext'
-import { useModalCompareContext } from '@/context/ModalCompareContext'
-import ModalSizeguide from '@/components/Modal/ModalSizeguide'
+import { useCart } from '@/context/CartContext';
+import { useModalCartContext } from '@/context/ModalCartContext';
+import { useWishlist } from '@/context/WishlistContext';
+import { useModalWishlistContext } from '@/context/ModalWishlistContext';
+import { useCompare } from '@/context/CompareContext';
+import { useModalCompareContext } from '@/context/ModalCompareContext';
+import ModalSizeguide from '@/components/Modal/ModalSizeguide';
 
-import { countdownTime } from '@/store/countdownTime'
+import { countdownTime } from '@/store/countdownTime';
 
 SwiperCore.use([Navigation, Thumbs]);
 
 interface Props {
-    data: Array<ProductType>
-    productId: string | number | null
+    data: Array<ProductType>;
+    productId: string | number | null;
 }
 
 const OnSale: React.FC<Props> = ({ data, productId }) => {
     const swiperRef: any = useRef(undefined);
-    const [photoIndex, setPhotoIndex] = useState(0)
-    const [openPopupImg, setOpenPopupImg] = useState(false)
-    const [openSizeGuide, setOpenSizeGuide] = useState<boolean>(false)
-    const [thumbsSwiper, setThumbsSwiper] = useState<SwiperCore | null>(null)
-    const [activeColor, setActiveColor] = useState<string>('')
-    const [activeSize, setActiveSize] = useState<string>('')
-    const [activeTab, setActiveTab] = useState<string | undefined>('description')
-    const { addToCart, updateCart, cartState } = useCart()
-    const { openModalCart } = useModalCartContext()
-    const { addToWishlist, removeFromWishlist, wishlistState } = useWishlist()
-    const { openModalWishlist } = useModalWishlistContext()
+    const [photoIndex, setPhotoIndex] = useState(0);
+    const [openPopupImg, setOpenPopupImg] = useState(false);
+    const [openSizeGuide, setOpenSizeGuide] = useState<boolean>(false);
+    const [thumbsSwiper, setThumbsSwiper] = useState<SwiperCore | null>(null);
+    const [activeColor, setActiveColor] = useState<string>('');
+    const [activeSize, setActiveSize] = useState<string>('');
+    const [activeTab, setActiveTab] = useState<string | undefined>('description');
+    const { addToCart, updateCart, cartState } = useCart();
+    const { openModalCart } = useModalCartContext();
+    const { addToWishlist, removeFromWishlist, wishlistState } = useWishlist();
+    const { openModalWishlist } = useModalWishlistContext();
     const { addToCompare, removeFromCompare, compareState } = useCompare();
-    const { openModalCompare } = useModalCompareContext()
-    let productMain = data.find(product => product.id === productId) as ProductType
+    const { openModalCompare } = useModalCompareContext();
+    let productMain = data.find(product => product.id === productId) as ProductType;
     if (productMain === undefined) {
-        productMain = data[0]
+        productMain = data[0];
     }
 
-    const percentSale = Math.floor(100 - ((productMain.price / productMain.originPrice) * 100))
+    const percentSale = Math.floor(100 - ((productMain.price / productMain.originPrice) * 100));
 
     const [timeLeft, setTimeLeft] = useState(countdownTime());
 
@@ -69,21 +69,21 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
     };
 
     const handleActiveColor = (item: string) => {
-        setActiveColor(item)
-    }
+        setActiveColor(item);
+    };
 
     const handleActiveSize = (item: string) => {
-        setActiveSize(item)
-    }
+        setActiveSize(item);
+    };
 
     const handleIncreaseQuantity = () => {
-        productMain.quantityPurchase += 1
+        productMain.quantityPurchase += 1;
         updateCart(productMain.id, productMain.quantityPurchase + 1, activeSize, activeColor);
     };
 
     const handleDecreaseQuantity = () => {
         if (productMain.quantityPurchase > 1) {
-            productMain.quantityPurchase -= 1
+            productMain.quantityPurchase -= 1;
             updateCart(productMain.id, productMain.quantityPurchase - 1, activeSize, activeColor);
         }
     };
@@ -91,11 +91,11 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
     const handleAddToCart = () => {
         if (!cartState.cartArray.find(item => item.id === productMain.id)) {
             addToCart({ ...productMain });
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor);
         } else {
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor);
         }
-        openModalCart()
+        openModalCart();
     };
 
     const handleAddToWishlist = () => {
@@ -119,15 +119,15 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
                 addToCompare(productMain);
             }
         } else {
-            alert('Compare up to 3 products')
+            alert('Compare up to 3 products');
         }
 
         openModalCompare();
     };
 
     const handleActiveTab = (tab: string) => {
-        setActiveTab(prevTab => prevTab === tab ? undefined : tab)
-    }
+        setActiveTab(prevTab => prevTab === tab ? undefined : tab);
+    };
 
     return (
         <>
@@ -151,7 +151,7 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
                                     key={index}
                                     onClick={() => {
                                         swiperRef.current?.slideTo(index);
-                                        setOpenPopupImg(true)
+                                        setOpenPopupImg(true);
                                     }}
                                 >
                                     <Image
@@ -168,7 +168,7 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
                             <span
                                 className="close-popup-btn absolute top-4 right-4 z-[2] cursor-pointer"
                                 onClick={() => {
-                                    setOpenPopupImg(false)
+                                    setOpenPopupImg(false);
                                 }}
                             >
                                 <Icon.X className="text-3xl text-white" />
@@ -181,14 +181,14 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
                                 loop={true}
                                 className="popupSwiper"
                                 onSwiper={(swiper) => {
-                                    swiperRef.current = swiper
+                                    swiperRef.current = swiper;
                                 }}
                             >
                                 {productMain.images.map((item, index) => (
                                     <SwiperSlide
                                         key={index}
                                         onClick={() => {
-                                            setOpenPopupImg(false)
+                                            setOpenPopupImg(false);
                                         }}
                                     >
                                         <Image
@@ -631,8 +631,7 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
                             </div>
                             <div className="list-action mt-6">
                                 <div className="countdown-block flex items-center justify-between flex-wrap gap-y-4">
-                                    <div className="text-title">Hurry Up!<br />
-                                        Offer ends in:</div>
+                                    <div className="text-title">Offer ends in:</div>
                                     <div className="countdown-time flex items-center lg:gap-5 gap-3 max-[400px]:justify-between max-[400px]:w-full">
                                         <div className="item w-[60px] h-[60px] flex flex-col items-center justify-center border border-red rounded-lg">
                                             <div className="days heading6 text-center">{timeLeft.days < 10 ? `0${timeLeft.days}` : timeLeft.days}</div>
@@ -737,7 +736,7 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
                                     <div className="button-main w-full text-center">Buy It Now</div>
                                 </div>
                                 <div className="flex items-center lg:gap-20 gap-8 mt-5 pb-6 border-b border-line">
-                                    <div className="compare flex items-center gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleAddToCompare() }}>
+                                    <div className="compare flex items-center gap-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleAddToCompare(); }}>
                                         <div className="compare-btn md:w-12 md:h-12 w-10 h-10 flex items-center justify-center border border-line cursor-pointer rounded-xl duration-300 hover:bg-black hover:text-white">
                                             <Icon.ArrowsCounterClockwise className='heading6' />
                                         </div>
@@ -885,7 +884,7 @@ const OnSale: React.FC<Props> = ({ data, productId }) => {
                 </div>
             </div >
         </>
-    )
-}
+    );
+};
 
-export default OnSale
+export default OnSale;

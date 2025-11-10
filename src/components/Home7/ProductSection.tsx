@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import React from 'react'
+import React from 'react';
 import Link from 'next/link';
-import Product from '../Product/Product'
-import { ProductType } from '@/type/ProductType'
-import CountdownTimer from './CountdownTimer'
+import Product from '../Product/Product';
+import { ProductDetail } from '@/types/product';
+import CountdownTimer from './CountdownTimer';
 
 interface Props {
-    data: Array<ProductType>;
+    data: Array<ProductDetail>;
     start?: number;
     limit?: number;
     header: string;
@@ -37,7 +37,7 @@ const ProductSection: React.FC<Props> = ({ data, start, limit, header, viewAllLi
                 </div>
             </div>
         </>
-    )
-}
+    );
+};
 
 export default ProductSection;

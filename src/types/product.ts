@@ -86,12 +86,15 @@ export interface ProductSale {
 
 export interface Product {
   _id: string;
+  id: string; // Alias for _id for backward compatibility
   name: string;
   slug: string;
   price: number;
+  originPrice: number; // Original price before any discounts
   sku?: string | number;
   brand?: string;
-  stock?: number;
+  stock: number;
+  originStock: number; // Original stock for calculating sold quantity
   lowStockThreshold?: number;
   description?: string;
   tags?: string[];
@@ -104,8 +107,17 @@ export interface Product {
   packSizes?: ProductPackSize[]; // NEW: Pack sizes for bulk/wholesale products
   shipping?: ProductShipping;
   rating?: number;
+  rate?: number; // Alias for rating
   status?: 'active' | 'inactive' | 'archived';
-  sale?: ProductSale | null; // NEW: Sale information
+  sale?: ProductSale ; // NEW: Sale information
+  
+  // Legacy fields for backward compatibility
+  type?: string; // Category name as string (legacy)
+  sold?: number; // Calculated as originStock - stock
+  quantity?: number; // Alias for stock
+  quantityPurchase?: number; // Quantity to purchase (cart-specific, usually 1)
+  action?: string; // Legacy action field
+  
   createdAt?: string;
   updatedAt?: string;
 }
@@ -120,6 +132,7 @@ export interface ProductListItem {
   slug: string;
   price: number;
   images: ProductDescriptionImage[]; // Array of product images
+  description_images: ProductDescriptionImage[]; // Array of product images
   category: ProductCategory;
   sku: string | number;
   stock: number;

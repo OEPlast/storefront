@@ -1,32 +1,39 @@
-'use client'
+'use client';
+
+/**
+ * @deprecated This Context API cart is deprecated. Use `useCart` from '@/hooks/useCart' instead.
+ * The new useCart hook automatically handles both guest and authenticated users with a unified API.
+ *
+ * This file is kept for backward compatibility only.
+ */
 
 // CartContext.tsx
 import React, { createContext, useContext, useState, useReducer, useEffect } from 'react';
-import { ProductType } from '@/type/ProductType';
+import { ProductDetail } from '@/types/product';
 
-interface CartItem extends ProductType {
-    quantity: number
-    selectedSize: string
-    selectedColor: string
+interface CartItem extends ProductDetail {
+    quantity: number;
+    selectedSize: string;
+    selectedColor: string;
 }
 
 interface CartState {
-    cartArray: CartItem[]
+    cartArray: CartItem[];
 }
 
 type CartAction =
-    | { type: 'ADD_TO_CART'; payload: ProductType }
-    | { type: 'REMOVE_FROM_CART'; payload: string }
+    | { type: 'ADD_TO_CART'; payload: ProductDetail; }
+    | { type: 'REMOVE_FROM_CART'; payload: string; }
     | {
         type: 'UPDATE_CART'; payload: {
-            itemId: string; quantity: number, selectedSize: string, selectedColor: string
-        }
+            itemId: string; quantity: number, selectedSize: string, selectedColor: string;
+        };
     }
-    | { type: 'LOAD_CART'; payload: CartItem[] }
+    | { type: 'LOAD_CART'; payload: CartItem[]; };
 
 interface CartContextProps {
     cartState: CartState;
-    addToCart: (item: ProductType) => void;
+    addToCart: (item: ProductDetail) => void;
     removeFromCart: (itemId: string) => void;
     updateCart: (itemId: string, quantity: number, selectedSize: string, selectedColor: string) => void;
 }
@@ -70,10 +77,10 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
 };
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CartProvider: React.FC<{ children: React.ReactNode; }> = ({ children }) => {
     const [cartState, dispatch] = useReducer(cartReducer, { cartArray: [] });
 
-    const addToCart = (item: ProductType) => {
+    const addToCart = (item: ProductDetail) => {
         dispatch({ type: 'ADD_TO_CART', payload: item });
     };
 

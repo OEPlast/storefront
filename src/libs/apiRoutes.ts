@@ -1,7 +1,13 @@
 const ROUTES = {
-  login: "/auth/login",
-  providerLogin: "/auth/login/provider",
-  register: "/auth/register",
+  login: '/auth/login',
+  providerLogin: '/auth/login/provider',
+  register: '/auth/register',
+
+  // Logistics endpoints
+  logisticsCountries: '/general/logistics/countries',
+  logisticsLocationsTree: '/general/logistics/locations-tree',
+  logisticsLocationsByCountry: (country: string) =>
+    `/general/logistics/locations/${encodeURIComponent(country)}`,
 } as const;
 
 type RoutesMap = typeof ROUTES;

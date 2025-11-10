@@ -3,7 +3,7 @@
 import React from 'react';
 import ProductSection from '@/components/Home7/ProductSection';
 import { useNewProducts, useWeekProducts, useTopSoldProducts, useDealsOfTheDay } from '@/hooks/queries/useProductLists';
-import { ProductType } from '@/type/ProductType';
+import { ProductDetail } from '@/types/product';
 import CatB_Banner from '@/components/Banners/CatB_Banner';
 
 /**
@@ -19,8 +19,8 @@ export default function HomeClient() {
 
     console.log('deals', dealsOfTheDay);
 
-    // Convert ProductListItem to ProductType (legacy type compatibility)
-    const convertProducts = (data: any): ProductType[] => {
+    // Convert ProductListItem to ProductDetail (legacy type compatibility)
+    const convertProducts = (data: any): ProductDetail[] => {
         if (!data?.data) return [];
         return data.data.map((item: any) => ({
             ...item,
@@ -61,7 +61,7 @@ export default function HomeClient() {
             {!isLoadingTopSold && topSoldProducts && (
                 <ProductSection
                     start={0}
-                    limit={11}
+                    limit={10}
                     data={convertProducts(topSoldProducts)}
                     header="Best Sellers"
                     viewAllLink="/top-sold-products"
@@ -69,7 +69,7 @@ export default function HomeClient() {
             )}
 
             {/* Week Products Section */}
-            {!isLoadingWeek && weekProducts && (
+            {!isLoadingWeek && weekProducts && weekProducts.data.length > 0 && (
                 <ProductSection
                     start={0}
                     limit={9}

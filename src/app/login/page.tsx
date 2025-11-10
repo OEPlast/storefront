@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function LoginPage() {
   const session = await auth();
-  
+
   // If user is already logged in, redirect to homepage
   if (session) {
     redirect("/");
@@ -22,15 +22,7 @@ export default async function LoginPage() {
 
   return (
     <>
-      <TopNavOne
-        props="style-one bg-black"
-        slogan="New customers save 10% with the code GET10"
-      />
-      <div id="header" className="relative w-full">
-        <MenuOne props="bg-transparent" />
-      </div>
-      <br />
-      <div className="login-block md:py-20 py-10">
+      <div className="login-block md:py-20 py-10  border-y">
         <div className="container">
           <LoginClient />
         </div>

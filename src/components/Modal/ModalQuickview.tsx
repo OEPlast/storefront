@@ -15,8 +15,7 @@ import Rate from '../Other/Rate';
 import ModalSizeguide from './ModalSizeguide';
 import { useProductById } from '@/hooks/queries/useProducts';
 import { useSession } from 'next-auth/react';
-import { useAddToCart } from '@/hooks/mutations/useCart';
-import { useGuestCart } from '@/hooks/useGuestCart';
+import { useCart as useUnifiedCart } from '@/hooks/useCart';
 import { getCdnUrl } from '@/libs/cdn-url';
 import Color from 'color';
 import {
@@ -45,11 +44,8 @@ const ModalQuickview = () => {
     const { addToCompare, removeFromCompare, compareState } = useCompare();
     const { openModalCompare } = useModalCompareContext();
 
-    // Auth and cart hooks
-    const { data: session } = useSession();
-    const isAuthenticated = !!session?.user;
-    const addToServerCart = useAddToCart();
-    const { addItem: addToGuestCart } = useGuestCart();
+    // Unified cart (local-first; server sync handled internally when logged in)
+    const { addItem } = useUnifiedCart();
 
     // Fetch product data with retry:0 for instant modal UX
     const { data: product, isLoading, error } = useProductById(selectedProductId || '', { retry: 0 });
@@ -183,29 +179,14 @@ const ModalQuickview = () => {
             }
         }
 
-        // ALWAYS use localStorage for current session (whether guest or authenticated)
-        // Server cart is only for cross-device/session sync
-        try {
-            addToGuestCart(
-                product._id,
-                quantity,
-                attributes,
-                {
-                    name: product.name,
-                    price: product.price,
-                    sku: product.sku || product._id,
-                    image: product.description_images?.[0]?.url || '',
-                },
-                saleInfo.hasActiveSale ? saleInfo.discountedPrice : product.price, // unitPrice with sale applied
-                product.sale?._id, // sale ID if active
-                undefined // saleVariantIndex - would need to calculate from active variant
-            );
-            openModalCart();
-            closeQuickview();
-        } catch (error) {
-            console.error('Failed to add to cart:', error);
-            alert('Failed to add item to cart. Please try again.');
-        }
+        // Pass full product object - hook handles all serialization/calculations
+        addItem({
+            product: product,
+            qty: quantity,
+            attributes,
+        });
+        openModalCart();
+        closeQuickview();
     };
 
     const handleAddToWishlist = () => {
@@ -439,15 +420,10 @@ const ModalQuickview = () => {
                                                 />
                                             </div>
                                             <div
-                                                onClick={() => {
-                                                    if (!addToServerCart.isPending) {
-                                                        handleAddToCart();
-                                                    }
-                                                }}
-                                                className={`button-main w-full text-center bg-white text-black border border-black ${addToServerCart.isPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                                                    }`}
+                                                onClick={handleAddToCart}
+                                                className={`button-main w-full text-center bg-white text-black border border-black cursor-pointer`}
                                             >
-                                                {addToServerCart.isPending ? 'Adding...' : 'Add To Cart'}
+                                                Add To Cart
                                             </div>
                                         </div>
                                         <div className="button-block mt-5">

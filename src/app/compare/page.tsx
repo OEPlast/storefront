@@ -1,89 +1,171 @@
 'use client'
-import React from 'react'
+import React, { Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import TopNavOne from '@/components/Header/TopNav/TopNavOne'
-import MenuOne from '@/components/Header/Menu/MenuOne'
-import Breadcrumb from '@/components/Breadcrumb/Breadcrumb'
+import { useSearchParams } from 'next/navigation'
 import Footer from '@/components/Footer/Footer'
-import { ProductType } from '@/type/ProductType'
-import productData from '@/data/Product.json'
-import Product from '@/components/Product/Product'
-import * as Icon from "@phosphor-icons/react/dist/ssr";
-import { useCompare } from '@/context/CompareContext'
+import * as Icon from "@phosphor-icons/react/dist/ssr"
 import { useCart } from '@/context/CartContext'
 import { useModalCartContext } from '@/context/ModalCartContext'
 import Rate from '@/components/Other/Rate'
 import { getCdnUrl } from '@/libs/cdn-url'
-import type { ProductSpecification, ProductDimension } from '@/types/product'
+import { useProductBySlug } from '@/hooks/queries/useProducts'
+import type { ProductSpecification, ProductDimension, ProductDetail } from '@/types/product'
+import { ProductType } from '@/type/ProductType'
 
-const Compare = () => {
-    const { compareState } = useCompare();
+const CompareContent = () => {
+    const searchParams = useSearchParams();
+    const productSlugs = searchParams.get('products')?.split(',').filter(Boolean) || [];
     const { cartState, addToCart, updateCart } = useCart();
-    const { openModalCart } = useModalCartContext();
+    const { openModalCartContext } = useModalCartContext();
 
-    const handleAddToCart = (productItem: ProductType) => {
-        if (!cartState.cartArray.find(item => item.id === productItem.id)) {
-            addToCart({ ...productItem });
-            updateCart(productItem.id, productItem.quantityPurchase, '', '')
+    // Fetch all products using React Query
+    const productQueries = productSlugs.map(slug =>
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        useProductBySlug(slug)
+    );
+
+    // Check loading states
+    const isLoading = productQueries.some(query => query.isLoading);
+    const hasError = productQueries.some(query => query.isError);
+    const errors = productQueries.filter(query => query.isError).map(query => query.error);
+
+    // Get successfully loaded products
+    const loadedProducts = productQueries
+        .filter(query => query.data)
+        .map(query => query.data as ProductDetail);
+
+    // Convert ProductDetail to legacy ProductType for cart compatibility
+    const convertToLegacyProduct = (product: ProductDetail): ProductType => {
+        return {
+            id: product._id,
+            category: product.category!,
+            type: product.category?.name || '',
+            name: product.name,
+            price: product.price,
+            originPrice: product.price,
+            brand: product.brand || '',
+            sold: 0,
+            quantity: 1,
+            quantityPurchase: 1,
+            rate: product.rating || 0,
+            description: product.description || '',
+            action: '',
+            slug: product.slug,
+            attributes: product.attributes || [],
+            sale: product.sale,
+            description_images: product.description_images || [],
+            createdAt: product.createdAt || '',
+            sku: parseInt(product.sku as string),
+            tags: product.tags || [],
+            // Add specifications and dimensions
+            specifications: product.specifications,
+            dimension: product.dimension,
+        };
+    };
+
+    const handleAddToCart = (productItem: ProductDetail) => {
+        const legacyProduct = convertToLegacyProduct(productItem);
+        if (!cartState.cartArray.find(item => item.id === productItem._id)) {
+            addToCart({ ...legacyProduct });
+            updateCart(productItem._id, 1, '', '')
         } else {
-            updateCart(productItem.id, productItem.quantityPurchase, '', '')
+            updateCart(productItem._id, 1, '', '')
         }
         openModalCart()
     };
 
-    // Helper: pick best image for compare – prefer description_images cover, then first description image,
-    // then cover from images, then first image. Returns raw URL (to be wrapped with getCdnUrl).
-    const selectCompareImage = (product: ProductType): string => {
+    // Helper: pick best image for compare
+    const selectCompareImage = (product: ProductDetail): string => {
         const descCover = product.description_images?.find((img) => img.cover_image)?.url
         if (descCover) return descCover
         const firstDesc = product.description_images?.[0]?.url
         if (firstDesc) return firstDesc
-        const imagesCover = product.images?.find((img) => img.cover_image)?.url
-        if (imagesCover) return imagesCover
-        return product.images?.[0]?.url ?? ''
+        return ''
     }
-
-    // Narrow types to include optional specs and dimensions without changing global ProductType
-    type WithSpecsDims = {
-        specifications?: ProductSpecification[];
-        dimension?: ProductDimension[];
-    };
-
-    const products = compareState.compareArray as Array<ProductType & WithSpecsDims>;
 
     const normalizeKey = (s: string) => s.trim().toLowerCase();
 
     // Build merged specification rows
     const specKeyToLabel = new Map<string, string>();
-    products.forEach(p => (p.specifications ?? []).forEach(spec => {
+    loadedProducts.forEach(p => (p.specifications ?? []).forEach(spec => {
         const norm = normalizeKey(spec.key);
         if (!specKeyToLabel.has(norm)) specKeyToLabel.set(norm, spec.key);
     }));
     const mergedSpecs = Array.from(specKeyToLabel.entries()).map(([norm, label]) => ({
         label,
-        values: products.map(p => (p.specifications ?? []).find(s => normalizeKey(s.key) === norm)?.value ?? ''),
+        values: loadedProducts.map(p => (p.specifications ?? []).find(s => normalizeKey(s.key) === norm)?.value ?? ''),
     }));
 
     // Build merged dimension rows
     const dimOrder: Array<ProductDimension['key']> = ['length', 'breadth', 'height', 'volume', 'width', 'weight'];
     const dimKeysSet = new Set<string>();
-    products.forEach(p => (p.dimension ?? []).forEach(d => dimKeysSet.add(d.key)));
+    loadedProducts.forEach(p => (p.dimension ?? []).forEach(d => dimKeysSet.add(d.key)));
     const orderedDimKeys = [
         ...dimOrder.filter(k => dimKeysSet.has(k)),
         ...Array.from(dimKeysSet).filter(k => !dimOrder.includes(k as ProductDimension['key'])),
     ];
     const mergedDims = orderedDimKeys.map(key => ({
         key,
-        values: products.map(p => (p.dimension ?? []).find(d => d.key === key)?.value ?? ''),
+        values: loadedProducts.map(p => (p.dimension ?? []).find(d => d.key === key)?.value ?? ''),
     }));
+
+    // Show loading state
+    if (isLoading) {
+        return (
+            <>
+                <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1] py-20">
+                    <div className="text-content">
+                        <div className="heading2 text-center">Loading products...</div>
+                    </div>
+                </div>
+                <Footer />
+            </>
+        );
+    }
+
+    // Show error state
+    if (hasError && loadedProducts.length === 0) {
+        return (
+            <>
+                <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1] py-20">
+                    <div className="text-content">
+                        <div className="heading2 text-center text-red-600">Error loading products</div>
+                        <p className="text-center mt-4">Unable to load product comparison. Please try again.</p>
+                        <Link href="/" className="button-main mt-6 inline-block">
+                            Go Home
+                        </Link>
+                    </div>
+                </div>
+                <Footer />
+            </>
+        );
+    }
+
+    // Show empty state
+    if (productSlugs.length === 0 || loadedProducts.length === 0) {
+        return (
+            <>
+                <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1] py-20">
+                    <div className="text-content">
+                        <div className="heading2 text-center">No products to compare</div>
+                        <p className="text-center mt-4">Add products to your comparison list to see them here.</p>
+                        <Link href="/" className="button-main mt-6 inline-block">
+                            Start Shopping
+                        </Link>
+                    </div>
+                </div>
+                <Footer />
+            </>
+        );
+    }
 
     return (
         <>
-            <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
-            <div id="header" className='relative w-full'>
-                <MenuOne props="bg-transparent" />
-                <Breadcrumb heading='Compare Products' subHeading='Compare Products' />
+            <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1]">
+                <div className="text-content">
+                    <div className="heading2 text-center">Compare Products</div>
+                </div>
             </div>
             <div className="compare-block md:py-20 py-10">
                 <div className="container">
@@ -92,8 +174,8 @@ const Compare = () => {
                             <div className="list-product flex">
                                 <div className="left lg:w-[240px] w-[170px] flex-shrink-0"></div>
                                 <div className="right flex w-full border border-line rounded-t-2xl border-b-0">
-                                    {compareState.compareArray.map(item => (
-                                        <div className="product-item px-10 pt-6 pb-5 border-r border-line" key={item.id}>
+                                    {loadedProducts.map(item => (
+                                        <div className="product-item px-10 pt-6 pb-5 border-r border-line" key={item._id}>
                                             <div className="bg-img w-full aspect-[3/4] rounded-lg overflow-hidden flex-shrink-0">
                                                 <Image
                                                     src={getCdnUrl(selectCompareImage(item))}
@@ -113,133 +195,124 @@ const Compare = () => {
                                 <div className="left lg:w-[240px] w-[170px] flex-shrink-0 border border-line border-r-0 rounded-l-2xl">
                                     <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Rating</div>
                                     <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Price</div>
-                                    <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Type</div>
+                                    <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Category</div>
                                     <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Brand</div>
-                                    <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Size</div>
-                                    <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Colors</div>
-                                    <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Metarial</div>
+                                    <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">SKU</div>
+                                    <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Stock</div>
                                     <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Add To Cart</div>
                                     {/* Dynamic Specifications */}
                                     {mergedSpecs.map((row) => (
-                                        <div key={`spec-left-${row.label}`} className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">
-                                            {row.label}
-                                        </div>
-                                    ))}
-                                    {/* Dynamic Dimensions */}
-                                    {mergedDims.map((row) => (
-                                        <div key={`dim-left-${row.key}`} className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line capitalize">
-                                            {row.key}
-                                        </div>
-                                    ))}
+                                        <div key={\`spec-left-\${row.label}\`} className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">
+                                    {row.label}
                                 </div>
-                                <table className="right border-collapse w-full border-t border-r border-line">
-                                    <tr className={`flex w-full items-center`}>
-                                        {compareState.compareArray.map((item, index) => (
-                                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                                <div className='h-full flex items-center justify-center'>
-                                                    <Rate currentRate={item.rate} size={12} />
-                                                    <p className='pl-1'>(1.234)</p>
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    <tr className={`flex w-full items-center`}>
-                                        {compareState.compareArray.map((item, index) => (
-                                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                                <div className='h-full flex items-center justify-center'>
-                                                    ${item.price}.00
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    <tr className={`flex w-full items-center`}>
-                                        {compareState.compareArray.map((item, index) => (
-                                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                                <div className='h-full flex items-center justify-center capitalize'>
-                                                    {item.type}
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    <tr className={`flex w-full items-center`}>
-                                        {compareState.compareArray.map((item, index) => (
-                                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                                <div className='h-full flex items-center justify-center capitalize'>
-                                                    {item.brand}
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    <tr className={`flex w-full items-center`}>
-                                        {compareState.compareArray.map((item, index) => (
-                                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0 size" key={index}>
-                                                <div className='h-full flex items-center justify-center capitalize gap-1'>
-                                                    {item.sizes.map((size, i) => (
-                                                        <p key={i}>{size}
-                                                            <span>,</span>
-                                                        </p>
-                                                    ))}
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    <tr className={`flex w-full items-center`}>
-                                        {compareState.compareArray.map((item, index) => (
-                                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0 size" key={index}>
-                                                <div className='h-full flex items-center justify-center capitalize gap-2'>
-                                                    {item.variation.map((colorItem, i) => (
-                                                        <span
-                                                            key={i}
-                                                            className={`w-6 h-6 rounded-full`}
-                                                            style={{ backgroundColor: `${colorItem.colorCode}` }}
-                                                        ></span>
-                                                    ))}
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    <tr className={`flex w-full items-center`}>
-                                        {compareState.compareArray.map((item, index) => (
-                                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                                <div className='h-full flex items-center justify-center capitalize'>
-                                                    Cotton
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    <tr className={`flex w-full items-center`}>
-                                        {compareState.compareArray.map((item, index) => (
-                                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                                <div className='h-full flex items-center justify-center'>
-                                                    <div className='button-main py-1.5 px-5' onClick={() => handleAddToCart(item)}>Add To Cart</div>
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
-                                    {/* Dynamic Specification rows */}
-                                    {mergedSpecs.map((row, rIdx) => (
-                                        <tr key={`spec-row-${rIdx}`} className={`flex w-full items-center`}>
-                                            {row.values.map((val, cIdx) => (
-                                                <td key={cIdx} className="w-full border border-line h-[60px] border-t-0 border-r-0">
+                                    ))}
+                                {/* Dynamic Dimensions */}
+                                {mergedDims.map((row) => (
+                                    <div key={\`dim-left-\${row.key}\`} className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line capitalize">
+                                {row.key}
+                            </div>
+                                    ))}
+                        </div>
+                        <table className="right border-collapse w-full border-t border-r border-line">
+                            <tbody>
+                                <tr className={\`flex w-full items-center\`}>
+                                {loadedProducts.map((item, index) => (
+                                    <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
+                                        <div className='h-full flex items-center justify-center'>
+                                            <Rate currentRate={item.rating || 0} size={12} />
+                                            <p className='pl-1'>({item.rating?.toFixed(1) || '0.0'})</p>
+                                        </div>
+                                    </td>
+                                ))}
+                            </tr>
+                            <tr className={\`flex w-full items-center\`}>
+                            {loadedProducts.map((item, index) => (
+                                <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
+                                    <div className='h-full flex items-center justify-center'>
+                                        ${item.price.toFixed(2)}
+                                    </div>
+                                </td>
+                            ))}
+                        </tr>
+                        <tr className={\`flex w-full items-center\`}>
+                        {loadedProducts.map((item, index) => (
+                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
+                                <div className='h-full flex items-center justify-center capitalize'>
+                                    {item.category?.name || '-'}
+                                </div>
+                            </td>
+                        ))}
+                    </tr>
+                    <tr className={\`flex w-full items-center\`}>
+                    {loadedProducts.map((item, index) => (
+                        <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
+                            <div className='h-full flex items-center justify-center capitalize'>
+                                {item.brand || '-'}
+                            </div>
+                        </td>
+                    ))}
+                </tr>
+                <tr className={\`flex w-full items-center\`}>
+                {loadedProducts.map((item, index) => (
+                    <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
+                        <div className='h-full flex items-center justify-center'>
+                            {item.sku || '-'}
+                        </div>
+                    </td>
+                ))}
+            </tr>
+            <tr className={\`flex w-full items-center\`}>
+            {loadedProducts.map((item, index) => (
+                <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
+                    <div className='h-full flex items-center justify-center'>
+                        {item.stock !== undefined ? (
+                            <span className={item.stock > 0 ? 'text-green-600' : 'text-red-600'}>
+                                {item.stock > 0 ?\`\${item.stock} in stock\` : 'Out of stock'}
+                            </span>
+                        ) : '-'}
+                    </div>
+                </td>
+            ))}
+        </tr >
+            <tr className={\`flex w-full items-center\`}>
+                                            {loadedProducts.map((item, index) => (
+                                                <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
                                                     <div className='h-full flex items-center justify-center'>
-                                                        {val || '-'}
+                                                        <div 
+                                                            className='button-main py-1.5 px-5 cursor-pointer' 
+                                                            onClick={() => handleAddToCart(item)}
+                                                        >
+                                                            Add To Cart
+                                                        </div>
                                                     </div>
                                                 </td>
                                             ))}
                                         </tr>
-                                    ))}
-                                    {/* Dynamic Dimension rows */}
-                                    {mergedDims.map((row, rIdx) => (
-                                        <tr key={`dim-row-${rIdx}`} className={`flex w-full items-center`}>
-                                            {row.values.map((val, cIdx) => (
-                                                <td key={cIdx} className="w-full border border-line h-[60px] border-t-0 border-r-0">
-                                                    <div className='h-full flex items-center justify-center capitalize'>
-                                                        {val || '-'}
-                                                    </div>
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
+                                        {/* Dynamic Specification rows */}
+                                        {mergedSpecs.map((row, rIdx) => (
+                                            <tr key={\`spec-row-\${rIdx}\`} className={\`flex w-full items-center\`}>
+                                                {row.values.map((val, cIdx) => (
+                                                    <td key={cIdx} className="w-full border border-line h-[60px] border-t-0 border-r-0">
+                                                        <div className='h-full flex items-center justify-center'>
+                                                            {val || '-'}
+                                                        </div>
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                        {/* Dynamic Dimension rows */}
+                                        {mergedDims.map((row, rIdx) => (
+                                            <tr key={\`dim-row-\${rIdx}\`} className={\`flex w-full items-center\`}>
+                                                {row.values.map((val, cIdx) => (
+                                                    <td key={cIdx} className="w-full border border-line h-[60px] border-t-0 border-r-0">
+                                                        <div className='h-full flex items-center justify-center capitalize'>
+                                                            {val || '-'}
+                                                        </div>
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -248,6 +321,20 @@ const Compare = () => {
             </div>
             <Footer />
         </>
+    )
+}
+
+const Compare = () => {
+    return (
+        <Suspense fallback={
+            <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1] py-20">
+                <div className="text-content">
+                    <div className="heading2 text-center">Loading...</div>
+                </div>
+            </div>
+        }>
+            <CompareContent />
+        </Suspense>
     )
 }
 

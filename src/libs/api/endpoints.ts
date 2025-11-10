@@ -95,12 +95,15 @@ export const api = {
 
   // Review endpoints
   reviews: {
-    byProduct: (productId: string) => `/products/${productId}/reviews`,
+    byProduct: (productId: string) => `/reviews/product/${productId}`,
+    stats: (productId: string) => `/reviews/product/${productId}/stats`,
     create: '/reviews/create',
     update: (reviewId: string) => `/reviews/${reviewId}`,
     delete: (reviewId: string) => `/reviews/${reviewId}`,
-    // New endpoints
-    like: (reviewId: string) => `/products/reviews/${reviewId}/like`,
+    like: (reviewId: string) => `/reviews/${reviewId}/like`,
+    unlike: (reviewId: string) => `/reviews/${reviewId}/unlike`,
+    isLikedByUser: (reviewId: string) => `/reviews/${reviewId}/isLikedByUser`,
+    likeCount: (reviewId: string) => `/reviews/${reviewId}/likeCount`,
   },
 
   // Category endpoints
@@ -135,9 +138,19 @@ export const api = {
   // Checkout endpoints
   checkout: {
     validateCoupon: '/checkout/coupon/validate',
-    calculateShipping: '/checkout/shipping/calculate',
+    calculateShipping: '/checkout/calculate-shipping',
+    secure: '/checkout/secure',
     createPayment: '/checkout/payment/create',
     confirmPayment: '/checkout/payment/confirm',
+  },
+
+  // Logistics endpoints
+  logistics: {
+    countries: '/logistics/countries',
+    allConfigs: '/logistics/configs',
+    locationsTree: '/logistics/locations-tree',
+    locationsByCountry: (country: string) => `/logistics/locations/${encodeURIComponent(country)}`,
+    cartFlatShipping: '/logistics/cart/flat-shipping',
   },
 } as const;
 

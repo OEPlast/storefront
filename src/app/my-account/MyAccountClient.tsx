@@ -19,10 +19,8 @@ export default function MyAccountClient() {
 
   return (
     <>
-      <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
       <div id="header" className="relative w-full">
-        <MenuOne props="bg-transparent" />
-        <Breadcrumb heading="My Account" subHeading="My Account" />
+        <Breadcrumb heading="My Account" />
       </div>
       <div className="profile-block md:py-20 py-10">
         <div className="container">
@@ -43,9 +41,8 @@ export default function MyAccountClient() {
         onClick={() => setOpenDetail(false)}
       >
         <div
-          className={`modal-order-detail-main grid grid-cols-2 w-[1160px] bg-white rounded-2xl ${
-            openDetail ? 'open' : ''
-          }`}
+          className={`modal-order-detail-main grid grid-cols-2 w-[1160px] bg-white rounded-2xl ${openDetail ? 'open' : ''
+            }`}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="info p-10 border-r border-line">

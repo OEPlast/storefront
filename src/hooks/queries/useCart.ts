@@ -1,80 +1,16 @@
 'use client';
 
+/**
+ * @deprecated These query hooks are deprecated. Use `useCart` from '@/hooks/useCart' instead.
+ * The new useCart hook automatically handles both guest and authenticated users with a unified API.
+ *
+ * This file is kept for backward compatibility only.
+ */
+
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/libs/api/axios';
 import api from '@/libs/api/endpoints';
-import { Product } from '@/types/product';
-
-export interface CartItem {
-  _id: string;
-  product: string;
-  qty: number;
-  productSnapshot: {
-    name: string;
-    price: number;
-    sku: string | number;
-  };
-  selectedAttributes: Array<{
-    name: string;
-    value: string;
-  }>;
-  productDetails?: Product | null;
-  unitPrice: number;
-  totalPrice: number;
-  sale?: string;
-  saleVariantIndex?: number;
-  appliedDiscount: number;
-  discountAmount: number;
-  pricingTier?: {
-    minQty: number;
-    maxQty?: number;
-    strategy: string;
-    value: number;
-    appliedPrice: number;
-  };
-  addedAt: string;
-}
-
-export interface CouponDetails {
-  _id: string;
-  coupon: string;
-  discount: number;
-  discountType: 'percentage' | 'fixed';
-  minOrderValue: number;
-  maxDiscount?: number;
-  active: boolean;
-  startDate: string;
-  endDate: string;
-  usageLimit?: number;
-  timesUsed: number;
-}
-
-export interface AppliedCoupon {
-  coupon: string;
-  code: string;
-  couponDetails?: CouponDetails | null;
-  discountAmount: number;
-  appliedAt: string;
-}
-
-export interface Cart {
-  _id: string;
-  user: string;
-  items: CartItem[];
-  subtotal: number;
-  totalDiscount: number;
-  couponDiscount: number;
-  total: number;
-  appliedCoupons: AppliedCoupon[];
-  status: 'active' | 'abandoned' | 'converted';
-  estimatedShipping: {
-    cost: number;
-    days: number;
-  };
-  lastActivity: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { ServerCart } from '@/types/cart';
 
 export interface CartValidationResult {
   valid: boolean;
@@ -110,10 +46,10 @@ export interface CartValidationResult {
  * @returns Query result with cart data
  */
 export const useCart = () => {
-  return useQuery<Cart>({
+  return useQuery<ServerCart>({
     queryKey: ['cart'],
     queryFn: async () => {
-      const response = await apiClient.get<Cart>(api.cart.get);
+      const response = await apiClient.get<ServerCart>(api.cart.get);
       if (!response.data) {
         throw new Error('No cart data returned');
       }

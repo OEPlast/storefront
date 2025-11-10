@@ -177,6 +177,13 @@ input[type='file'] {
   text-transform: capitalize;
 }
 
+.heading7 {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
 .text-title {
   font-size: 16px;
   line-height: 24px;
@@ -290,6 +297,11 @@ input[type='file'] {
     line-height: 26px;
   }
 
+  .heading7 {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
   .button-main {
     padding: 12px 24px;
     border-radius: 10px;
@@ -345,6 +357,11 @@ input[type='file'] {
   .heading6 {
     font-size: 16px;
     line-height: 24px;
+  }
+
+  .heading7 {
+    font-size: 14px;
+    line-height: 22px;
   }
 
   .text-title {

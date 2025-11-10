@@ -1,9 +1,11 @@
+import React from 'react';
 import { useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { apiClient } from '@/libs/api/axios';
 import api from '@/libs/api/endpoints';
 import { queryKeys } from '@/provider/react-query';
 import { WishlistItem, WishlistMeta } from '@/types/wishlist';
+import { useWishlistStore } from '@/store/useWishlistStore';
 
 /**
  * Fetch wishlist items with pagination
@@ -36,14 +38,16 @@ const fetchWishlistCount = async (): Promise<number> => {
 
 /**
  * Hook to get wishlist items with pagination
+ * Syncs data to Zustand store for client-side state management
  */
 export const useWishlistItems = (
   page: number = 1,
   limit: number = 30
 ): UseQueryResult<{ data: WishlistItem[]; meta: WishlistMeta }, Error> => {
   const { data: session } = useSession();
+  const syncFromServer = useWishlistStore(state => state.syncFromServer);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: queryKeys.wishlist.list(page),
     queryFn: () => fetchWishlistItems(page, limit),
     enabled: !!session?.user, // Only fetch if authenticated
@@ -52,6 +56,15 @@ export const useWishlistItems = (
     refetchOnMount: false,
     refetchOnReconnect: true,
   });
+
+  // Sync to Zustand when data is successfully fetched
+  React.useEffect(() => {
+    if (query.data?.data) {
+      syncFromServer(query.data.data);
+    }
+  }, [query.data, syncFromServer]);
+
+  return query;
 };
 
 /**
@@ -73,31 +86,22 @@ export const useWishlistCount = (): UseQueryResult<number, Error> => {
 
 /**
  * Hook to check if a product is in the wishlist
- * Scans only page 1 cache (first 30 items from server prefetch)
+ * Uses Zustand store for client-side state
  * Returns wishlist item ID for removal operations
  */
 export const useIsInWishlist = (
   productId: string
 ): { isInWishlist: boolean; wishlistItemId: string | null } => {
-  const queryClient = useQueryClient();
   const { data: session } = useSession();
+  const items = useWishlistStore(state => state.items);
 
   // If not authenticated, product cannot be in wishlist
   if (!session?.user) {
     return { isInWishlist: false, wishlistItemId: null };
   }
 
-  // Get cached wishlist data from page 1 (most recent 30 items)
-  const cachedData = queryClient.getQueryData<{ data: WishlistItem[]; meta: WishlistMeta }>(
-    queryKeys.wishlist.list(1)
-  );
-
-  if (!cachedData?.data) {
-    return { isInWishlist: false, wishlistItemId: null };
-  }
-
-  // Search for product in cached wishlist items
-  const wishlistItem = cachedData.data.find((item) => item.product._id === productId);
+  // Search for product in Zustand store
+  const wishlistItem = items.find((item) => item.productId === productId);
 
   return {
     isInWishlist: !!wishlistItem,

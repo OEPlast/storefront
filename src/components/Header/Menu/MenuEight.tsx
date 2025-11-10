@@ -17,7 +17,7 @@ import { useModalSearchContext } from '@/context/ModalSearchContext';
 import { useCart } from '@/context/CartContext';
 import NavCategoriesComponent from './NavCategoriesComponent';
 import NavCategoriesMobile from './NavCategoriesMobile';
-import { useCartCount } from '@/hooks/useCartCount';
+import { useCartCount } from '@/hooks/useCart';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useProductSearchAutocomplete } from '@/hooks/queries/useProducts';
@@ -174,6 +174,12 @@ const MenuEight = () => {
         };
     }, [openAutocomplete]);
 
+    const shouldShowTopNavigation = useMemo(() => {
+        if (pathname === '/login' || pathname === '/register') {
+            return false;
+        }
+        return true;
+    }, [pathname]);
 
     return (
         <>
@@ -187,58 +193,55 @@ const MenuEight = () => {
                         <Link href={'/'} className='flex items-center'>
                             <div className="heading4">OEPlast</div>
                         </Link>
-                        <div className="form-search w-2/3 pl-8 flex items-center h-[44px] max-lg:hidden">
-                            <div className="category-block relative h-full">
-                                <div className="category-btn bg-black relative flex items-center gap-6 py-2 px-4 h-full rounded-l w-fit cursor-pointer">
-                                    <div className="text-button text-white whitespace-nowrap">All</div>
-                                </div>
-                            </div>
-                            <div className='w-full flex items-center h-full'>
-                                <div className="relative w-full h-full flex" ref={desktopInputAnchorRef}>
-                                    <input
-                                        type="text"
-                                        className="search-input h-full px-4 w-full border border-line"
-                                        placeholder="What are you looking for today?"
-                                        value={searchKeyword}
-                                        onChange={(e) => setSearchKeyword(e.target.value)}
-                                        onFocus={() => setOpenAutocomplete(true)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                handleSearch(searchKeyword);
-                                            } else if (e.key === 'ArrowDown') {
-                                                e.preventDefault();
-                                                setActiveIndex((prev) => Math.min(prev + 1, (suggestions?.length ?? 0) - 1));
-                                            } else if (e.key === 'ArrowUp') {
-                                                e.preventDefault();
-                                                setActiveIndex((prev) => Math.max(prev - 1, -1));
-                                            } else if (e.key === 'Escape') {
-                                                setOpenAutocomplete(false);
-                                            }
-                                        }}
-                                    />
-                                    {shouldShowDropdown && (
-                                        <AutocompleteDropdown
-                                            open={shouldShowDropdown}
-                                            loading={isFetching}
-                                            suggestions={searchKeyword.trim().length >= 2 ? suggestions : []}
-                                            history={searchKeyword.trim().length < 2 ? history : []}
-                                            activeIndex={activeIndex}
-                                            anchorRef={desktopInputAnchorRef}
-                                            onSelectSuggestion={(item) => handleSelectSuggestion(item.name)}
-                                            onSelectHistory={(term) => handleSearch(term)}
-                                            onClearHistory={() => clearHistory()}
+                        {shouldShowTopNavigation && (
+                            <div className="form-search w-2/3 pl-8 flex items-center h-[44px] max-lg:hidden">
+
+                                <div className='w-full flex items-center h-full'>
+                                    <div className="relative w-full h-full flex" ref={desktopInputAnchorRef}>
+                                        <input
+                                            type="text"
+                                            className="search-input h-full px-4 w-full border border-line rounded-l-lg"
+                                            placeholder="What are you looking for today?"
+                                            value={searchKeyword}
+                                            onChange={(e) => setSearchKeyword(e.target.value)}
+                                            onFocus={() => setOpenAutocomplete(true)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleSearch(searchKeyword);
+                                                } else if (e.key === 'ArrowDown') {
+                                                    e.preventDefault();
+                                                    setActiveIndex((prev) => Math.min(prev + 1, (suggestions?.length ?? 0) - 1));
+                                                } else if (e.key === 'ArrowUp') {
+                                                    e.preventDefault();
+                                                    setActiveIndex((prev) => Math.max(prev - 1, -1));
+                                                } else if (e.key === 'Escape') {
+                                                    setOpenAutocomplete(false);
+                                                }
+                                            }}
                                         />
-                                    )}
+                                        {shouldShowDropdown && (
+                                            <AutocompleteDropdown
+                                                open={shouldShowDropdown}
+                                                loading={isFetching}
+                                                suggestions={searchKeyword.trim().length >= 2 ? suggestions : []}
+                                                history={searchKeyword.trim().length < 2 ? history : []}
+                                                activeIndex={activeIndex}
+                                                anchorRef={desktopInputAnchorRef}
+                                                onSelectSuggestion={(item) => handleSelectSuggestion(item.name)}
+                                                onSelectHistory={(term) => handleSearch(term)}
+                                                onClearHistory={() => clearHistory()}
+                                            />
+                                        )}
+                                    </div>
+                                    <button
+                                        className="search-button button-main bg-black h-full flex items-center px-7 rounded-none rounded-r-lg "
+                                        onClick={() => handleSearch(searchKeyword)}
+                                    >
+                                        Search
+                                    </button>
                                 </div>
-                                <button
-                                    className="search-button button-main bg-black h-full flex items-center px-7 rounded-none rounded-r "
-                                    onClick={() => handleSearch(searchKeyword)}
-                                >
-                                    Search
-                                </button>
-                            </div>
-                        </div>
+                            </div>)}
                         <div className="right flex gap-12">
                             <div className="list-action flex items-center gap-4">
                                 <div className="user-icon flex items-center justify-center cursor-pointer">
@@ -248,7 +251,7 @@ const MenuEight = () => {
                                             ${openLoginPopup ? 'open' : ''}`}
                                     >
                                         <Link href={'/login'} className="button-main w-full text-center">Login</Link>
-                                        <div className="text-secondary text-center mt-3 pb-4">Don't have an account?
+                                        <div className="text-secondary text-center mt-3 pb-4">{`Don't have an account?`}
                                             <Link href={'/register'} className='text-black pl-1 hover:underline'>Register</Link>
                                         </div>
                                         <div className="bottom pt-4 border-t border-line"></div>
@@ -267,116 +270,40 @@ const MenuEight = () => {
                     </div>
                 </div>
             </div>
+            {shouldShowTopNavigation && (
 
-            {/* Top Nav Menu */}
-            <div className="top-nav-menu relative bg-white border-t border-b border-line h-[44px] max-lg:hidden z-10">
-                <div className="container h-full">
-                    <div className="top-nav-menu-main flex items-center justify-between h-full relative">
-                        <div className="left flex items-center h-full">
+                <>
 
-                            <NavCategoriesComponent isOpen={openSubMenuDepartment} />
-                            <div className="menu-main style-eight h-full pl-12 max-lg:hidden">
-                                <ul className='flex items-center gap-8 h-full'>
-                                    <li className='h-full relative'>
-                                        <Link
-                                            href="#!"
-                                            className={`text-button-uppercase duration-300 h-full flex items-center justify-center gap-1 
-                                            ${pathname.includes('/homepages/') ? 'active' : ''}`}
-                                        >
-                                            Demo
-                                        </Link>
-                                        <div className="sub-menu absolute py-3 px-5 -left-10 w-max grid grid-cols-4 gap-5 bg-white rounded-b-xl">
-                                            {DEMO_LINKS.map((column, colIndex) => (
-                                                <ul key={colIndex}>
-                                                    {column.map((link, linkIndex) => (
-                                                        <li key={linkIndex}>
-                                                            <Link
-                                                                href={link.href}
-                                                                className={`text-secondary duration-300 ${pathname === link.href ? 'active' : ''}`}
-                                                            >
-                                                                {link.label}
-                                                            </Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            ))}
-                                        </div>
-                                    </li>
 
-                                    {/* Features, Shop, Product menus remain as they have complex nested structures */}
-                                    <li className='h-full'>
-                                        <Link href="#!" className='text-button-uppercase duration-300 h-full flex items-center justify-center'>
-                                            Features
-                                        </Link>
-                                        {/* ... keep existing Features mega menu ... */}
-                                    </li>
+                    {/* Top Nav Menu */}
+                    <div className="top-nav-menu relative bg-white border-t border-b border-line h-[44px] max-lg:hidden z-10">
+                        <div className="container h-full">
+                            <div className="top-nav-menu-main flex items-center justify-between h-full relative">
+                                <div className="left flex items-center h-full">
 
-                                    <li className='h-full'>
-                                        <Link href="#!" className='text-button-uppercase duration-300 h-full flex items-center justify-center'>
-                                            Shop
-                                        </Link>
-                                        {/* ... keep existing Shop mega menu ... */}
-                                    </li>
+                                    <NavCategoriesComponent isOpen={openSubMenuDepartment} />
+                                    <div className="menu-main style-eight h-full pl-12 max-lg:hidden">
+                                        <ul className='flex items-center gap-8 h-full'>
 
-                                    <li className='h-full'>
-                                        <Link href="#!" className='text-button-uppercase duration-300 h-full flex items-center justify-center'>
-                                            Product
-                                        </Link>
-                                        {/* ... keep existing Product mega menu ... */}
-                                    </li>
-
-                                    <li className='h-full relative'>
-                                        <Link href="#!" className='text-button-uppercase duration-300 h-full flex items-center justify-center'>
-                                            Blog
-                                        </Link>
-                                        <div className="sub-menu py-3 px-5 -left-10 absolute bg-white rounded-b-xl">
-                                            <ul className='w-full'>
-                                                {BLOG_LINKS.map((link, index) => (
-                                                    <li key={index}>
-                                                        <Link
-                                                            href={link.href}
-                                                            className={`text-secondary duration-300 ${pathname === link.href ? 'active' : ''}`}
-                                                        >
-                                                            {link.label}
-                                                        </Link>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </li>
-
-                                    <li className='h-full relative'>
-                                        <Link
-                                            href="#!"
-                                            className={`text-button-uppercase duration-300 h-full flex items-center justify-center ${pathname.includes('/pages') ? 'active' : ''}`}
-                                        >
-                                            Pages
-                                        </Link>
-                                        <div className="sub-menu py-3 px-5 -left-10 absolute bg-white rounded-b-xl">
-                                            <ul className='w-full'>
-                                                {PAGES_LINKS.map((link, index) => (
-                                                    <li key={index}>
-                                                        <Link
-                                                            href={link.href}
-                                                            className={`text-secondary duration-300 ${pathname === link.href ? 'active' : ''}`}
-                                                        >
-                                                            {link.label}
-                                                        </Link>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </li>
-                                </ul>
+                                            <li className='h-full relative'>
+                                                <Link
+                                                    href="/promos"
+                                                    className={`text-button-uppercase duration-300 h-full flex items-center justify-center ${pathname.includes('/pages') ? 'active' : ''}`}
+                                                >
+                                                    Promos
+                                                </Link>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div className="right flex items-center gap-1">
+                                    <div className="caption1">Hotline:</div>
+                                    <div className="text-button-uppercase">+01 1234 8888</div>
+                                </div>
                             </div>
                         </div>
-                        <div className="right flex items-center gap-1">
-                            <div className="caption1">Hotline:</div>
-                            <div className="text-button-uppercase">+01 1234 8888</div>
-                        </div>
                     </div>
-                </div>
-            </div>
+                </>)}
 
             {/* Mobile Menu */}
             <div id="menu-mobile" className={`${openMenuMobile ? 'open' : ''}`}>

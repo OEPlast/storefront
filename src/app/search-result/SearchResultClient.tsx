@@ -9,6 +9,7 @@ import { useSearchResultProducts, useSearchResultFilters } from '@/hooks/queries
 import * as Icon from '@phosphor-icons/react/dist/ssr';
 import type { SortOption, ProductListItem } from '@/types/product';
 import Link from 'next/link';
+import { SearchIcon, UnboxingIcon } from '@/components/Icons';
 
 interface SearchResultClientProps {
     searchQuery: string;
@@ -190,25 +191,6 @@ export default function SearchResultClient({ searchQuery }: SearchResultClientPr
 
     return (
         <>
-            {/* Breadcrumb Section */}
-            <div className="breadcrumb-block style-img">
-                <div className="breadcrumb-main bg-linear overflow-hidden">
-                    <div className="container lg:pt-[134px] pt-24 pb-10 relative">
-                        <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1]">
-                            <div className="text-content">
-                                <div className="heading2 text-center">
-                                    {searchQuery ? `Search Results: "${searchQuery}"` : 'All Products'}
-                                </div>
-                                <div className="link flex items-center justify-center gap-1 caption1 mt-3">
-                                    <Link href={'/'}>Homepage</Link>
-                                    <Icon.CaretRight size={14} className='text-secondary2' />
-                                    <span className='text-secondary2 capitalize'>Search Results</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* Filter Sidebar */}
             <div
@@ -451,8 +433,10 @@ export default function SearchResultClient({ searchQuery }: SearchResultClientPr
                                         <Product key={product._id} data={product} type="grid" />
                                     ))
                                 ) : (
-                                    <div className="col-span-full text-center text-secondary2 py-10">
-                                        No products found with the current filters.
+                                    <div className="col-span-full text-center text-secondary2 py-10 min-h-[400px]">
+
+                                        <SearchIcon className='w-3/12 h-3/12 inline-flex justify-center' />
+                                        <p className='text-sm md:text-md'>No products found for <span className='text-black underline'>{searchQuery}</span> <br />. Change search query or filters to see more products.</p>
                                     </div>
                                 )}
                             </div>

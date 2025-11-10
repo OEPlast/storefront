@@ -1,112 +1,37 @@
+
 'use client';
 
 import React from 'react';
-
-interface PricingTier {
-    minQty: number;
-    maxQty?: number;
-    strategy: 'fixedPrice' | 'percentOff' | 'amountOff';
-    value: number;
-}
-
-// Dummy data for demonstration
-const dummyPricingTiers: PricingTier[] = [
-    {
-        minQty: 1,
-        maxQty: 9,
-        strategy: 'fixedPrice' as const,
-        value: 45.0,
-    },
-    {
-        minQty: 10,
-        maxQty: 49,
-        strategy: 'percentOff' as const,
-        value: 10,
-    },
-    {
-        minQty: 50,
-        maxQty: 99,
-        strategy: 'percentOff' as const,
-        value: 15,
-    },
-    {
-        minQty: 100,
-        maxQty: 199,
-        strategy: 'percentOff' as const,
-        value: 20,
-    },
-    {
-        minQty: 200,
-        maxQty: 499,
-        strategy: 'amountOff' as const,
-        value: 10.0,
-    },
-    {
-        minQty: 500,
-        maxQty: undefined,
-        strategy: 'amountOff' as const,
-        value: 15.0,
-    },
-];
+import { formatPrice } from '@/utils/calculateSale';
+import {
+    calculateTierBasePrice,
+    findTierForQuantity,
+    NormalizedPricingTier,
+} from './pricingHelpers';
 
 interface PricingTiersHorizontalProps {
     basePrice: number;
-    tiers?: PricingTier[];
-    salesDiscount?: number;
-    attributePrice?: number;
+    tiers?: NormalizedPricingTier[];
+    salePercent?: number;
+    saleMultiplier?: number;
     currentQuantity?: number;
     onTierClick?: (minQty: number) => void;
 }
 
 const PricingTiersHorizontal: React.FC<PricingTiersHorizontalProps> = ({
     basePrice,
-    tiers = dummyPricingTiers,
-    salesDiscount = 0,
-    attributePrice,
+    tiers = [],
+    salePercent = 0,
+    saleMultiplier = 1,
     currentQuantity = 1,
     onTierClick,
 }) => {
-    const effectiveBasePrice = attributePrice || basePrice;
-    const priceAfterSales = salesDiscount > 0
-        ? effectiveBasePrice * (1 - salesDiscount / 100)
-        : effectiveBasePrice;
+    const resolvedTiers = tiers.length > 0 ? tiers : [{ minQty: 1, strategy: 'fixedPrice', value: Math.max(0, basePrice) }];
+    const activeTier = findTierForQuantity(resolvedTiers, currentQuantity);
+    const comparisonBase = saleMultiplier < 1 ? basePrice * saleMultiplier : basePrice;
+    const showSale = saleMultiplier < 1;
 
-    const calculateTierPrice = (tier: PricingTier): number => {
-        switch (tier.strategy) {
-            case 'fixedPrice':
-                return tier.value;
-            case 'percentOff':
-                return priceAfterSales * (1 - tier.value / 100);
-            case 'amountOff':
-                return priceAfterSales - tier.value;
-            default:
-                return priceAfterSales;
-        }
-    };
-
-    const calculateSavings = (finalPrice: number): number => {
-        if (finalPrice >= effectiveBasePrice) return 0;
-        return Math.round(((effectiveBasePrice - finalPrice) / effectiveBasePrice) * 100);
-    };
-
-    // Determine which tier the current quantity falls into
-    const getCurrentTier = (qty: number): number => {
-        for (let i = 0; i < tiers.length; i++) {
-            const tier = tiers[i];
-            if (qty >= tier.minQty && (tier.maxQty === undefined || qty <= tier.maxQty)) {
-                return i;
-            }
-        }
-        return -1;
-    };
-
-    const activeTierIndex = getCurrentTier(currentQuantity);
-
-    // Calculate current unit price and total price
-    const currentTier = activeTierIndex >= 0 ? tiers[activeTierIndex] : null;
-    const currentUnitPrice = currentTier ? calculateTierPrice(currentTier) : priceAfterSales;
-    const totalPrice = currentUnitPrice * currentQuantity;
-
+    if (tiers.length === 0) return null;
     return (
         <div className="pricing-tiers-horizontal mt-6">
             <div className="flex items-center justify-between mb-3">
@@ -114,13 +39,14 @@ const PricingTiersHorizontal: React.FC<PricingTiersHorizontalProps> = ({
             </div>
 
             <div className="grid lg:grid-cols-3 sm:grid-cols-3 grid-cols-3 gap-2 sm:gap-3">
-                {tiers.map((tier, index) => {
-                    const finalPrice = calculateTierPrice(tier);
-                    const savings = calculateSavings(finalPrice);
-                    const quantityRange = tier.maxQty
-                        ? `${tier.minQty}-${tier.maxQty}`
-                        : `${tier.minQty}+`;
-                    const isActive = index === activeTierIndex;
+                {resolvedTiers.map((tier, index) => {
+                    const rangeLabel = tier.maxQty ? `${tier.minQty}-${tier.maxQty}` : `${tier.minQty}+`;
+                    const originalPrice = calculateTierBasePrice(basePrice, tier);
+                    const discountedPrice = showSale ? Math.max(0, originalPrice * saleMultiplier) : originalPrice;
+                    const displaySavingsSource = showSale ? comparisonBase : basePrice;
+                    const savings = Math.max(0, Math.round((1 - discountedPrice / displaySavingsSource) * 100));
+                    const isActive = Boolean(activeTier && activeTier.minQty === tier.minQty && activeTier.maxQty === tier.maxQty);
+                    const showStrikeThrough = showSale && discountedPrice < originalPrice - 0.009;
 
                     return (
                         <div
@@ -132,7 +58,7 @@ const PricingTiersHorizontal: React.FC<PricingTiersHorizontalProps> = ({
                                 }`}
                         >
                             <div className="flex items-start justify-between mb-2">
-                                <div className="text-sm font-semibold">{quantityRange}</div>
+                                <div className="text-sm font-semibold">{rangeLabel}</div>
                                 {savings > 0 && (
                                     <div className="text-xs bg-lime-500 text-white px-1.5 py-0.5 rounded font-semibold">
                                         -{savings}%
@@ -140,20 +66,19 @@ const PricingTiersHorizontal: React.FC<PricingTiersHorizontalProps> = ({
                                 )}
                             </div>
                             <div className="font-bold text-lg group-hover:text-black">
-                                ${finalPrice.toFixed(2)}
+                                {showStrikeThrough && (
+                                    <div className="text-xs text-secondary2 line-through">{formatPrice(originalPrice)}</div>
+                                )}
+                                <div>{formatPrice(discountedPrice)}</div>
                             </div>
                             <div className="text-xs text-secondary2 mt-0.5">per unit</div>
                         </div>
                     );
                 })}
             </div>
-
-            {(salesDiscount > 0 || (attributePrice && attributePrice !== basePrice)) && (
+            {showSale && (
                 <div className="text-xs text-secondary2 mt-2">
-                    {attributePrice && attributePrice !== basePrice && (
-                        <span>Variant price applied • </span>
-                    )}
-                    Prices calculated from ${priceAfterSales.toFixed(2)} base
+                    Sale applied: -{Math.round(salePercent ?? 0)}% across tiers
                 </div>
             )}
         </div>

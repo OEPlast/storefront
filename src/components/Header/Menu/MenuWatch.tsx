@@ -14,7 +14,7 @@ import { useModalWishlistContext } from '@/context/ModalWishlistContext';
 import { useModalSearchContext } from '@/context/ModalSearchContext';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
-import { useCartCount } from '@/hooks/useCartCount';
+import { useCartCount } from '@/hooks/useCart';
 
 interface Props {
     props: string;

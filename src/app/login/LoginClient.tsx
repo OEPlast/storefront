@@ -6,7 +6,13 @@ import Link from "next/link";
 import LoginForm from "@/components/forms/LoginForm";
 import GoogleLogin from "@/components/Other/GoogleLogin";
 
-export default function LoginClient() {
+type LoginClientProps = {
+  onLoginSuccess?: () => void;
+  redirectPath?: string;
+  pageHeader?: string;
+};
+
+export default function LoginClient({ onLoginSuccess, redirectPath, pageHeader = 'Welcome Back' }: LoginClientProps) {
   const searchParams = useSearchParams();
   const [showResetSuccess, setShowResetSuccess] = useState(false);
 
@@ -29,8 +35,8 @@ export default function LoginClient() {
             </p>
           </div>
         )}
-        <div className="heading4">Welcome Back</div>
-        <LoginForm />
+        <div className="heading4 text-center">{pageHeader}</div>
+        <LoginForm onLoginSuccess={onLoginSuccess} redirectPath={redirectPath} />
         <div className="flex items-center my-4">
           <div className="flex-grow h-px bg-line" />
           <span className="mx-4 text-secondary font-medium">OR</span>

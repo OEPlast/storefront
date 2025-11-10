@@ -222,8 +222,7 @@ const CountdownTimer: React.FC<Props> = ({ data, productId }) => {
                             </div>
                             <div className="list-action mt-6">
                                 <div className="countdown-block flex items-center justify-between flex-wrap gap-y-4">
-                                    <div className="text-title">Hurry Up!<br />
-                                        Offer ends in:</div>
+                                    <div className="text-title">Offer ends in:</div>
                                     <div className="countdown-time flex items-center lg:gap-5 gap-3 max-[400px]:justify-between max-[400px]:w-full">
                                         <div className="item w-[60px] h-[60px] flex flex-col items-center justify-center border border-red rounded-lg">
                                             <div className="days heading6 text-center">{timeLeft.days < 10 ? `0${timeLeft.days}` : timeLeft.days}</div>

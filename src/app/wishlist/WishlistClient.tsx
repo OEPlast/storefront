@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useWishlistItems } from '@/hooks/queries/useWishlist';
 import { useRemoveFromWishlist } from '@/hooks/mutations/useWishlistMutations';
+import { useWishlistStore } from '@/store/useWishlistStore';
 import Product from '@/components/Product/Product';
 import HandlePagination from '@/components/Other/HandlePagination';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
@@ -12,7 +13,7 @@ import { ProductListItem } from '@/types/product';
 import { WishlistItem } from '@/types/wishlist';
 
 const WishlistClient = () => {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [sortOption, setSortOption] = useState('');
     const [layoutCol, setLayoutCol] = useState<number | null>(4);
     const [currentPage, setCurrentPage] = useState(1); // 1-indexed for API
@@ -35,8 +36,10 @@ const WishlistClient = () => {
 
     const totalProducts = wishlistData?.meta?.total || 0;
 
-    // Extract ProductListItem from WishlistItem
-    let productList: ProductListItem[] = wishlistItems.map(item => item.product);
+    // Extract ProductListItem from WishlistItem, filter out null/undefined products
+    let productList: ProductListItem[] = wishlistItems
+        .filter(item => item.product != null) // Filter out deleted products
+        .map(item => item.product);
 
     // Handle empty state
     const hasProducts = productList.length > 0;
@@ -66,6 +69,8 @@ const WishlistClient = () => {
     const handlePageChange = (selected: number) => {
         setCurrentPage(selected + 1); // HandlePagination uses 0-indexed, API uses 1-indexed
     };
+
+    if (status === 'loading') return null;
 
     return (
         <div className="shop-product breadcrumb1 lg:py-20 md:py-14 py-10">

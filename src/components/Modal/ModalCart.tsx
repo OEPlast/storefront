@@ -5,11 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import productData from '@/data/Product.json';
-import { ProductType } from '@/type/ProductType';
+import { ProductDetail } from '@/types/product';
 import { useModalCartContext } from '@/context/ModalCartContext';
 import { countdownTime } from '@/store/countdownTime';
 import CountdownTimeType from '@/type/CountdownType';
-import { useGuestCart, useGuestCartCount } from '@/hooks/useGuestCart';
+import { useCart as useUnifiedCart } from '@/hooks/useCart';
+import { useCartCount } from '@/hooks/useCart';
 import { getCdnUrl } from '@/libs/cdn-url';
 
 const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) => {
@@ -26,11 +27,35 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) =
     const [activeTab, setActiveTab] = useState<string | undefined>('');
     const { isModalOpen, closeModalCart } = useModalCartContext();
 
-    // Use localStorage cart (guest cart) for current session
-    const { items: cartItems, removeItem } = useGuestCart();
-    const { count: cartCount } = useGuestCartCount();
+    // Use unified cart (localStorage-first) for current session
+    const { items: cartItems, removeItem } = useUnifiedCart();
+    const { count: cartCount } = useCartCount();
 
-    const handleAddToCart = (productItem: ProductType) => {
+    // Memoize lightweight view model to reduce per-render work
+    const displayItems = React.useMemo(() => {
+        return cartItems.map((item) => {
+            const productDetails = item.productDetails;
+            const productSnapshot = (item as any).productSnapshot as { name?: string; image?: string; } | undefined;
+            const productName = productDetails?.name ?? productSnapshot?.name ?? 'Product';
+            const productImagePath =
+                productDetails?.description_images?.find((img: any) => img.cover_image)?.url ??
+                productDetails?.description_images?.[0]?.url ??
+                productSnapshot?.image;
+            const productImageUrl = productImagePath ? getCdnUrl(productImagePath) : '/images/placeholder.png';
+
+            return {
+                id: item._id,
+                name: productName,
+                imageUrl: productImageUrl,
+                qty: item.qty,
+                attrs: item.selectedAttributes.map((a) => a.value).join(', '),
+                unitPrice: item.unitPrice,
+                pricingTier: item.pricingTier,
+            };
+        });
+    }, [cartItems]);
+
+    const handleAddToCart = (productItem: ProductDetail) => {
         // This is for "You May Also Like" section - can be implemented later if needed
         console.log('Add to cart from modal:', productItem);
     };
@@ -62,16 +87,8 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) =
                                 <Icon.X size={14} />
                             </div>
                         </div>
-                        {/* <div className="time px-6">
-                            <div className=" flex items-center gap-3 px-5 py-3 bg-green rounded-lg">
-                                <p className='text-3xl'>🔥</p>
-                                <div className="caption1">Your cart will expire in <span className='text-red caption1 font-semibold'>{timeLeft.minutes}:
-                                    {timeLeft.seconds < 10 ? `0${timeLeft.seconds}` : timeLeft.seconds}</span> minutes!<br />
-                                    Please checkout now before your items sell out!</div>
-                            </div>
-                        </div> */}
                         <div className="heading banner mt-3 px-6">
-                            <div className="text">Buy <span className="text-button"> $<span className="more-price">{moneyForFreeship - totalCart > 0 ? (<>{moneyForFreeship - totalCart}</>) : (0)}</span>.00 </span>
+                            <div className="text">Buy <span className="text-button"> $<span className="more-price">{moneyForFreeship - totalCart > 0 ? (moneyForFreeship - totalCart) : 0}</span>.00 </span>
                                 <span>more to get </span>
                                 <span className="text-button">freeship</span></div>
                             <div className="tow-bar-block mt-3">
@@ -88,43 +105,56 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) =
                                     <p className="text-button">Your cart is empty</p>
                                 </div>
                             ) : (
-                                cartItems.map((item) => (
-                                    <div key={item._id} className='item py-5 flex items-center justify-between gap-3 border-b border-line'>
-                                        <div className="infor flex items-center gap-3 w-full">
-                                            <div className="bg-img w-[100px] aspect-square flex-shrink-0 rounded-lg overflow-hidden">
-                                                <Image
-                                                    src={getCdnUrl(item.productSnapshot.name) || '/images/placeholder.png'}
-                                                    width={300}
-                                                    height={300}
-                                                    alt={item.productSnapshot.name}
-                                                    className='w-full h-full object-cover'
-                                                />
-                                            </div>
-                                            <div className='w-full'>
-                                                <div className="flex items-center justify-between w-full">
-                                                    <div className="name text-button">{item.productSnapshot.name}</div>
-                                                    <div
-                                                        className="remove-cart-btn caption1 font-semibold text-red underline cursor-pointer"
-                                                        onClick={() => removeItem(item._id)}
-                                                    >
-                                                        Remove
-                                                    </div>
+                                displayItems.map((item) => {
+                                    const hasPricingTier = !!item.pricingTier;
+                                    const tierDiscount = hasPricingTier ? item.pricingTier?.value : null as number | null;
+                                    const tierStrategy = hasPricingTier ? item.pricingTier?.strategy : null as string | null;
+                                    return (
+                                        <div key={item.id} className='item py-5 flex items-center justify-between gap-3 border-b border-line'>
+                                            <div className="infor flex items-center gap-3 w-full">
+                                                <div className="bg-img w-[100px] aspect-square flex-shrink-0 rounded-lg overflow-hidden">
+                                                    <Image
+                                                        src={item.imageUrl}
+                                                        width={120}
+                                                        height={120}
+                                                        alt={item.name}
+                                                        loading="lazy"
+                                                        className='w-full h-full object-cover'
+                                                    />
                                                 </div>
-                                                <div className="flex items-center justify-between gap-2 mt-3 w-full">
-                                                    <div className="flex items-center gap-2 text-secondary2 capitalize">
-                                                        <span>Qty: {item.qty}</span>
-                                                        {item.selectedAttributes.length > 0 && (
-                                                            <span className="text-xs">
-                                                                ({item.selectedAttributes.map(attr => attr.value).join(', ')})
-                                                            </span>
-                                                        )}
+                                                <div className='w-full'>
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <div className="name text-button">{item.name}</div>
+                                                        <div
+                                                            className="remove-cart-btn caption1 font-semibold text-red underline cursor-pointer"
+                                                            onClick={() => removeItem(item.id)}
+                                                        >
+                                                            Remove
+                                                        </div>
                                                     </div>
-                                                    <div className="product-price text-title">${item.unitPrice.toFixed(2)}</div>
+                                                    <div className="flex items-center justify-between gap-2 mt-3 w-full">
+                                                        <div className="flex items-center gap-2 text-secondary2 capitalize">
+                                                            <span>Qty: {item.qty}</span>
+                                                            {item.attrs && item.attrs.length > 0 && (
+                                                                <span className="text-xs">({item.attrs})</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-col items-end">
+                                                            <div className="product-price text-title">${item.unitPrice.toFixed(2)}</div>
+                                                            {hasPricingTier && (
+                                                                <div className="text-[10px] text-blue-600 font-medium">
+                                                                    {tierStrategy === 'percentOff' && `${tierDiscount}% off`}
+                                                                    {tierStrategy === 'amountOff' && `$${(tierDiscount as number)?.toFixed(2)} off`}
+                                                                    {tierStrategy === 'fixedPrice' && `Bulk price`}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                         <div className="footer-modal bg-white absolute bottom-0 left-0 w-full">

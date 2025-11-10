@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useCart } from '@/hooks/queries/useCart';
-import { setGuestCart, getGuestCart } from '@/libs/guestCart';
+import { setGuestCart, getGuestCart, areCartItemsIdentical } from '@/libs/guestCart';
+import type { CartItem } from '@/types/cart';
 
 /**
  * Hook to sync server cart TO localStorage when user returns (new session)
@@ -21,44 +22,174 @@ export function useSyncCartFromServer() {
   const { data: serverCart, isLoading } = useCart();
   const [hasSynced, setHasSynced] = useState(false);
 
-  const syncFromServer = useCallback(() => {
-    // Only sync once per session when authenticated
-    if (!session?.user || hasSynced || isLoading) return;
+  const buildIdentityKey = useCallback(
+    (item: { product: string; selectedAttributes: Array<{ name: string; value: string }> }) =>
+      `${item.product}|${[...item.selectedAttributes]
+        .map((attr) => `${attr.name}:${attr.value}`)
+        .sort()
+        .join(',')}`,
+    []
+  );
 
-    const localCart = getGuestCart();
+  const checkVariantStock = useCallback(
+    (
+      product: NonNullable<CartItem['productDetails']>,
+      selectedAttributes: Array<{ name: string; value: string }>
+    ): number | null => {
+      if (!product.attributes || product.attributes.length === 0) {
+        return product.stock ?? 0;
+      }
 
-    // If localStorage is empty and server has items, sync them down
-    if (localCart.items.length === 0 && serverCart && serverCart.items.length > 0) {
-      console.log(`Syncing ${serverCart.items.length} items from server to localStorage...`);
+      for (const attr of product.attributes) {
+        const selectedAttr = selectedAttributes.find((sa) => sa.name === attr.name);
+        if (!selectedAttr) continue;
 
-      // Convert server cart items to guest cart format
-      const guestCartItems = serverCart.items.map((item) => ({
+        const variant = attr.children?.find((child: any) => child.name === selectedAttr.value);
+        if (variant) {
+          return variant.stock ?? 0;
+        }
+      }
+
+      return null;
+    },
+    []
+  );
+
+  const mapServerItemToGuest = useCallback(
+    (item: CartItem) => {
+      const productDetails = item.productDetails;
+      let isAvailable = true;
+      let unavailableReason:
+        | 'out_of_stock'
+        | 'variant_unavailable'
+        | 'product_deleted'
+        | undefined = undefined;
+
+      if (!productDetails) {
+        // Product deleted - show as out of stock to user
+        isAvailable = false;
+        unavailableReason = 'out_of_stock';
+      } else if (item.selectedAttributes && item.selectedAttributes.length > 0) {
+        const variantStock = checkVariantStock(productDetails, item.selectedAttributes);
+        if (variantStock === null) {
+          isAvailable = false;
+          unavailableReason = 'variant_unavailable';
+        } else if (variantStock < item.qty) {
+          isAvailable = false;
+          unavailableReason = 'out_of_stock';
+        }
+      } else if ((productDetails.stock ?? 0) < item.qty) {
+        isAvailable = false;
+        unavailableReason = 'out_of_stock';
+      }
+
+      return {
         _id: item._id,
         product: item.product,
         qty: item.qty,
-        selectedAttributes: item.selectedAttributes,
-        productSnapshot: item.productSnapshot,
+        selectedAttributes: item.selectedAttributes ?? [],
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
         sale: item.sale,
         saleVariantIndex: item.saleVariantIndex,
-        addedAt: item.addedAt,
-      }));
+        appliedDiscount: item.appliedDiscount,
+        discountAmount: item.discountAmount,
+        pricingTier: item.pricingTier,
+        serverItemId: item._id,
+        addedAt: item.addedAt ?? new Date().toISOString(),
+        productDetails: item.productDetails ?? null,
+        isAvailable,
+        unavailableReason,
+      };
+    },
+    [checkVariantStock]
+  );
 
-      // Save to localStorage
-      setGuestCart({
-        items: guestCartItems,
-        lastUpdated: new Date().toISOString(),
-      });
-
-      setHasSynced(true);
-      console.log('Server cart synced to localStorage');
-    } else if (localCart.items.length > 0) {
-      // Local cart already has items - don't overwrite
-      setHasSynced(true);
-      console.log('Local cart has items - skipping server sync');
+  const syncFromServer = useCallback(() => {
+    if (!session?.user || hasSynced || isLoading || !serverCart) {
+      return;
     }
-  }, [session, serverCart, hasSynced, isLoading]);
+
+    const localCart = getGuestCart();
+    const mergedItems = [...localCart.items];
+    const identityMap = new Map<string, number>();
+    mergedItems.forEach((item, index) => {
+      identityMap.set(buildIdentityKey(item), index);
+    });
+
+    let hasChanges = false;
+
+    for (const serverItem of serverCart.items) {
+      const mapped = mapServerItemToGuest(serverItem);
+      const identity = buildIdentityKey({
+        product: mapped.product,
+        selectedAttributes: mapped.selectedAttributes,
+      });
+      const existingIndex = identityMap.get(identity);
+
+      if (existingIndex == null) {
+        mergedItems.push({
+          ...mapped,
+          _id:
+            mapped._id ??
+            mapped.serverItemId ??
+            `server_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        });
+        hasChanges = true;
+        continue;
+      }
+
+      const current = mergedItems[existingIndex];
+      if (
+        !areCartItemsIdentical(
+          { product: current.product, selectedAttributes: current.selectedAttributes },
+          { product: mapped.product, selectedAttributes: mapped.selectedAttributes }
+        )
+      ) {
+        continue;
+      }
+
+      const updated = {
+        ...current,
+        unitPrice: mapped.unitPrice,
+        totalPrice: mapped.totalPrice,
+        sale: mapped.sale,
+        saleVariantIndex: mapped.saleVariantIndex,
+        appliedDiscount: mapped.appliedDiscount,
+        discountAmount: mapped.discountAmount,
+        pricingTier: mapped.pricingTier,
+        serverItemId: mapped.serverItemId,
+        addedAt: mapped.addedAt,
+        productDetails: mapped.productDetails ?? current.productDetails ?? null,
+        isAvailable: mapped.isAvailable ?? true,
+        unavailableReason: mapped.unavailableReason,
+      };
+
+      const changed =
+        updated.unitPrice !== current.unitPrice ||
+        updated.totalPrice !== current.totalPrice ||
+        updated.sale !== current.sale ||
+        updated.saleVariantIndex !== current.saleVariantIndex ||
+        updated.serverItemId !== current.serverItemId ||
+        updated.appliedDiscount !== current.appliedDiscount ||
+        updated.discountAmount !== current.discountAmount ||
+        JSON.stringify(updated.pricingTier) !== JSON.stringify(current.pricingTier) ||
+        updated.isAvailable !== current.isAvailable ||
+        updated.unavailableReason !== current.unavailableReason;
+
+      if (changed) {
+        mergedItems[existingIndex] = updated;
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      setGuestCart({ items: mergedItems, lastUpdated: new Date().toISOString() });
+      console.log('Server cart merged into guest cart state');
+    }
+
+    setHasSynced(true);
+  }, [session, hasSynced, isLoading, serverCart, buildIdentityKey, mapServerItemToGuest]);
 
   // Sync when session is authenticated and cart data is loaded
   useEffect(() => {

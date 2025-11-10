@@ -6,6 +6,8 @@
  * Storage: localStorage with JSON serialization
  */
 
+import type { CartProductSummary } from '@/types/cart';
+
 const GUEST_CART_KEY = 'oep-cart-1';
 const CART_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
@@ -17,17 +19,30 @@ export interface GuestCartItem {
     name: string;
     value: string;
   }>;
-  productSnapshot: {
-    name: string;
-    price: number;
-    sku: string | number;
-    image?: string; // First product image
-  };
   unitPrice: number;
   totalPrice: number;
   sale?: string; // Sale ID (if applicable)
   saleVariantIndex?: number;
+  appliedDiscount?: number;
+  discountAmount?: number;
+  pricingTier?: {
+    minQty: number;
+    maxQty?: number;
+    strategy: string;
+    value: number;
+    appliedPrice: number;
+  };
+  serverItemId?: string;
   addedAt: string; // ISO timestamp
+  productSnapshot?: {
+    name: string;
+    price: number;
+    sku: string | number;
+    image?: string;
+  } | null;
+  productDetails?: CartProductSummary | null;
+  isAvailable?: boolean; // Track if product/variant is in stock
+  unavailableReason?: 'out_of_stock' | 'variant_unavailable';
 }
 
 export interface GuestCart {
@@ -119,7 +134,7 @@ export function setGuestCart(cart: GuestCart): void {
 /**
  * Check if two items are identical (same product + attributes)
  */
-function areItemsIdentical(
+export function areCartItemsIdentical(
   item1: { product: string; selectedAttributes: Array<{ name: string; value: string }> },
   item2: { product: string; selectedAttributes: Array<{ name: string; value: string }> }
 ): boolean {
@@ -140,6 +155,17 @@ function areItemsIdentical(
  * Add item to guest cart
  * If identical item exists, sum quantities
  */
+type GuestCartOverrides = {
+  id?: string;
+  serverItemId?: string;
+  unitPrice?: number;
+  totalPrice?: number;
+  appliedDiscount?: number;
+  discountAmount?: number;
+  pricingTier?: GuestCartItem['pricingTier'];
+  addedAt?: string;
+};
+
 export function addToGuestCart(
   productId: string,
   qty: number,
@@ -147,17 +173,21 @@ export function addToGuestCart(
   productSnapshot: { name: string; price: number; sku: string | number; image?: string },
   unitPrice: number,
   sale?: string,
-  saleVariantIndex?: number
+  saleVariantIndex?: number,
+  overrides?: GuestCartOverrides
 ): GuestCartItem {
   const cart = getGuestCart();
 
   // Check if identical item exists
   const existingItemIndex = cart.items.findIndex((item) =>
-    areItemsIdentical(
+    areCartItemsIdentical(
       { product: item.product, selectedAttributes: item.selectedAttributes },
       { product: productId, selectedAttributes: attributes }
     )
   );
+
+  const resolvedUnitPrice = overrides?.unitPrice ?? unitPrice;
+  const now = overrides?.addedAt ?? new Date().toISOString();
 
   let updatedItem: GuestCartItem;
 
@@ -168,28 +198,39 @@ export function addToGuestCart(
     updatedItem = {
       ...existingItem,
       qty: newQty,
-      totalPrice: unitPrice * newQty,
-      addedAt: new Date().toISOString(), // Refresh TTL
+      unitPrice: resolvedUnitPrice,
+      totalPrice: overrides?.totalPrice ?? resolvedUnitPrice * newQty,
+      sale,
+      saleVariantIndex,
+      appliedDiscount: overrides?.appliedDiscount ?? existingItem.appliedDiscount,
+      discountAmount: overrides?.discountAmount ?? existingItem.discountAmount,
+      pricingTier: overrides?.pricingTier ?? existingItem.pricingTier,
+      serverItemId: overrides?.serverItemId ?? existingItem.serverItemId,
+      addedAt: now, // Refresh TTL
     };
     cart.items[existingItemIndex] = updatedItem;
   } else {
     // Add new item
     updatedItem = {
-      _id: generateLocalId(),
+      _id: overrides?.id ?? generateLocalId(),
       product: productId,
       qty,
       selectedAttributes: attributes,
       productSnapshot,
-      unitPrice,
-      totalPrice: unitPrice * qty,
+      unitPrice: resolvedUnitPrice,
+      totalPrice: overrides?.totalPrice ?? resolvedUnitPrice * qty,
       sale,
       saleVariantIndex,
-      addedAt: new Date().toISOString(),
+      appliedDiscount: overrides?.appliedDiscount,
+      discountAmount: overrides?.discountAmount,
+      pricingTier: overrides?.pricingTier,
+      serverItemId: overrides?.serverItemId,
+      addedAt: now,
     };
     cart.items.push(updatedItem);
   }
 
-  cart.lastUpdated = new Date().toISOString();
+  cart.lastUpdated = now;
   saveGuestCart(cart);
 
   console.log('✅ Item added to guest cart:', updatedItem);
@@ -206,6 +247,17 @@ export function updateGuestCartItem(
   updates: {
     qty?: number;
     selectedAttributes?: Array<{ name: string; value: string }>;
+    unitPrice?: number;
+    totalPrice?: number;
+    productSnapshot?: GuestCartItem['productSnapshot'];
+    sale?: string;
+    saleVariantIndex?: number;
+    appliedDiscount?: number;
+    discountAmount?: number;
+    pricingTier?: GuestCartItem['pricingTier'];
+    serverItemId?: string | null;
+    productDetails?: CartProductSummary | null;
+    addedAt?: string;
   }
 ): GuestCartItem | null {
   const cart = getGuestCart();
@@ -221,6 +273,15 @@ export function updateGuestCartItem(
   // Apply updates
   if (updates.qty !== undefined) {
     item.qty = updates.qty;
+  }
+
+  if (updates.unitPrice !== undefined) {
+    item.unitPrice = updates.unitPrice;
+  }
+
+  if (updates.totalPrice !== undefined) {
+    item.totalPrice = updates.totalPrice;
+  } else if (updates.qty !== undefined || updates.unitPrice !== undefined) {
     item.totalPrice = item.unitPrice * item.qty;
   }
 
@@ -228,7 +289,39 @@ export function updateGuestCartItem(
     item.selectedAttributes = updates.selectedAttributes;
   }
 
-  item.addedAt = new Date().toISOString(); // Refresh TTL
+  if (updates.productSnapshot) {
+    item.productSnapshot = updates.productSnapshot;
+  }
+
+  if (updates.sale !== undefined) {
+    item.sale = updates.sale;
+  }
+
+  if (updates.saleVariantIndex !== undefined) {
+    item.saleVariantIndex = updates.saleVariantIndex;
+  }
+
+  if (updates.appliedDiscount !== undefined) {
+    item.appliedDiscount = updates.appliedDiscount;
+  }
+
+  if (updates.discountAmount !== undefined) {
+    item.discountAmount = updates.discountAmount;
+  }
+
+  if (updates.pricingTier !== undefined) {
+    item.pricingTier = updates.pricingTier;
+  }
+
+  if (updates.serverItemId !== undefined) {
+    item.serverItemId = updates.serverItemId ?? undefined;
+  }
+
+  if (updates.productDetails !== undefined) {
+    item.productDetails = updates.productDetails;
+  }
+
+  item.addedAt = updates.addedAt ?? new Date().toISOString(); // Refresh TTL
   cart.items[itemIndex] = item;
   cart.lastUpdated = new Date().toISOString();
 

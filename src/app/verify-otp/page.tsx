@@ -22,15 +22,8 @@ export default async function VerifyOTPPage() {
   }
   return (
     <>
-      <TopNavOne
-        props="style-one bg-black"
-        slogan="New customers save 10% with the code GET10"
-      />
-      <div id="header" className="relative w-full">
-        {/* <MenuOne props="bg-transparent" /> */}
-      </div>
       <div className="verify-otp-block md:py-20 py-10 my-10">
-        <div className="container">
+        <div className="container min-[80vh]">
           <div className="content-main flex items-center justify-center">
             <div className="w-full max-w-[650px] bg-surface p-8 rounded-2xl">
               <VerifyOTPForm />
@@ -38,7 +31,6 @@ export default async function VerifyOTPPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

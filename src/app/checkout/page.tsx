@@ -27,6 +27,7 @@ import CorrectionReviewModal from '@/components/Modal/CorrectionReviewModal';
 import { CheckoutErrors, CheckoutCorrectionResponse } from '@/types/checkout';
 import { parseCheckoutErrors, buildCartUpdatePayload, hasProductIssues, hasOnlyNonProductIssues } from '@/utils/cartCorrections';
 import Paystack from '@paystack/inline-js';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 type ShippingFormState = {
     firstName: string;
@@ -58,14 +59,6 @@ type ShippingCalculationResponse = {
 type FlatCartShippingResponse = {
     amount: number;
 };
-
-const currencyFormatter = new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: 'NGN',
-    maximumFractionDigits: 2,
-});
-
-const formatCurrency = (value: number) => currencyFormatter.format(value);
 
 const EXPRESS_SURCHARGE_MULTIPLIER = 1.5;
 
@@ -1230,7 +1223,6 @@ const Checkout = () => {
                                             pendingCorrections={pendingCorrections}
                                             checkoutError={checkoutError}
                                             checkoutSuccess={checkoutSuccess}
-                                            formatCurrency={formatCurrency}
                                         />
 
                                         <CheckoutButton
@@ -1397,7 +1389,7 @@ const Checkout = () => {
                                     {/* Subtotal */}
                                     <div className="flex justify-between items-center">
                                         <span className="text-secondary text-sm md:text-base">Subtotal</span>
-                                        <span className="text-sm md:text-base font-medium">{formatCurrency(resolvedSubtotal)}</span>
+                                        <span className="text-sm md:text-base font-medium">{formatToNaira(resolvedSubtotal)}</span>
                                     </div>
 
                                     {/* Discount */}
@@ -1428,7 +1420,7 @@ const Checkout = () => {
                                             ) : shippingCalculationError ? (
                                                 <span className="text-red-600 text-xs">Error</span>
                                             ) : calculatedShippingCost !== null ? (
-                                                formatCurrency(calculatedShippingCost)
+                                                formatToNaira(calculatedShippingCost)
                                             ) : (
                                                 <span className="text-secondary text-xs">Enter address</span>
                                             )}
@@ -1460,7 +1452,7 @@ const Checkout = () => {
                                         <span className="text-base md:text-lg font-semibold">Total</span>
                                         <span className="text-lg md:text-xl lg:text-2xl font-bold text-blue">
                                             {resolvedTotal !== null ? (
-                                                formatCurrency(resolvedTotal)
+                                                formatToNaira(resolvedTotal)
                                             ) : (
                                                 <span className="text-secondary text-sm">Add shipping info</span>
                                             )}

@@ -104,7 +104,9 @@ export default function Dashboard() {
                   return (
                     <tr key={order._id} className="item duration-300 border-b border-line">
                       <th scope="row" className="py-3 text-left">
-                        <strong className="text-title">{order._id}</strong>
+                        <Link href={`/my-account/orders/${order._id}`} className='hover:underline'>
+                          <strong className="text-title">{order._id}</strong>
+                        </Link>
                       </th>
                       <td className="py-3">
                         {firstProduct ? (

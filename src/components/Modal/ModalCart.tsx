@@ -202,7 +202,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) =
                                                             <div className="flex flex-col items-end gap-1">
                                                                 {/* Total Price (qty × unit price) */}
                                                                 <div className="text-title font-bold text-lg">
-                                                                    ${item.totalPrice.toFixed(2)}
+                                                                    &#8358;{item.totalPrice.toFixed(2)}
                                                                 </div>
                                                                 {/* Unit prices with slash if discounted */}
                                                                 <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) =
                                                                         </span>
                                                                     )}
                                                                     <span className="text-secondary text-xs">
-                                                                        ${item.unitPrice.toFixed(2)} per unit
+                                                                        &#8358;{item.unitPrice.toFixed(2)} per unit
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -250,7 +250,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) =
                                 </div>
                                 <div className="flex items-center justify-between pt-6 px-6">
                                     <div className="heading5">Subtotal</div>
-                                    <div className="heading5">${totalCart.toFixed(2)}</div>
+                                    <div className="heading5">&#8358;{totalCart.toFixed(2)}</div>
                                 </div>
                                 <div className="block-button text-center p-6">
                                     <div className="flex items-center gap-4">

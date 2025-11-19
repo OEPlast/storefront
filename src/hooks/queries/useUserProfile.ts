@@ -17,7 +17,7 @@ export interface UserProfile {
  * React Query hook to fetch user profile data
  * @returns Query result with user profile data
  */
-export const useUserProfile = () => {
+export const useUserProfile = ({ userId }: { userId?: string }) => {
   return useQuery<UserProfile>({
     queryKey: ['userProfile'],
     queryFn: async () => {
@@ -28,6 +28,8 @@ export const useUserProfile = () => {
       return response.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: true,
+    retry: false, // Don't retry on failure to prevent infinite loading
+    refetchOnWindowFocus: false,
+    enabled: !!userId,
   });
 };

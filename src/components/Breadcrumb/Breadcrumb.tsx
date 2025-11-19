@@ -15,7 +15,7 @@ const Breadcrumb: React.FC<Pros> = ({ heading, subHeading }) => {
                     <div
                         className={`container relative ${subHeading
                             ? ' lg:pt-[134px] pt-24 pb-10'
-                            : 'py-16'
+                            : 'py-16 sm:py-24'
                             }`}
                     >
                         <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1]">

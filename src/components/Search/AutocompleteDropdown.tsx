@@ -4,6 +4,7 @@ import React, { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { AutocompleteProduct } from '@/types/product';
 import { getCdnUrl } from '@/libs/cdn-url';
+import { cn } from '@/libs/utils';
 
 export interface AutocompleteDropdownProps {
     open: boolean;
@@ -16,6 +17,7 @@ export interface AutocompleteDropdownProps {
     onSelectSuggestion: (item: AutocompleteProduct) => void;
     onSelectHistory: (term: string) => void;
     onClearHistory: () => void;
+    classname?: string;
 }
 
 const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
@@ -28,18 +30,20 @@ const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
     onSelectSuggestion,
     onSelectHistory,
     onClearHistory,
+    classname
 }) => {
-    if (!open) return null;
-
     // Compute dropdown width to match anchor
     const width = useMemo(() => {
         if (!anchorRef.current) return '100%';
         return `${anchorRef.current.getBoundingClientRect().width}px`;
     }, [anchorRef]);
 
+
+    if (!open) return null;
+
     return (
         <div
-            className="absolute z-50 mt-1 bg-white border border-line rounded-b-lg shadow-md overflow-hidden w-full top-10"
+            className={cn('absolute z-50 mt-1 bg-white border border-line rounded-b-lg shadow-md overflow-hidden w-full top-10', classname)}
             style={{
                 //  width,
 

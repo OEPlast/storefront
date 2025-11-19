@@ -18,6 +18,7 @@ import { useCompare } from '@/context/CompareContext';
 import { useModalCompareContext } from '@/context/ModalCompareContext';
 import ModalSizeguide from '@/components/Modal/ModalSizeguide';
 import { countdownTime } from '@/store/countdownTime';
+import { convert as htmlToText } from 'html-to-text';
 import PricingTiersHorizontal from './PricingTiersHorizontal';
 import { useProduct } from '@/hooks/queries/useProduct';
 import RelatedProducts from '../RelatedProducts';
@@ -26,7 +27,7 @@ import { getCdnUrl } from '@/libs/cdn-url';
 import Color from 'color';
 import SalesCountdownTimer from './SalesCountdownTimer';
 import ProductDescription from './ProductDescription';
-import { calculateBestSale, formatPrice } from '@/utils/calculateSale';
+import { calculateBestSale } from '@/utils/calculateSale';
 import { ProductListItem } from '@/types/product';
 import { OptimisticWishlistProduct } from '@/types/wishlist';
 import type { ProductSale } from '@/types/product';
@@ -37,6 +38,11 @@ import {
     NormalizedPricingTier,
 } from './pricingHelpers';
 import LimitedProductProgress from './LimitedProductProgress';
+import { formatToNaira } from '@/utils/currencyFormatter';
+import { useQueryClient } from '@tanstack/react-query';
+import apiClient from '@/libs/api/axios';
+import api from '@/libs/api/endpoints';
+import { Review } from '@/hooks/queries/useProductReviews';
 
 
 interface Props {
@@ -45,7 +51,7 @@ interface Props {
 
 const Sale: React.FC<Props> = ({ slug }) => {
     SwiperCore.use([Navigation, Thumbs]);
-
+    const queryClient = useQueryClient();
     // Fetch product data using React Query
     const { data: productMain, isLoading, error } = useProduct({ slug });
 
@@ -165,6 +171,32 @@ const Sale: React.FC<Props> = ({ slug }) => {
         openModalWishlist();
     }, [wishlistPending, productMain, isInWishlist, wishlistItemId, wishlistItem, addToWishlistStore, removeFromWishlistStore, addToWishlistMutation, removeFromWishlistMutation, openModalWishlist]);
 
+    useEffect(() => {
+        if (productMain?._id) {
+            // Prefetch reviews stats
+            queryClient.prefetchQuery({
+                queryKey: ['reviews', 'stats', productMain._id],
+                queryFn: async () => {
+                    const response = await apiClient.get(api.reviews.stats(productMain._id));
+                    return response.data;
+                },
+            });
+
+            // Optionally prefetch reviews list too
+            queryClient.prefetchQuery({
+                queryKey: ['reviews', productMain._id, 1, 10, 'newest'],
+                queryFn: async () => {
+
+                    const response = await apiClient.getWithMeta<
+                        Review[],
+                        { nextCursor: string | null; count: number; }
+                    >(`${api.reviews.byProduct(productMain._id)}?page=1&limit=10&sortBy=newest`
+                    );
+                    return response.data;
+                },
+            });
+        }
+    }, [productMain?._id, queryClient]);
 
 
     // Process attributes similar to Product.tsx
@@ -394,8 +426,8 @@ const Sale: React.FC<Props> = ({ slug }) => {
     const handleAddToCompare = () => {
         // if product existed in wishlit, remove from wishlist and set state to false
         if (compareState.compareArray.length < 3) {
-            if (compareState.compareArray.some(item => item.id === product.id)) {
-                removeFromCompare(product.id);
+            if (compareState.compareArray.some(item => item._id === product._id)) {
+                removeFromCompare(product._id);
             } else {
                 // else, add to wishlist and set state to true
                 addToCompare(product);
@@ -410,6 +442,8 @@ const Sale: React.FC<Props> = ({ slug }) => {
     const handleActiveTab = (tab: string) => {
         setActiveTab(tab);
     };
+
+
 
     return (
         <>
@@ -529,19 +563,19 @@ const Sale: React.FC<Props> = ({ slug }) => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 flex-wrap mt-2.5 pb-6 border-b border-line">
-                                <div className="product-price heading5 font-semibold">{formatPrice(discountedBasePrice)}</div>
+                                <div className="product-price heading5 font-semibold">{formatToNaira(discountedBasePrice)}</div>
                                 {hasSale && (
                                     <>
                                         <div className='w-px h-4 bg-line'></div>
                                         <div className="product-origin-price font-normal text-secondary2">
-                                            <del>{formatPrice(originalUnitPrice)}</del>
+                                            <del>{formatToNaira(originalUnitPrice)}</del>
                                         </div>
                                         <div className="product-sale caption2 font-semibold bg-green px-3 py-0.5 inline-block rounded-full">
                                             -{Math.round(salePercent)}%
                                         </div>
                                     </>
                                 )}
-                                <div className='desc text-secondary mt-3'>{product.description}</div>
+                                <div className='desc text-secondary mt-3'>{htmlToText(product.description ?? '', { wordwrap: 100 })}</div>
                             </div>
                             <div className="list-action mt-6 gap-4 flex-col">
                                 <SalesCountdownTimer sale={normalizedSale} salesType={productMain.sale?.type} />
@@ -614,14 +648,14 @@ const Sale: React.FC<Props> = ({ slug }) => {
                                         <div>
                                             <div className="text-secondary2 text-sm">Total Price</div>
                                             <div className="text-xs text-secondary2 mt-0.5">
-                                                {quantity} × {formatPrice(currentUnitPrice)}
+                                                {quantity} × {formatToNaira(currentUnitPrice)}
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="heading5 text-black">{formatPrice(totalPrice)}</div>
+                                            <div className="heading5 text-black">{formatToNaira(totalPrice)}</div>
                                             {quantity > 1 && (
                                                 <div className="text-xs text-secondary2 mt-0.5">
-                                                    {formatPrice(currentUnitPrice)} per unit
+                                                    {formatToNaira(currentUnitPrice)} per unit
                                                 </div>
                                             )}
                                         </div>
@@ -752,7 +786,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
                                     <div className="icon-delivery-truck text-4xl"></div>
                                     <div>
                                         <div className="text-title">Free shipping</div>
-                                        <div className="caption1 text-secondary mt-1">Free shipping on orders over $400,000.</div>
+                                        <div className="caption1 text-secondary mt-1">Free shipping on orders over &#8358; 500,000.</div>
                                     </div>
                                 </div>
                                 <div className="item flex items-center gap-3 mt-4">

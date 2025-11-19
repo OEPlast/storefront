@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import React, { useRef, useState } from 'react'
-import Image from 'next/image'
-import Product from '../Product/Product'
-import { ProductType } from '@/type/ProductType'
-import Rate from '../Other/Rate'
+import React, { useRef, useState } from 'react';
+import Image from 'next/image';
+import Product from '../Product/Product';
+import { ProductType } from '@/type/ProductType';
+import Rate from '../Other/Rate';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Scrollbar } from 'swiper/modules';
 import 'swiper/css/bundle';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
-import { useCart } from '@/context/CartContext'
-import { useModalCartContext } from '@/context/ModalCartContext'
-import ModalSizeguide from '../Modal/ModalSizeguide'
+import { useCart } from '@/context/CartContext';
+import { useModalCartContext } from '@/context/ModalCartContext';
+import ModalSizeguide from '../Modal/ModalSizeguide';
 import { useSwiper } from 'swiper/react';
 
 interface Props {
@@ -19,13 +19,13 @@ interface Props {
 }
 
 const BestSaleProduct: React.FC<Props> = ({ data }) => {
-    const [photoIndex, setPhotoIndex] = useState(0)
-    const [openPopupImg, setOpenPopupImg] = useState(false)
-    const [openSizeGuide, setOpenSizeGuide] = useState<boolean>(false)
-    const [activeColor, setActiveColor] = useState<string>('')
-    const [activeSize, setActiveSize] = useState<string>('')
-    const { addToCart, updateCart, cartState } = useCart()
-    const { openModalCart } = useModalCartContext()
+    const [photoIndex, setPhotoIndex] = useState(0);
+    const [openPopupImg, setOpenPopupImg] = useState(false);
+    const [openSizeGuide, setOpenSizeGuide] = useState<boolean>(false);
+    const [activeColor, setActiveColor] = useState<string>('');
+    const [activeSize, setActiveSize] = useState<string>('');
+    const { addToCart, updateCart, cartState } = useCart();
+    const { openModalCart } = useModalCartContext();
     const swiperRef: any = useRef(undefined);
 
     const handleOpenSizeGuide = () => {
@@ -37,7 +37,7 @@ const BestSaleProduct: React.FC<Props> = ({ data }) => {
     };
 
     const handleActiveColor = (item: string) => {
-        setActiveColor(item)
+        setActiveColor(item);
 
         // Find variation with selected color
         const foundColor = productMain.variation.find((variation) => variation.color === item);
@@ -49,20 +49,20 @@ const BestSaleProduct: React.FC<Props> = ({ data }) => {
                 swiperRef.current?.slideTo(index);
             }
         }
-    }
+    };
 
     const handleActiveSize = (item: string) => {
-        setActiveSize(item)
-    }
+        setActiveSize(item);
+    };
 
     const handleIncreaseQuantity = () => {
-        productMain.quantityPurchase += 1
+        productMain.quantityPurchase += 1;
         updateCart(productMain.id, productMain.quantityPurchase + 1, activeSize, activeColor);
     };
 
     const handleDecreaseQuantity = () => {
         if (productMain.quantityPurchase > 1) {
-            productMain.quantityPurchase -= 1
+            productMain.quantityPurchase -= 1;
             updateCart(productMain.id, productMain.quantityPurchase - 1, activeSize, activeColor);
         }
     };
@@ -70,16 +70,16 @@ const BestSaleProduct: React.FC<Props> = ({ data }) => {
     const handleAddToCart = () => {
         if (!cartState.cartArray.find(item => item.id === productMain.id)) {
             addToCart({ ...productMain });
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor);
         } else {
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor);
         }
-        openModalCart()
+        openModalCart();
     };
 
     // Infor's product 13th in data
     const productMain = data[12];
-    const percentSale = Math.floor(100 - ((productMain.price / productMain.originPrice) * 100))
+    const percentSale = Math.floor(100 - ((productMain.price / productMain.originPrice) * 100));
 
     return (
         <>
@@ -105,7 +105,7 @@ const BestSaleProduct: React.FC<Props> = ({ data }) => {
                             }}
                             className='h-full'
                             onSwiper={(swiper) => {
-                                swiperRef.current = swiper
+                                swiperRef.current = swiper;
                             }}
                         >
                             <SwiperSlide>
@@ -154,9 +154,9 @@ const BestSaleProduct: React.FC<Props> = ({ data }) => {
                             <span className='caption1 text-secondary'>(1.234 reviews)</span>
                         </div>
                         <div className="flex items-center gap-3 flex-wrap mt-5 pb-6 border-b border-line">
-                            <div className="product-price heading5">${productMain.price}.00</div>
+                            <div className="product-price heading5">&#8358;{productMain.price}.00</div>
                             <div className='w-px h-4 bg-line'></div>
-                            <div className="product-origin-price font-normal text-secondary2"><del>${productMain.originPrice}.00</del></div>
+                            <div className="product-origin-price font-normal text-secondary2"><del>&#8358;{productMain.originPrice}.00</del></div>
                             {productMain.originPrice && (
                                 <div className="product-sale caption2 font-semibold bg-green px-3 py-0.5 inline-block rounded-full">
                                     -{percentSale}%
@@ -235,7 +235,7 @@ const BestSaleProduct: React.FC<Props> = ({ data }) => {
                 </div>
             </div>
         </>
-    )
-}
+    );
+};
 
-export default BestSaleProduct
+export default BestSaleProduct;

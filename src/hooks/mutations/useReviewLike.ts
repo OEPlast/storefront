@@ -2,20 +2,23 @@
 
 import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { apiClient, handleApiError } from '@/libs/api/axios';
 import api from '@/libs/api/endpoints';
 import type { Review } from '../queries/useProductReviews';
+import { useRef, useCallback } from 'react';
 
 interface ToggleLikeResponse {
   message: string;
   data: {
     liked: boolean;
     likesCount: number;
-  };
+  } | null;
 }
 
 interface ToggleLikeVariables {
   reviewId: string;
   productId: string;
+  isCurrentlyLiked: boolean;
 }
 
 type MutationContext = {
@@ -53,36 +56,40 @@ export const useReviewLike = (
 ) => {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  return useMutation<ToggleLikeResponse, Error, ToggleLikeVariables, MutationContext>({
-    mutationFn: async ({ reviewId }: ToggleLikeVariables) => {
+  const mutation = useMutation<ToggleLikeResponse, Error, ToggleLikeVariables, MutationContext>({
+    mutationFn: async ({
+      reviewId,
+      isCurrentlyLiked,
+    }: ToggleLikeVariables): Promise<ToggleLikeResponse> => {
       // Check authentication
       if (!session?.user) {
         throw new Error('AUTHENTICATION_REQUIRED');
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}${api.reviews.like(reviewId)}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
+      // Use unlike endpoint if currently liked, otherwise use like endpoint
+      const endpoint = isCurrentlyLiked ? api.reviews.unlike(reviewId) : api.reviews.like(reviewId);
+
+      const response = await apiClient.post<{ liked: boolean; likesCount: number } | null>(
+        endpoint
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to toggle like');
-      }
-
-      return response.json();
+      // Backend returns data: null on success, which is OK
+      // The optimistic update handles the UI state
+      return {
+        message:
+          response.message ||
+          (isCurrentlyLiked ? 'Review unliked successfully' : 'Review liked successfully'),
+        data: response.data,
+      };
     },
 
     // Optimistic update - immediately update UI before server responds
     onMutate: async ({ reviewId, productId }) => {
-      if (!session?.user?.id) return;
+      if (!session?.user?.id) {
+        return { previousReviews: undefined };
+      }
 
       // Cancel outgoing refetches to avoid race conditions
       await queryClient.cancelQueries({ queryKey: ['product-reviews', productId] });
@@ -94,6 +101,8 @@ export const useReviewLike = (
       queryClient.setQueryData(['product-reviews', productId], (old: any) => {
         if (!old?.pages) return old;
 
+        const userId = session.user.id!;
+
         return {
           ...old,
           pages: old.pages.map((page: any) => ({
@@ -101,7 +110,6 @@ export const useReviewLike = (
             data: page.data.map((review: Review) => {
               if (review._id !== reviewId) return review;
 
-              const userId = session.user.id;
               const isLiked = review.likes.includes(userId);
 
               return {
@@ -124,9 +132,6 @@ export const useReviewLike = (
       if (context?.previousReviews) {
         queryClient.setQueryData(['product-reviews', variables.productId], context.previousReviews);
       }
-
-      // Call user-provided error handler
-      options?.onError?.(error, variables, context);
     },
 
     // On success, invalidate to refetch and sync with server
@@ -136,11 +141,29 @@ export const useReviewLike = (
         queryKey: ['product-reviews', variables.productId],
         exact: false,
       });
-
-      // Call user-provided success handler
-      options?.onSuccess?.(data, variables, context);
     },
 
     ...options,
   });
+
+  // Debounced mutate function to prevent rapid clicking
+  const debouncedMutate = useCallback(
+    (variables: ToggleLikeVariables) => {
+      // Clear existing timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      // Set new timer
+      debounceTimerRef.current = setTimeout(() => {
+        mutation.mutate(variables);
+      }, 500); // 500ms debounce
+    },
+    [mutation]
+  );
+
+  return {
+    ...mutation,
+    mutate: debouncedMutate,
+  };
 };

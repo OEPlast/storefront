@@ -14,6 +14,10 @@ const ROUTES = {
   cartCoupons: '/coupons/cart',
   couponByCode: (code: string) => `/coupons/${encodeURIComponent(code)}`,
   couponValidate: '/coupons/validate',
+
+  // File upload endpoints
+  uploadSingleFile: '/files/upload/single',
+  uploadMultipleFiles: '/files/upload/multiple',
 } as const;
 
 type RoutesMap = typeof ROUTES;

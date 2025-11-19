@@ -36,6 +36,7 @@ export default function LoginForm({ onLoginSuccess, redirectPath }: LoginFormPro
           value.rememberMe
         );
 
+        console.log(result);
         if (result.success) {
           const nextRoute = redirectPath && result.emailVerified ? redirectPath : "/";
 

@@ -81,7 +81,7 @@ baseApiClient.interceptors.response.use(
         respData.message === 'Invalid token'
       ) {
         console.error('[Unauthenticaed]');
-        signOut();
+        // signOut();
       }
     }
     if (process.env.NODE_ENV === 'development') {

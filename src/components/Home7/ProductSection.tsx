@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Product from '../Product/Product';
 import { ProductDetail } from '@/types/product';
 import CountdownTimer from './CountdownTimer';
+import { ProductSkeleton } from '../Product/ProductLoading';
 
 interface Props {
     data: Array<ProductDetail>;
@@ -13,9 +14,10 @@ interface Props {
     header: string;
     viewAllLink: string;
     showCountdown?: boolean;
+    isLoading: boolean;
 }
-
-const ProductSection: React.FC<Props> = ({ data, start, limit, header, viewAllLink, showCountdown = false }) => {
+const SKELETON_COUNT = 15;
+const ProductSection: React.FC<Props> = ({ data, start, limit, header, viewAllLink, showCountdown = false, isLoading }) => {
     return (
         <>
             <div className="tab-features-block md:pt-20 pt-10">
@@ -29,9 +31,14 @@ const ProductSection: React.FC<Props> = ({ data, start, limit, header, viewAllLi
                     </div>
 
                     <div className="list-product show-product-sold grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 grid-cols-2 sm:gap-[30px] gap-[20px] md:mt-10 mt-6">
-                        {data.slice(start, limit).map((prd, index) => (
-                            <Product key={index} data={prd} type='grid' />
-                        ))}
+                        {isLoading ?
+                            Array.from({ length: SKELETON_COUNT }, (_, i) => (
+                                <ProductSkeleton key={`mainpageProcuctSkeleton__${i}`} />
+                            )) : data.slice(start, limit).map((prd, index) => (
+                                <Product key={index} data={prd} type='grid' />
+                            ))
+                        }
+
                     </div>
 
                 </div>

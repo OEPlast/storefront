@@ -99,8 +99,8 @@ const FixedPrice: React.FC<Props> = ({ data, productId }) => {
     const handleAddToCompare = () => {
         // if product existed in wishlit, remove from wishlist and set state to false
         if (compareState.compareArray.length < 3) {
-            if (compareState.compareArray.some(item => item.id === productMain.id)) {
-                removeFromCompare(productMain.id);
+            if (compareState.compareArray.some(item => item._id === productMain._id)) {
+                removeFromCompare(productMain._id);
             } else {
                 // else, add to wishlist and set state to true
                 addToCompare(productMain);

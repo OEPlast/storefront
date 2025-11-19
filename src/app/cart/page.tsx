@@ -426,7 +426,7 @@ const Cart = () => {
                                                                     </div>
                                                                 </>
                                                             ) : (
-                                                                <div className="text-title text-center font-semibold">${pricing.unitPrice.toFixed(2)}</div>
+                                                                <div className="text-title text-center font-semibold">&#8358;{pricing.unitPrice.toFixed(2)}</div>
                                                             )}
                                                             {/* {hasPricingTier && (
                                                                 <div className="text-[10px] text-blue-600 font-medium">
@@ -478,7 +478,7 @@ const Cart = () => {
                                                             </div>
                                                         </div>
                                                         <div className="w-1/6 flex flex-col items-center justify-center">
-                                                            <div className="text-title text-center font-bold">${displayTotal.toFixed(2)}</div>
+                                                            <div className="text-title text-center font-bold">&#8358;{displayTotal.toFixed(2)}</div>
                                                             {currentQty > 1 && (
                                                                 <div className="text-xs text-secondary mt-1">
                                                                     ${pricing.unitPrice.toFixed(2)} × {currentQty}
@@ -588,7 +588,7 @@ const Cart = () => {
                                                                     {coupon.minOrderValue > 0 && (
                                                                         <div className="text-right">
                                                                             <div className="text-xs text-secondary">Min. Order</div>
-                                                                            <div className="font-semibold">${coupon.minOrderValue}</div>
+                                                                            <div className="font-semibold">&#8358;{coupon.minOrderValue}</div>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -647,7 +647,7 @@ const Cart = () => {
                                     <div className="space-y-4">
                                         <div className="total-block flex justify-between items-center">
                                             <div className="text-secondary">Subtotal ({cartItems.length} items)</div>
-                                            <div className="text-title font-semibold">${totalCart.toFixed(2)}</div>
+                                            <div className="text-title font-semibold">&#8358;{totalCart.toFixed(2)}</div>
                                         </div>
 
                                         {discountCart > 0 && (
@@ -727,7 +727,7 @@ const Cart = () => {
                                         <div className="border-t border-line pt-4">
                                             <div className="flex justify-between items-center">
                                                 <div className="heading5">Total</div>
-                                                <div className="heading4 text-red">${(totalCart - discountCart).toFixed(2)}</div>
+                                                <div className="heading4 text-red">&#8358;{(totalCart - discountCart).toFixed(2)}</div>
                                             </div>
                                             {(shippingMethod === 'normal' || shippingMethod === 'express') && (
                                                 <div className="text-xs text-secondary mt-2">

@@ -38,7 +38,7 @@ export default function RelatedProducts({
             <div className={`related-product md:py-20 py-10 ${className}`}>
                 <div className="container">
                     <div className="heading3 text-center">Related Products</div>
-                    <div className="list-product hide-product-sold grid lg:grid-cols-4 grid-cols-2 md:gap-[30px] gap-5 md:mt-10 mt-6">
+                    <div className="list-product hide-product-sold grid md:grid-cols-3 lg:grid-cols-5 grid-cols-2 md:gap-[30px] gap-5 md:mt-10 mt-6">
                         {[...Array(4)].map((_, index) => (
                             <div key={index} className="animate-pulse">
                                 <div className="aspect-square bg-gray-200 rounded-lg mb-3"></div>
@@ -60,7 +60,7 @@ export default function RelatedProducts({
         <div className={`related-product md:py-20 py-10 ${className}`}>
             <div className="container">
                 <div className="heading3 text-center">Related Products</div>
-                <div className="list-product hide-product-sold grid lg:grid-cols-4 grid-cols-2 md:gap-[30px] gap-5 md:mt-10 mt-6">
+                <div className="list-product hide-product-sold grid md:grid-cols-3 lg:grid-cols-5 grid-cols-2 md:gap-[30px] gap-5 md:mt-10 mt-6">
                     {products.map((item, index) => (
                         <Product key={index} data={item} type='grid' />
                     ))}

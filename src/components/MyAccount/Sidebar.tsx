@@ -8,17 +8,18 @@ import { useAccountStore } from '@/store/accountStore';
 import { signOut, useSession } from 'next-auth/react';
 import { SignOutIcon } from '@phosphor-icons/react';
 import { useUserProfile } from '@/hooks/queries/useUserProfile';
+import { getCdnUrl } from '@/libs/cdn-url';
 
 export default function Sidebar() {
   const { activeTab, setActiveTab } = useAccountStore();
   const { data: session } = useSession();
-  const { data: userProfile, isLoading } = useUserProfile();
+  const { data: userProfile, isLoading } = useUserProfile({ userId: session?.user.id });
 
   // Construct full name
   const fullName = userProfile
     ? `${userProfile.firstName} ${userProfile.lastName}`
     : 'Loading...';
-  
+
   // Get email from session
   const email = session?.user?.email || '';
 
@@ -31,11 +32,11 @@ export default function Sidebar() {
         <div className="heading flex flex-col items-center justify-center">
           <div className="avatar">
             <Image
-              src={avatarImage}
+              src={getCdnUrl(avatarImage)}
               width={300}
               height={300}
               alt="avatar"
-              className="md:w-[140px] w-[120px] md:h-[140px] h-[120px] rounded-full"
+              className="md:w-[140px] w-[120px] md:h-[140px] h-[120px] rounded-full object-cover"
             />
           </div>
           <div className="name heading6 mt-4 text-center">{fullName}</div>
@@ -47,9 +48,8 @@ export default function Sidebar() {
           <Link
             href={'#!'}
             scroll={false}
-            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white ${
-              activeTab === 'dashboard' ? 'active' : ''
-            }`}
+            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white ${activeTab === 'dashboard' ? 'active' : ''
+              }`}
             onClick={() => setActiveTab('dashboard')}
           >
             <Icon.HouseLine size={20} />
@@ -58,9 +58,8 @@ export default function Sidebar() {
           <Link
             href={'#!'}
             scroll={false}
-            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white mt-1.5 ${
-              activeTab === 'orders' ? 'active' : ''
-            }`}
+            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white mt-1.5 ${activeTab === 'orders' ? 'active' : ''
+              }`}
             onClick={() => setActiveTab('orders')}
           >
             <Icon.Package size={20} />
@@ -69,9 +68,8 @@ export default function Sidebar() {
           <Link
             href={'#!'}
             scroll={false}
-            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white mt-1.5 ${
-              activeTab === 'address' ? 'active' : ''
-            }`}
+            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white mt-1.5 ${activeTab === 'address' ? 'active' : ''
+              }`}
             onClick={() => setActiveTab('address')}
           >
             <Icon.Tag size={20} />
@@ -80,9 +78,8 @@ export default function Sidebar() {
           <Link
             href={'#!'}
             scroll={false}
-            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white mt-1.5 ${
-              activeTab === 'setting' ? 'active' : ''
-            }`}
+            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white mt-1.5 ${activeTab === 'setting' ? 'active' : ''
+              }`}
             onClick={() => setActiveTab('setting')}
           >
             <Icon.GearSix size={20} />

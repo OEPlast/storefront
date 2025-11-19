@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ProductDetail } from '@/types/product';
 import { ProductListItem } from '@/types/product';
@@ -23,7 +22,6 @@ import Color from 'color';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import {
     calculateBestSale,
-    formatPrice,
     calculateSoldFromSale,
     calculateAvailableFromSale,
     calculateSaleProgress,
@@ -33,6 +31,8 @@ import {
 import { ProductVariant, ProductVariantChild } from '@/types/product';
 import { CheckCircleIcon } from '@phosphor-icons/react';
 import { useSession } from 'next-auth/react';
+import { formatToNaira } from '@/utils/currencyFormatter';
+import { LazyLoadImage as Image } from 'react-lazy-load-image-component';
 // Cart context already imported correctly at top
 
 interface ProductProps {
@@ -43,6 +43,19 @@ interface ProductProps {
 // Type guard to check if data is ProductListItem
 function isProductListItem(data: ProductDetail | ProductListItem): data is ProductListItem {
     return 'images' in data && Array.isArray(data.images);
+}
+
+/**
+ * Get the CDN URL for the primary product image (cover image or first available)
+ * @param product - Product data (ProductDetail or ProductListItem)
+ * @returns CDN URL string (empty string if no image found)
+ */
+export function getProductImageCdnUrl(product: ProductDetail | ProductListItem): string {
+    const imageUrl = isProductListItem(product)
+        ? product.images.find((img) => img.cover_image)?.url || product.images[0]?.url || ''
+        : product.description_images?.find((img) => img.cover_image)?.url || product.description_images?.[0]?.url || '';
+
+    return getCdnUrl(imageUrl);
 }
 
 const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
@@ -312,8 +325,8 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
     const handleAddToCompare = () => {
         // if product existed in wishlit, remove from wishlist and set state to false
         if (compareState.compareArray.length < 3) {
-            if (compareState.compareArray.some(item => item.id === data.id)) {
-                removeFromCompare(data.id);
+            if (compareState.compareArray.some(item => item._id === data._id)) {
+                removeFromCompare(data._id);
             } else {
                 // else, add to wishlist and set state to true
                 addToCompare(data);
@@ -411,7 +424,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                                     </div>
                                 )}
                                 <div
-                                    className={`compare-btn w-[32px] h-[32px] flex items-center justify-center rounded-full bg-white duration-300 relative ${session?.user ? 'mt-2' : ''} ${compareState.compareArray.some(item => item.id === data.id) ? 'active' : ''}`}
+                                    className={`compare-btn w-[32px] h-[32px] flex items-center justify-center rounded-full bg-white duration-300 relative ${session?.user ? 'mt-2' : ''} ${compareState.compareArray.some(item => item._id === data._id) ? 'active' : ''}`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleAddToCompare();
@@ -424,15 +437,12 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                             </div>
                             <Link href={`/product/${data.slug}`} className="product-img w-full h-full aspect-[3/4] block">
                                 <Image
-                                    src={getCdnUrl(isProductListItem(rawData)
-                                        ? rawData.images.find((img) => img.cover_image)?.url || rawData.images[0]?.url || ''
-                                        : data.description_images?.find((img) => img.cover_image)?.url || data.description_images?.[0]?.url || ''
-                                    )}
-                                    width={500}
-                                    height={500}
+                                    effect={'blur'}
+                                    placeholderSrc={`${getProductImageCdnUrl(rawData)}?class=minify`}
+                                    src={getProductImageCdnUrl(rawData)}
                                     alt={data.name}
-                                    priority={true}
-                                    className='w-full h-full object-cover duration-700'
+                                    className='w-full h-full object-cover'
+                                    wrapperClassName='w-full h-full object-cover duration-700'
                                 />
                                 {/* {activeColor ? (
                                     <>
@@ -608,14 +618,14 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                             <div className="product-price-block flex items-center gap-2 flex-wrap mt-1 duration-300 relative z-[1]">
                                 {saleInfo.hasActiveSale ? (
                                     <>
-                                        <div className="product-price text-title">{formatPrice(saleInfo.discountedPrice)}</div>
-                                        <div className="product-origin-price caption1 text-secondary2"><del>{formatPrice(saleInfo.originalPrice)}</del></div>
+                                        <div className="product-price text-title">{formatToNaira(saleInfo.discountedPrice)}</div>
+                                        <div className="product-origin-price caption1 text-secondary2"><del>{formatToNaira(saleInfo.originalPrice)}</del></div>
                                         <div className="product-sale caption1 font-medium bg-green px-3 py-0.5 inline-block rounded-full">
                                             -{saleInfo.percentOff}%
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="product-price text-title">{formatPrice(data.price)}</div>
+                                    <div className="product-price text-title">{formatToNaira(data.price)}</div>
                                 )}
                             </div>
                         </div>
@@ -790,7 +800,7 @@ export default Product;
                                                     )}
                                                 </div>
                                                 <div
-                                                    className={`compare-btn w-[32px] h-[32px] flex items-center justify-center rounded-full bg-white duration-300 relative ${compareState.compareArray.some(item => item.id === data.id) ? 'active' : ''}`}
+                                                    className={`compare-btn w-[32px] h-[32px] flex items-center justify-center rounded-full bg-white duration-300 relative ${compareState.compareArray.some(item => item._id === data._id) ? 'active' : ''}`}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleAddToCompare();
@@ -848,7 +858,7 @@ export default Product;
                                 </span>
                             )}
                             <span
-                                className={`compare-btn w-8 h-8 bg-white flex items-center justify-center rounded-full box-shadow-sm duration-300 ${compareState.compareArray.some(item => item.id === data.id) ? 'active' : ''}`}
+                                className={`compare-btn w-8 h-8 bg-white flex items-center justify-center rounded-full box-shadow-sm duration-300 ${compareState.compareArray.some(item => item._id === data._id) ? 'active' : ''}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleAddToCompare();

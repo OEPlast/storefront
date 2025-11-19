@@ -6,7 +6,7 @@ import * as Icon from '@phosphor-icons/react/dist/ssr';
 interface ConfirmModalProps {
   isOpen: boolean;
   title: string;
-  message: string;
+  message: string | React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   onConfirm: () => void;

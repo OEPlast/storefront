@@ -27,6 +27,7 @@ export const api = {
     byCategory: (categoryId: string) => `/products/category/${categoryId}`,
     byCategorySlug: (slug: string) => `/products/category/${slug}`,
     byCampaignSlug: (slug: string) => `/products/campaign/${slug}`,
+    compare: '/products/compare',
     search: '/products/search',
     searchResults: '/products/search-results', // Full product data for search results page
     searchFilters: '/products/search-filters', // Aggregated filters for search results
@@ -105,6 +106,7 @@ export const api = {
     unlike: (reviewId: string) => `/reviews/${reviewId}/unlike`,
     isLikedByUser: (reviewId: string) => `/reviews/${reviewId}/isLikedByUser`,
     likeCount: (reviewId: string) => `/reviews/${reviewId}/likeCount`,
+    canReview: (productId: string) => `/reviews/can-review/${productId}`,
   },
 
   // Category endpoints
@@ -152,6 +154,8 @@ export const api = {
     locationsTree: '/logistics/locations-tree',
     locationsByCountry: (country: string) => `/logistics/locations/${encodeURIComponent(country)}`,
     cartFlatShipping: '/logistics/cart/flat-shipping',
+    trackByNumber: (trackingNumber: string) =>
+      `/logistics/track/${encodeURIComponent(trackingNumber)}`,
   },
 
   // Coupon endpoints

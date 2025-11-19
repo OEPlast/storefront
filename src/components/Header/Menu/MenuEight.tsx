@@ -6,15 +6,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { usePathname } from 'next/navigation';
-import Product from '@/components/Product/Product';
-import productData from '@/data/Product.json';
 import useLoginPopup from '@/store/useLoginPopup';
 import useSubMenuDepartment from '@/store/useSubMenuDepartment';
 import useMenuMobile from '@/store/useMenuMobile';
 import { useModalCartContext } from '@/context/ModalCartContext';
 import { useModalWishlistContext } from '@/context/ModalWishlistContext';
-import { useModalSearchContext } from '@/context/ModalSearchContext';
-import { useCart } from '@/context/CartContext';
 import NavCategoriesComponent from './NavCategoriesComponent';
 import NavCategoriesMobile from './NavCategoriesMobile';
 import { useCartCount } from '@/context/CartContext';
@@ -22,6 +18,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useProductSearchAutocomplete } from '@/hooks/queries/useProducts';
 import AutocompleteDropdown from '@/components/Search/AutocompleteDropdown';
+import UserIcon from './Usericon';
 
 // Data constants
 
@@ -43,51 +40,7 @@ const PAGES_LINKS = [
     { href: '/pages/customer-feedbacks', label: 'Customer Feedbacks' }
 ];
 
-const DEMO_LINKS = [
-    [
-        { href: '/', label: 'Home Fashion 1' },
-        { href: '/homepages/fashion2', label: 'Home Fashion 2' },
-        { href: '/homepages/fashion3', label: 'Home Fashion 3' },
-        { href: '/homepages/fashion4', label: 'Home Fashion 4' },
-        { href: '/homepages/fashion5', label: 'Home Fashion 5' },
-        { href: '/homepages/fashion6', label: 'Home Fashion 6' }
-    ],
-    [
-        { href: '/homepages/fashion7', label: 'Home Fashion 7' },
-        { href: '/homepages/fashion8', label: 'Home Fashion 8' },
-        { href: '/homepages/fashion9', label: 'Home Fashion 9' },
-        { href: '/homepages/fashion10', label: 'Home Fashion 10' },
-        { href: '/homepages/fashion11', label: 'Home Fashion 11' },
-        { href: '/homepages/underwear', label: 'Home Underwear' }
-    ],
-    [
-        { href: '/homepages/cosmetic1', label: 'Home Cosmetic 1' },
-        { href: '/homepages/cosmetic2', label: 'Home Cosmetic 2' },
-        { href: '/homepages/cosmetic3', label: 'Home Cosmetic 3' },
-        { href: '/homepages/pet', label: 'Home Pet Store' },
-        { href: '/homepages/jewelry', label: 'Home Jewelry' },
-        { href: '/homepages/furniture', label: 'Home Furniture' }
-    ],
-    [
-        { href: '/homepages/watch', label: 'Home Watch' },
-        { href: '/homepages/toys', label: 'Home Toys Kid' },
-        { href: '/homepages/yoga', label: 'Home Yoga' },
-        { href: '/homepages/organic', label: 'Home Organic' },
-        { href: '/homepages/marketplace', label: 'Home Marketplace' }
-    ]
-];
 
-// Flatten demo links for mobile (2 columns)
-const MOBILE_DEMO_LINKS_COL1 = [
-    ...DEMO_LINKS[0],
-    ...DEMO_LINKS[1].slice(0, 3)
-];
-
-const MOBILE_DEMO_LINKS_COL2 = [
-    ...DEMO_LINKS[1].slice(3),
-    ...DEMO_LINKS[2],
-    ...DEMO_LINKS[3]
-];
 
 const MenuEight = () => {
     const pathname = usePathname();
@@ -243,27 +196,14 @@ const MenuEight = () => {
                             </div>)}
                         <div className="right flex gap-12">
                             <div className="list-action flex items-center gap-4">
-                                <div className="user-icon flex items-center justify-center cursor-pointer">
-                                    <Icon.User size={24} color='black' onClick={handleLoginPopup} />
-                                    <div
-                                        className={`login-popup absolute top-[74px] w-[320px] p-7 rounded-xl bg-white box-shadow-sm 
-                                            ${openLoginPopup ? 'open' : ''}`}
-                                    >
-                                        <Link href={'/login'} className="button-main w-full text-center">Login</Link>
-                                        <div className="text-secondary text-center mt-3 pb-4">{`Don't have an account?`}
-                                            <Link href={'/register'} className='text-black pl-1 hover:underline'>Register</Link>
-                                        </div>
-                                        <div className="bottom pt-4 border-t border-line"></div>
-                                        <Link href={'#!'} className='body1 hover:underline'>Support</Link>
-                                    </div>
-                                </div>
+                                <UserIcon />
                                 <div className="max-md:hidden wishlist-icon flex items-center cursor-pointer" onClick={openModalWishlist}>
                                     <Icon.Heart size={24} color='black' />
                                 </div>
                                 <div className="cart-icon flex items-center relative cursor-pointer" onClick={openModalCart}>
                                     <Icon.Handbag size={24} color='black' />
-                                    <span className="quantity cart-quantity absolute -right-2 -top-2 text-[10px] text-white bg-black w-4 h-4 !px-3 flex items-center justify-center rounded-full">{cartCount > 99 ? 
-                                    '99+' : cartCount}</span>
+                                    <span className="quantity cart-quantity absolute -right-2 -top-2 text-[10px] text-white bg-black w-4 h-4 !px-3 flex items-center justify-center rounded-full">{cartCount > 99 ?
+                                        '99+' : cartCount}</span>
                                 </div>
                             </div>
                         </div>
@@ -320,24 +260,36 @@ const MenuEight = () => {
                                 <Link href={'/'} className='logo text-3xl font-semibold text-center'>OEPlast</Link>
                             </div>
                             <div className="form-search relative mt-2" ref={mobileInputAnchorRef}>
-                                <Icon.MagnifyingGlass size={20} className='absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer' />
-                                <input
-                                    type="text"
-                                    placeholder='What are you looking for?'
-                                    className=' h-12 rounded-lg border border-line text-sm w-full pl-10 pr-4'
-                                    value={searchKeyword}
-                                    onChange={(e) => setSearchKeyword(e.target.value)}
-                                    onFocus={() => setOpenAutocomplete(true)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleSearch(searchKeyword);
-                                        }
-                                    }}
-                                />
+                                <div className='flex w-full h-[40px]'>
+
+                                    <input
+                                        type="text"
+                                        placeholder='What are you looking for?'
+                                        className='rounded-l-md border border-line text-sm px-2 w-full h-full'
+                                        value={searchKeyword}
+                                        onChange={(e) => setSearchKeyword(e.target.value)}
+                                        onFocus={() => setOpenAutocomplete(true)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleSearch(searchKeyword);
+                                                handleMenuMobile();
+                                            }
+                                        }}
+                                    />
+                                    <button onClick={(e) => {
+                                        e.preventDefault();
+                                        handleSearch(searchKeyword);
+                                        handleMenuMobile();
+                                    }
+                                    } className='w-[50px] h-full rounded-r-md bg-black cursor-pointer flex justify-center items-center'>
+                                        <Icon.MagnifyingGlass size={20} className='text-white' />
+                                    </button>
+                                </div>
                                 {shouldShowDropdown && (
                                     <div className="absolute left-0 right-0">
                                         <AutocompleteDropdown
+                                            classname='mt-0 top-0'
                                             open={shouldShowDropdown}
                                             loading={isFetching}
                                             suggestions={searchKeyword.trim().length >= 2 ? suggestions : []}
@@ -356,7 +308,7 @@ const MenuEight = () => {
                                     {/* Demo Menu */}
                                     <li
                                     >
-                                        <Link href={'/'} className={`text-xl font-semibold flex items-center justify-between`}>Home
+                                        <Link href={'/'} onClick={handleMenuMobile} className={`text-xl font-semibold flex items-center justify-between`}>Home
                                         </Link>
                                     </li>
                                     {/* categories */}
@@ -385,40 +337,6 @@ const MenuEight = () => {
 
                                     {/* Features, Shop, Product mobile menus - keep existing complex structures */}
 
-                                    {/* Blog Menu */}
-                                    <li
-                                        className={`${openSubNavMobile === 5 ? 'open' : ''}`}
-                                        onClick={() => handleOpenSubNavMobile(5)}
-                                    >
-                                        <a href={'#!'} className='text-xl font-semibold flex items-center justify-between mt-5'>Blog
-                                            <span className='text-right'>
-                                                <Icon.CaretRight size={20} />
-                                            </span>
-                                        </a>
-                                        <div className="sub-nav-mobile">
-                                            <div
-                                                className="back-btn flex items-center gap-3"
-                                                onClick={() => handleOpenSubNavMobile(5)}
-                                            >
-                                                <Icon.CaretLeft />
-                                                Back
-                                            </div>
-                                            <div className="list-nav-item w-full pt-2 pb-6">
-                                                <ul className='w-full'>
-                                                    {BLOG_LINKS.map((link, index) => (
-                                                        <li key={index}>
-                                                            <Link
-                                                                href={link.href}
-                                                                className={`text-secondary duration-300 ${pathname === link.href ? 'active' : ''}`}
-                                                            >
-                                                                {link.label}
-                                                            </Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </li>
 
                                     {/* Pages Menu */}
                                     <li

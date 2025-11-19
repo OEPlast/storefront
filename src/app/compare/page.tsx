@@ -9,70 +9,32 @@ import { useCart } from '@/context/CartContext'
 import { useModalCartContext } from '@/context/ModalCartContext'
 import Rate from '@/components/Other/Rate'
 import { getCdnUrl } from '@/libs/cdn-url'
-import { useProductBySlug } from '@/hooks/queries/useProducts'
+import { useCompareProducts } from '@/hooks/queries/useProducts'
 import type { ProductSpecification, ProductDimension, ProductDetail } from '@/types/product'
-import { ProductType } from '@/type/ProductType'
 
 const CompareContent = () => {
     const searchParams = useSearchParams();
-    const productSlugs = searchParams.get('products')?.split(',').filter(Boolean) || [];
-    const { cartState, addToCart, updateCart } = useCart();
-    const { openModalCartContext } = useModalCartContext();
+    const identifiers = searchParams.get('identifiers')?.split(',').filter(Boolean) || [];
+    const { addToCart } = useCart();
+    const { openModalCart } = useModalCartContext();
 
-    // Fetch all products using React Query
-    const productQueries = productSlugs.map(slug =>
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        useProductBySlug(slug)
-    );
+    // Fetch all products using the bulk comparison API
+    const { data: loadedProductsData, isLoading, isError, error } = useCompareProducts(identifiers);
 
-    // Check loading states
-    const isLoading = productQueries.some(query => query.isLoading);
-    const hasError = productQueries.some(query => query.isError);
-    const errors = productQueries.filter(query => query.isError).map(query => query.error);
+    // Filter out null products (not found)
+    const loadedProducts = (loadedProductsData || []).filter((p): p is ProductDetail => p !== null);
 
-    // Get successfully loaded products
-    const loadedProducts = productQueries
-        .filter(query => query.data)
-        .map(query => query.data as ProductDetail);
-
-    // Convert ProductDetail to legacy ProductType for cart compatibility
-    const convertToLegacyProduct = (product: ProductDetail): ProductType => {
-        return {
-            id: product._id,
-            category: product.category!,
-            type: product.category?.name || '',
-            name: product.name,
-            price: product.price,
-            originPrice: product.price,
-            brand: product.brand || '',
-            sold: 0,
-            quantity: 1,
-            quantityPurchase: 1,
-            rate: product.rating || 0,
-            description: product.description || '',
-            action: '',
-            slug: product.slug,
-            attributes: product.attributes || [],
-            sale: product.sale,
-            description_images: product.description_images || [],
-            createdAt: product.createdAt || '',
-            sku: parseInt(product.sku as string),
-            tags: product.tags || [],
-            // Add specifications and dimensions
-            specifications: product.specifications,
-            dimension: product.dimension,
-        };
-    };
+    // Track which products are unavailable (null)
+    const productsWithAvailability = (loadedProductsData || []).map((product, index) => ({
+        product,
+        identifier: identifiers[index],
+        isAvailable: product !== null,
+    }));
 
     const handleAddToCart = (productItem: ProductDetail) => {
-        const legacyProduct = convertToLegacyProduct(productItem);
-        if (!cartState.cartArray.find(item => item.id === productItem._id)) {
-            addToCart({ ...legacyProduct });
-            updateCart(productItem._id, 1, '', '')
-        } else {
-            updateCart(productItem._id, 1, '', '')
-        }
-        openModalCart()
+        // Add product to cart with quantity 1 and no specific attributes/variant
+        addToCart(productItem, 1, []);
+        openModalCart();
     };
 
     // Helper: pick best image for compare
@@ -86,7 +48,7 @@ const CompareContent = () => {
 
     const normalizeKey = (s: string) => s.trim().toLowerCase();
 
-    // Build merged specification rows
+    // Build merged specification rows (only from available products)
     const specKeyToLabel = new Map<string, string>();
     loadedProducts.forEach(p => (p.specifications ?? []).forEach(spec => {
         const norm = normalizeKey(spec.key);
@@ -94,10 +56,12 @@ const CompareContent = () => {
     }));
     const mergedSpecs = Array.from(specKeyToLabel.entries()).map(([norm, label]) => ({
         label,
-        values: loadedProducts.map(p => (p.specifications ?? []).find(s => normalizeKey(s.key) === norm)?.value ?? ''),
+        values: productsWithAvailability.map(({ product }) =>
+            product ? ((product.specifications ?? []).find(s => normalizeKey(s.key) === norm)?.value ?? 'N/A') : 'N/A'
+        ),
     }));
 
-    // Build merged dimension rows
+    // Build merged dimension rows (only from available products)
     const dimOrder: Array<ProductDimension['key']> = ['length', 'breadth', 'height', 'volume', 'width', 'weight'];
     const dimKeysSet = new Set<string>();
     loadedProducts.forEach(p => (p.dimension ?? []).forEach(d => dimKeysSet.add(d.key)));
@@ -107,7 +71,9 @@ const CompareContent = () => {
     ];
     const mergedDims = orderedDimKeys.map(key => ({
         key,
-        values: loadedProducts.map(p => (p.dimension ?? []).find(d => d.key === key)?.value ?? ''),
+        values: productsWithAvailability.map(({ product }) =>
+            product ? ((product.dimension ?? []).find(d => d.key === key)?.value ?? 'N/A') : 'N/A'
+        ),
     }));
 
     // Show loading state
@@ -125,7 +91,7 @@ const CompareContent = () => {
     }
 
     // Show error state
-    if (hasError && loadedProducts.length === 0) {
+    if (isError && loadedProducts.length === 0) {
         return (
             <>
                 <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1] py-20">
@@ -143,7 +109,7 @@ const CompareContent = () => {
     }
 
     // Show empty state
-    if (productSlugs.length === 0 || loadedProducts.length === 0) {
+    if (identifiers.length === 0 || loadedProducts.length === 0) {
         return (
             <>
                 <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1] py-20">
@@ -174,19 +140,30 @@ const CompareContent = () => {
                             <div className="list-product flex">
                                 <div className="left lg:w-[240px] w-[170px] flex-shrink-0"></div>
                                 <div className="right flex w-full border border-line rounded-t-2xl border-b-0">
-                                    {loadedProducts.map(item => (
-                                        <div className="product-item px-10 pt-6 pb-5 border-r border-line" key={item._id}>
-                                            <div className="bg-img w-full aspect-[3/4] rounded-lg overflow-hidden flex-shrink-0">
-                                                <Image
-                                                    src={getCdnUrl(selectCompareImage(item))}
-                                                    width={1000}
-                                                    height={1500}
-                                                    alt={item.name}
-                                                    className='w-full h-full object-cover'
-                                                />
-                                            </div>
-                                            <div className="text-title text-center mt-4">{item.name}</div>
-                                            <div className="caption2 font-semibold text-secondary2 uppercase text-center mt-1">{item.brand}</div>
+                                    {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
+                                        <div className={`product-item w-full px-10 pt-6 pb-5 border-r border-line last:border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
+                                            {isAvailable && product ? (
+                                                <>
+                                                    <div className="bg-img w-full aspect-[3/4] rounded-lg overflow-hidden flex-shrink-0">
+                                                        <Image
+                                                            src={getCdnUrl(selectCompareImage(product))}
+                                                            width={1000}
+                                                            height={1500}
+                                                            alt={product.name}
+                                                            className='w-full h-full object-cover'
+                                                        />
+                                                    </div>
+                                                    <div className="text-title text-center mt-4">{product.name}</div>
+                                                    <div className="caption2 font-semibold text-secondary2 uppercase text-center mt-1">{product.brand}</div>
+                                                </>
+                                            ) : (
+                                                <div className="w-full aspect-[3/4] flex items-center justify-center">
+                                                    <div className="text-center">
+                                                        <div className="text-title">Product Unavailable</div>
+                                                        <div className="caption2 text-secondary2 mt-2">Not found</div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -202,114 +179,126 @@ const CompareContent = () => {
                                     <div className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">Add To Cart</div>
                                     {/* Dynamic Specifications */}
                                     {mergedSpecs.map((row) => (
-                                        <div key={\`spec-left-\${row.label}\`} className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">
-                                    {row.label}
-                                </div>
-                                    ))}
-                                {/* Dynamic Dimensions */}
-                                {mergedDims.map((row) => (
-                                    <div key={\`dim-left-\${row.key}\`} className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line capitalize">
-                                {row.key}
-                            </div>
-                                    ))}
-                        </div>
-                        <table className="right border-collapse w-full border-t border-r border-line">
-                            <tbody>
-                                <tr className={\`flex w-full items-center\`}>
-                                {loadedProducts.map((item, index) => (
-                                    <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                        <div className='h-full flex items-center justify-center'>
-                                            <Rate currentRate={item.rating || 0} size={12} />
-                                            <p className='pl-1'>({item.rating?.toFixed(1) || '0.0'})</p>
+                                        <div key={`spec-left-${row.label}`} className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line">
+                                            {row.label}
                                         </div>
-                                    </td>
-                                ))}
-                            </tr>
-                            <tr className={\`flex w-full items-center\`}>
-                            {loadedProducts.map((item, index) => (
-                                <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                    <div className='h-full flex items-center justify-center'>
-                                        ${item.price.toFixed(2)}
-                                    </div>
-                                </td>
-                            ))}
-                        </tr>
-                        <tr className={\`flex w-full items-center\`}>
-                        {loadedProducts.map((item, index) => (
-                            <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                                <div className='h-full flex items-center justify-center capitalize'>
-                                    {item.category?.name || '-'}
+                                    ))}
+                                    {/* Dynamic Dimensions */}
+                                    {mergedDims.map((row) => (
+                                        <div key={`dim-left-${row.key}`} className="item text-button flex items-center h-[60px] px-8 w-full border-b border-line capitalize">
+                                            {row.key}
+                                        </div>
+                                    ))}
                                 </div>
-                            </td>
-                        ))}
-                    </tr>
-                    <tr className={\`flex w-full items-center\`}>
-                    {loadedProducts.map((item, index) => (
-                        <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                            <div className='h-full flex items-center justify-center capitalize'>
-                                {item.brand || '-'}
-                            </div>
-                        </td>
-                    ))}
-                </tr>
-                <tr className={\`flex w-full items-center\`}>
-                {loadedProducts.map((item, index) => (
-                    <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                        <div className='h-full flex items-center justify-center'>
-                            {item.sku || '-'}
-                        </div>
-                    </td>
-                ))}
-            </tr>
-            <tr className={\`flex w-full items-center\`}>
-            {loadedProducts.map((item, index) => (
-                <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
-                    <div className='h-full flex items-center justify-center'>
-                        {item.stock !== undefined ? (
-                            <span className={item.stock > 0 ? 'text-green-600' : 'text-red-600'}>
-                                {item.stock > 0 ?\`\${item.stock} in stock\` : 'Out of stock'}
-                            </span>
-                        ) : '-'}
-                    </div>
-                </td>
-            ))}
-        </tr >
-            <tr className={\`flex w-full items-center\`}>
-                                            {loadedProducts.map((item, index) => (
-                                                <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
+                                <table className="right border-collapse w-full border-t border-r border-line">
+                                    <tbody>
+                                        <tr className={`flex w-full items-center`}>
+                                            {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
+                                                <td className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
                                                     <div className='h-full flex items-center justify-center'>
-                                                        <div 
-                                                            className='button-main py-1.5 px-5 cursor-pointer' 
-                                                            onClick={() => handleAddToCart(item)}
-                                                        >
-                                                            Add To Cart
-                                                        </div>
+                                                        {isAvailable && product ? (
+                                                            <>
+                                                                <Rate currentRate={product.rating || 0} size={12} />
+                                                                <p className='pl-1'>({product.rating?.toFixed(1) || '0.0'})</p>
+                                                            </>
+                                                        ) : null}
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr className={`flex w-full items-center`}>
+                                            {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
+                                                <td className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
+                                                    <div className='h-full flex items-center justify-center'>
+                                                        {isAvailable && product ? `$${product.price.toFixed(2)}` : null}
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr className={`flex w-full items-center`}>
+                                            {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
+                                                <td className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
+                                                    <div className='h-full flex items-center justify-center capitalize'>
+                                                        {isAvailable && product ? (product.category?.name || 'N/A') : null}
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr className={`flex w-full items-center`}>
+                                            {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
+                                                <td className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
+                                                    <div className='h-full flex items-center justify-center capitalize'>
+                                                        {isAvailable && product ? (product.brand || 'N/A') : null}
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr className={`flex w-full items-center`}>
+                                            {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
+                                                <td className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
+                                                    <div className='h-full flex items-center justify-center'>
+                                                        {isAvailable && product ? (product.sku || 'N/A') : null}
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr className={`flex w-full items-center`}>
+                                            {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
+                                                <td className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
+                                                    <div className='h-full flex items-center justify-center'>
+                                                        {isAvailable && product && product.stock !== undefined ? (
+                                                            <span className={product.stock > 0 ? 'text-green-600' : 'text-red-600'}>
+                                                                {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        <tr className={`flex w-full items-center`}>
+                                            {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
+                                                <td className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
+                                                    <div className='h-full flex items-center justify-center'>
+                                                        {isAvailable && product ? (
+                                                            <div
+                                                                className='button-main py-1.5 px-5 cursor-pointer'
+                                                                onClick={() => handleAddToCart(product)}
+                                                            >
+                                                                Add To Cart
+                                                            </div>
+                                                        ) : null}
                                                     </div>
                                                 </td>
                                             ))}
                                         </tr>
                                         {/* Dynamic Specification rows */}
                                         {mergedSpecs.map((row, rIdx) => (
-                                            <tr key={\`spec-row-\${rIdx}\`} className={\`flex w-full items-center\`}>
-                                                {row.values.map((val, cIdx) => (
-                                                    <td key={cIdx} className="w-full border border-line h-[60px] border-t-0 border-r-0">
-                                                        <div className='h-full flex items-center justify-center'>
-                                                            {val || '-'}
-                                                        </div>
-                                                    </td>
-                                                ))}
+                                            <tr key={`spec-row-${rIdx}`} className={`flex w-full items-center`}>
+                                                {row.values.map((val, cIdx) => {
+                                                    const isAvailable = productsWithAvailability[cIdx].isAvailable;
+                                                    return (
+                                                        <td key={cIdx} className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`}>
+                                                            <div className='h-full flex items-center justify-center'>
+                                                                {isAvailable ? val : null}
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                })}
                                             </tr>
                                         ))}
                                         {/* Dynamic Dimension rows */}
                                         {mergedDims.map((row, rIdx) => (
-                                            <tr key={\`dim-row-\${rIdx}\`} className={\`flex w-full items-center\`}>
-                                                {row.values.map((val, cIdx) => (
-                                                    <td key={cIdx} className="w-full border border-line h-[60px] border-t-0 border-r-0">
-                                                        <div className='h-full flex items-center justify-center capitalize'>
-                                                            {val || '-'}
-                                                        </div>
-                                                    </td>
-                                                ))}
+                                            <tr key={`dim-row-${rIdx}`} className={`flex w-full items-center`}>
+                                                {row.values.map((val, cIdx) => {
+                                                    const isAvailable = productsWithAvailability[cIdx].isAvailable;
+                                                    return (
+                                                        <td key={cIdx} className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`}>
+                                                            <div className='h-full flex items-center justify-center capitalize'>
+                                                                {isAvailable ? val : null}
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                })}
                                             </tr>
                                         ))}
                                     </tbody>
@@ -339,3 +328,4 @@ const Compare = () => {
 }
 
 export default Compare
+

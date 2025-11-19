@@ -2,12 +2,12 @@
 'use client';
 
 import React from 'react';
-import { formatPrice } from '@/utils/calculateSale';
 import {
     calculateTierBasePrice,
     findTierForQuantity,
     NormalizedPricingTier,
 } from './pricingHelpers';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 interface PricingTiersHorizontalProps {
     basePrice: number;
@@ -35,7 +35,7 @@ const PricingTiersHorizontal: React.FC<PricingTiersHorizontalProps> = ({
     return (
         <div className="pricing-tiers-horizontal mt-6">
             <div className="flex items-center justify-between mb-3">
-                <div className="text-title">Pricing Tier</div>
+                <div className="text-title">Wholesale prices</div>
             </div>
 
             <div className="grid lg:grid-cols-3 sm:grid-cols-3 grid-cols-3 gap-2 sm:gap-3">
@@ -67,9 +67,9 @@ const PricingTiersHorizontal: React.FC<PricingTiersHorizontalProps> = ({
                             </div>
                             <div className="font-bold text-lg group-hover:text-black">
                                 {showStrikeThrough && (
-                                    <div className="text-xs text-secondary2 line-through">{formatPrice(originalPrice)}</div>
+                                    <div className="text-xs text-secondary2 line-through">{formatToNaira(originalPrice)}</div>
                                 )}
-                                <div>{formatPrice(discountedPrice)}</div>
+                                <div>{formatToNaira(discountedPrice)}</div>
                             </div>
                             <div className="text-xs text-secondary2 mt-0.5">per unit</div>
                         </div>

@@ -34,7 +34,7 @@ const OrderProductItem = ({
                 />
             </div>
             <div className="flex-1">
-                <div className="text-title font-semibold line-clamp-2">{product.name}</div>
+                <Link href={`/product/${product.slug}`} className="text-title font-semibold line-clamp-2 hover:underline">{product.name}</Link>
                 {product.attributes && product.attributes.length > 0 && (
                     <div className="caption1 text-secondary mt-2 flex gap-2">
                         {product.attributes.map((attr, i) => (
@@ -98,7 +98,7 @@ export default function OrderSummarySection({ order, formatCurrency }: OrderSumm
                             <span className="text-secondary">
                                 Discount {order.coupon.code && `(${order.coupon.code})`}:
                             </span>
-                            <span className="text-red font-semibold">-{formatCurrency(discount)}</span>
+                            <span className="text-green-500 font-semibold">-{formatCurrency(discount)}</span>
                         </div>
                     )}
 

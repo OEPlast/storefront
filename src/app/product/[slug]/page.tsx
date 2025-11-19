@@ -37,9 +37,6 @@ async function prefetchProduct(slug: string) {
 
         // Get the prefetched data to check if product exists
         const product = queryClient.getQueryData<ProductDetail>(['product', slug]);
-
-        console.log('[Server Prefetch] Final product:', product ? 'Found' : 'Not found');
-
         return { queryClient, product };
     } catch (error) {
         console.error('[Server Prefetch] Error:', error);

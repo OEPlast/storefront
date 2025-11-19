@@ -19,7 +19,6 @@ import { getCdnUrl } from '@/libs/cdn-url';
 import Color from 'color';
 import {
     calculateBestSale,
-    formatPrice,
     calculateSoldFromSale,
     calculateAvailableFromSale,
     calculateSaleProgress,
@@ -27,6 +26,7 @@ import {
 } from '@/utils/calculateSale';
 import { ProductVariant } from '@/types/product';
 import Link from 'next/link';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 const ModalQuickview = () => {
     const [photoIndex, setPhotoIndex] = useState(0);
@@ -203,7 +203,7 @@ const ModalQuickview = () => {
         if (product) {
             const productId = product._id;
             if (compareState.compareArray.length < 3) {
-                if (compareState.compareArray.some(item => item.id === productId)) {
+                if (compareState.compareArray.some(item => item._id === productId)) {
                     removeFromCompare(productId);
                 } else {
                     // TODO: Wire to real compare API
@@ -333,15 +333,15 @@ const ModalQuickview = () => {
                                     <div className="flex items-center gap-3 flex-wrap mt-5 pb-6 border-b border-line">
                                         {saleInfo.hasActiveSale ? (
                                             <>
-                                                <div className="product-price heading5">{formatPrice(saleInfo.discountedPrice)}</div>
+                                                <div className="product-price heading5">{formatToNaira(saleInfo.discountedPrice)}</div>
                                                 <div className='w-px h-4 bg-line'></div>
-                                                <div className="product-origin-price font-normal text-secondary2"><del>{formatPrice(saleInfo.originalPrice)}</del></div>
+                                                <div className="product-origin-price font-normal text-secondary2"><del>{formatToNaira(saleInfo.originalPrice)}</del></div>
                                                 <div className="product-sale caption2 font-semibold bg-green px-3 py-0.5 inline-block rounded-full">
                                                     -{saleInfo.percentOff}%
                                                 </div>
                                             </>
                                         ) : (
-                                            <div className="product-price heading5">{formatPrice(product?.price || 0)}</div>
+                                            <div className="product-price heading5">{formatToNaira(product?.price || 0)}</div>
                                         )}
                                         <div className='desc text-secondary mt-3 w-full' dangerouslySetInnerHTML={{ __html: product?.description || '' }} />
                                     </div>

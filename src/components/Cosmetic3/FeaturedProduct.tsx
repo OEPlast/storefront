@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import Image from 'next/image'
-import { ProductType } from '@/type/ProductType'
-import Rate from '../Other/Rate'
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { ProductType } from '@/type/ProductType';
+import Rate from '../Other/Rate';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
-import { useCart } from '@/context/CartContext'
-import { useModalCartContext } from '@/context/ModalCartContext'
+import { useCart } from '@/context/CartContext';
+import { useModalCartContext } from '@/context/ModalCartContext';
 import SwiperCore from 'swiper/core';
 
 interface Props {
@@ -14,22 +14,22 @@ interface Props {
 }
 
 const FeaturedProduct: React.FC<Props> = ({ data }) => {
-    const [activeSize, setActiveSize] = useState<string>('0')
-    const { addToCart, updateCart, cartState } = useCart()
-    const { openModalCart } = useModalCartContext()
+    const [activeSize, setActiveSize] = useState<string>('0');
+    const { addToCart, updateCart, cartState } = useCart();
+    const { openModalCart } = useModalCartContext();
 
     const handleActiveSize = (item: string) => {
-        setActiveSize(item)
-    }
+        setActiveSize(item);
+    };
 
     const handleIncreaseQuantity = () => {
-        productMain.quantityPurchase += 1
+        productMain.quantityPurchase += 1;
         updateCart(productMain.id, productMain.quantityPurchase + 1, activeSize, '');
     };
 
     const handleDecreaseQuantity = () => {
         if (productMain.quantityPurchase > 1) {
-            productMain.quantityPurchase -= 1
+            productMain.quantityPurchase -= 1;
             updateCart(productMain.id, productMain.quantityPurchase - 1, activeSize, '');
         }
     };
@@ -37,16 +37,16 @@ const FeaturedProduct: React.FC<Props> = ({ data }) => {
     const handleAddToCart = () => {
         if (!cartState.cartArray.find(item => item.id === productMain.id)) {
             addToCart({ ...productMain });
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, '')
+            updateCart(productMain.id, productMain.quantityPurchase, activeSize, '');
         } else {
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, '')
+            updateCart(productMain.id, productMain.quantityPurchase, activeSize, '');
         }
-        openModalCart()
+        openModalCart();
     };
 
     // Truy cập thông tin của sản phẩm thứ 50 trong mảng data
     const productMain = data[50];
-    const percentSale = Math.floor(100 - ((productMain.price / productMain.originPrice) * 100))
+    const percentSale = Math.floor(100 - ((productMain.price / productMain.originPrice) * 100));
 
     return (
         <>
@@ -70,9 +70,9 @@ const FeaturedProduct: React.FC<Props> = ({ data }) => {
                             <span className='caption1 text-secondary'>(1.234 reviews)</span>
                         </div>
                         <div className="flex items-center gap-3 flex-wrap mt-5 pb-6 border-b border-line">
-                            <div className="product-price heading5">${productMain.price}.00</div>
+                            <div className="product-price heading5">&#8358;{productMain.price}.00</div>
                             <div className='w-px h-4 bg-line'></div>
-                            <div className="product-origin-price font-normal text-secondary2"><del>${productMain.originPrice}.00</del></div>
+                            <div className="product-origin-price font-normal text-secondary2"><del>&#8358;{productMain.originPrice}.00</del></div>
                             {productMain.originPrice && (
                                 <div className="product-sale caption2 font-semibold bg-green px-3 py-0.5 inline-block rounded-full">
                                     -{percentSale}%
@@ -124,7 +124,7 @@ const FeaturedProduct: React.FC<Props> = ({ data }) => {
                 </div>
             </div>
         </>
-    )
-}
+    );
+};
 
-export default FeaturedProduct
+export default FeaturedProduct;

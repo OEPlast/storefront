@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import Image from 'next/image'
-import { ProductType } from '@/type/ProductType'
-import Rate from '../Other/Rate'
+import React, { useState } from 'react';
+import Image from 'next/image';
+import { ProductType } from '@/type/ProductType';
+import Rate from '../Other/Rate';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Thumbs, FreeMode } from 'swiper/modules';
 import 'swiper/css/bundle';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import SwiperCore from 'swiper/core';
-import { useCart } from '@/context/CartContext'
-import { useModalCartContext } from '@/context/ModalCartContext'
+import { useCart } from '@/context/CartContext';
+import { useModalCartContext } from '@/context/ModalCartContext';
 
 SwiperCore.use([Navigation, Thumbs]);
 
@@ -20,18 +20,18 @@ interface Props {
 
 const FeaturedProduct: React.FC<Props> = ({ data }) => {
     const [thumbsSwiper, setThumbsSwiper] = useState<SwiperCore | null>(null);
-    const [activeColor, setActiveColor] = useState<string>('')
-    const [activeSize, setActiveSize] = useState<string>('')
-    const { addToCart, updateCart, cartState } = useCart()
-    const { openModalCart } = useModalCartContext()
+    const [activeColor, setActiveColor] = useState<string>('');
+    const [activeSize, setActiveSize] = useState<string>('');
+    const { addToCart, updateCart, cartState } = useCart();
+    const { openModalCart } = useModalCartContext();
 
     const handleActiveColor = (item: string) => {
-        setActiveColor(item)
-    }
+        setActiveColor(item);
+    };
 
     const handleActiveSize = (item: string) => {
-        setActiveSize(item)
-    }
+        setActiveSize(item);
+    };
 
     const handleSwiper = (swiper: SwiperCore) => {
         // Do something with the thumbsSwiper instance
@@ -39,13 +39,13 @@ const FeaturedProduct: React.FC<Props> = ({ data }) => {
     };
 
     const handleIncreaseQuantity = () => {
-        productMain.quantityPurchase += 1
+        productMain.quantityPurchase += 1;
         updateCart(productMain.id, productMain.quantityPurchase + 1, activeSize, activeColor);
     };
 
     const handleDecreaseQuantity = () => {
         if (productMain.quantityPurchase > 1) {
-            productMain.quantityPurchase -= 1
+            productMain.quantityPurchase -= 1;
             updateCart(productMain.id, productMain.quantityPurchase - 1, activeSize, activeColor);
         }
     };
@@ -53,16 +53,16 @@ const FeaturedProduct: React.FC<Props> = ({ data }) => {
     const handleAddToCart = () => {
         if (!cartState.cartArray.find(item => item.id === productMain.id)) {
             addToCart({ ...productMain });
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor);
         } else {
-            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor)
+            updateCart(productMain.id, productMain.quantityPurchase, activeSize, activeColor);
         }
-        openModalCart()
+        openModalCart();
     };
 
     // Truy cập thông tin của sản phẩm thứ 38 trong mảng data
     const productMain = data[120];
-    const percentSale = Math.floor(100 - ((productMain.price / productMain.originPrice) * 100))
+    const percentSale = Math.floor(100 - ((productMain.price / productMain.originPrice) * 100));
 
     return (
         <>
@@ -168,9 +168,9 @@ const FeaturedProduct: React.FC<Props> = ({ data }) => {
                             <span className='caption1 text-secondary2'>(1.234 reviews)</span>
                         </div>
                         <div className="flex items-center gap-3 flex-wrap mt-5 pb-6 border-b border-line">
-                            <div className="product-price heading5 text-white">${productMain.price}.00</div>
+                            <div className="product-price heading5 text-white">&#8358;{productMain.price}.00</div>
                             <div className='w-px h-4 bg-line'></div>
-                            <div className="product-origin-price font-normal text-secondary2"><del>${productMain.originPrice}.00</del></div>
+                            <div className="product-origin-price font-normal text-secondary2"><del>&#8358;{productMain.originPrice}.00</del></div>
                             {productMain.originPrice && (
                                 <div className="product-sale caption2 font-semibold bg-green px-3 py-0.5 inline-block rounded-full">
                                     -{percentSale}%
@@ -244,7 +244,7 @@ const FeaturedProduct: React.FC<Props> = ({ data }) => {
                 </div>
             </div>
         </>
-    )
-}
+    );
+};
 
-export default FeaturedProduct
+export default FeaturedProduct;

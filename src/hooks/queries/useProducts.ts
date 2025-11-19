@@ -545,3 +545,28 @@ export const useSearchResultFilters = (params: { query?: string }) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
+
+/**
+ * Hook to fetch products for comparison by mixed IDs and slugs
+ * Returns array of ProductDetail | null (preserves order, null for not-found products)
+ * Maximum 3 products enforced on backend
+ * @param identifiers - Array of product IDs or slugs (max 3)
+ * @returns Query result with comparison products
+ */
+export const useCompareProducts = (identifiers: string[]) => {
+  return useQuery<(ProductDetail | null)[]>({
+    queryKey: ['products', 'compare', identifiers.join(',')],
+    queryFn: async () => {
+      const response = await apiClient.get<(ProductDetail | null)[]>(api.products.compare, {
+        params: { identifiers: identifiers.join(',') },
+      });
+      if (!response.data) {
+        throw new Error('No data returned from server');
+      }
+      return response.data;
+    },
+    enabled: identifiers.length > 0 && identifiers.length <= 3,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: false,
+  });
+};

@@ -31,15 +31,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      allowDangerousEmailAccountLinking: true,
       profile(profile) {
         return {
           // Return the default fields
           id: profile.sub,
           name: profile.name,
+          dob: profile.dob,
+          firstName: profile.given_name,
+          lastname: profile.family_name,
           email: profile.email,
           image: profile.picture,
           emailVerified: profile.email_verified ? new Date() : null,
-          token: randomUUID(),
         };
       },
     }),
@@ -93,7 +96,57 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: 'jwt' },
 
   callbacks: {
-    async signIn({ user, account, profile }) {
+    // async signIn({ user, account, profile }) {
+    //   if (account?.provider === 'google') {
+    //     try {
+    //       const response = await fetch(APIRoutes.providerLogin, {
+    //         method: 'POST',
+    //         headers: {
+    //           'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({
+    //           provider: account.provider,
+    //           providerAccountId: account.providerAccountId,
+    //         }),
+    //       });
+
+    //       const result = await response.json();
+    //       console.log(result);
+
+    //       if (!response.ok) {
+    //         if (result.message === 'Account not found' || result.message === 'User not found') {
+    //           throw new AccountNotFoundError();
+    //         }
+    //         throw new AuthenticationFailedError(result.message);
+    //       }
+
+    //       if (result.data?.token) {
+    //         user.token = result.data.token;
+    //         user.name = result.data.name;
+    //         user.email = result.data.email;
+    //         user.image = result.data.image;
+    //         user.id = result.data._id;
+    //         user.emailVerified = result.data.emailVerified
+    //           ? new Date(result.data.emailVerified)
+    //           : new Date();
+    //       }
+
+    //       return true;
+    //     } catch (error) {
+    //       console.error('Error during Google sign-in:', error);
+    //       // Re-throw to let NextAuth handle it
+    //       throw error;
+    //     }
+    //   }
+
+    //   return true;
+    // },
+    async jwt({ token, user, account, trigger, session }) {
+      console.log(
+        {user, account}
+      );
+      
+      // On initial sign-in with Google - fetch token from backend
       if (account?.provider === 'google') {
         try {
           const response = await fetch(APIRoutes.providerLogin, {
@@ -108,38 +161,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
 
           const result = await response.json();
-          console.log(result);
+          console.log('JWT callback - backend result:', result);
 
-          if (!response.ok) {
-            if (result.message === 'Account not found' || result.message === 'User not found') {
-              throw new AccountNotFoundError();
-            }
-            throw new AuthenticationFailedError(result.message);
-          }
-
-          if (result.data?.token) {
-            user.token = result.data.token;
-            user.name = result.data.name;
-            user.email = result.data.email;
-            user.image = result.data.image;
-            user.id = result.data._id;
-            user.emailVerified = result.data.emailVerified
+          if (response.ok && result.data?.token) {
+            // Use backend data, not user object from database
+            token.id = result.data._id;
+            token.token = result.data.token; // Real JWT token
+            token.name = result.data.name;
+            token.email = result.data.email;
+            token.image = result.data.image;
+            token.emailVerified = result.data.emailVerified
               ? new Date(result.data.emailVerified)
               : new Date();
-          }
 
-          return true;
+            console.log('JWT callback - token set to:', result.data.token);
+          }
         } catch (error) {
-          console.error('Error during Google sign-in:', error);
-          // Re-throw to let NextAuth handle it
-          throw error;
+          console.error('Error fetching token in JWT callback:', error);
         }
       }
-
-      return true;
-    },
-    async jwt({ token, user, account, trigger, session }) {
-      if (user) {
+      // For credentials login
+      else if (account?.provider === 'credentials' && user) {
         token.id = user.id;
         token.token = user.token;
         token.name = user.name;
@@ -147,6 +189,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.image = user.image;
         token.emailVerified = user.emailVerified;
       }
+
       if (trigger === 'update' && session) {
         token.emailVerified = session.user.emailVerified;
       }
@@ -185,5 +228,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   pages: {
     error: '/register',
+    signIn: '/login',
   },
 });

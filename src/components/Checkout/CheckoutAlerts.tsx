@@ -2,6 +2,7 @@
 
 import React from 'react';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 interface CouponInfo {
     code: string;
@@ -53,14 +54,12 @@ interface CheckoutAlertsProps {
     pendingCorrections: PendingCorrections | null;
     checkoutError: string | null;
     checkoutSuccess: CheckoutSuccess | null;
-    formatCurrency: (value: number) => string;
 }
 
 const CheckoutAlerts: React.FC<CheckoutAlertsProps> = ({
     pendingCorrections,
     checkoutError,
     checkoutSuccess,
-    formatCurrency,
 }) => {
     return (
         <>
@@ -94,7 +93,7 @@ const CheckoutAlerts: React.FC<CheckoutAlertsProps> = ({
                                             {pendingCorrections.correctedCart.validatedCoupons?.map((coupon) => (
                                                 <li key={coupon.code} className="flex items-center justify-between gap-2">
                                                     <span className="uppercase tracking-wide">{coupon.code}</span>
-                                                    <span>-{formatCurrency(coupon.discountAmount ?? 0)}</span>
+                                                    <span>-{formatToNaira(coupon.discountAmount ?? 0)}</span>
                                                 </li>
                                             ))}
                                         </ul>

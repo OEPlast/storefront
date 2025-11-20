@@ -38,8 +38,8 @@ const Footer = () => {
                                     </div>
                                     <div className="item flex flex-col basis-1/2 ">
                                         <div className="text-button-uppercase pb-3">Customer Services</div>
-                                        <Link className='caption1 has-line-before duration-300 w-fit pt-2' href={'/pages/order-tracking'}>Order Tracking</Link>
-                                        <Link className='caption1 has-line-before duration-300 w-fit pt-2' href={'/pages/faqs'}>Privacy Policy</Link>
+                                        <Link className='caption1 has-line-before duration-300 w-fit pt-2' href={'/order-tracking'}>Order Tracking</Link>
+                                        <Link className='caption1 has-line-before duration-300 w-fit pt-2' href={'/faqs'}>Privacy Policy</Link>
                                     </div>
                                 </div>
                                 <div className="newsletter basis-2/4 pl-7 max-md:basis-full max-md:pl-0">

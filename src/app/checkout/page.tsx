@@ -28,6 +28,12 @@ import { CheckoutErrors, CheckoutCorrectionResponse } from '@/types/checkout';
 import { parseCheckoutErrors, buildCartUpdatePayload, hasProductIssues, hasOnlyNonProductIssues } from '@/utils/cartCorrections';
 import Paystack from '@paystack/inline-js';
 import { formatToNaira } from '@/utils/currencyFormatter';
+import { useSession } from 'next-auth/react';
+import { useAddresses } from '@/hooks/queries/useAddresses';
+import { useAddAddress } from '@/hooks/mutations/useAddressMutations';
+import { Address, AddAddressInput } from '@/types/user';
+import AddressSelector from '@/components/Checkout/AddressSelector';
+import toast from 'react-hot-toast';
 
 type ShippingFormState = {
     firstName: string;
@@ -140,6 +146,14 @@ const Checkout = () => {
         removeItem,
         clearCart
     } = useCart();
+
+    // Session and address management
+    const { data: session } = useSession();
+    const { data: addresses } = useAddresses();
+    const createAddressMutation = useAddAddress();
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [addressValidationError, setAddressValidationError] = useState<string | null>(null);
+    const [saveManualAddressToAccount, setSaveManualAddressToAccount] = useState(true);
 
     // Calculate subtotal from items using ModalCart's exact pricing method
     const subtotal = React.useMemo(() => {
@@ -269,7 +283,56 @@ const Checkout = () => {
 
     const availableStates = selectedCountryConfig?.states ?? [];
     const availableCities: LogisticsLocationConfig[] = selectedStateConfig?.cities ?? [];
-    const availableLGAs: LogisticsLocationConfig[] = selectedStateConfig?.lgas ?? [];
+    const availableLGAs: LogisticsLocationConfig[] = React.useMemo(() => {
+        return selectedStateConfig?.lgas ?? [];
+    }, [selectedStateConfig]);
+
+    // Function to populate form from selected address
+    const populateFormFromAddress = useCallback((address: Address) => {
+        // Validate that the address's lga exists in available options
+        const lgaValid = availableLGAs?.some((lga) => lga.name === address.lga);
+        
+        if (!lgaValid && availableLGAs.length > 0) {
+            setAddressValidationError(
+                'Selected address has invalid location data. Please enter address manually or select a different address.'
+            );
+            return;
+        }
+
+        // Populate form with address data
+        setShippingForm({
+            firstName: address.firstName,
+            lastName: address.lastName,
+            email: session?.user?.email || '',
+            phoneNumber: address.phoneNumber,
+            country: address.country,
+            state: address.state,
+            lga: address.lga,
+            city: address.city,
+            streetAddress: address.address1,
+            postalCode: address.zipCode,
+        });
+        
+        setAddressValidationError(null);
+    }, [availableLGAs, session]);
+
+    // Auto-populate active address on mount
+    React.useEffect(() => {
+        if (
+            addresses &&
+            addresses.length > 0 &&
+            !isGuest &&
+            shippingMethod !== 'pickup' &&
+            session?.user?.email &&
+            !selectedAddressId
+        ) {
+            const activeAddress = addresses.find((a) => a.active);
+            if (activeAddress) {
+                populateFormFromAddress(activeAddress);
+                setSelectedAddressId(activeAddress._id);
+            }
+        }
+    }, [addresses, isGuest, shippingMethod, session, selectedAddressId, populateFormFromAddress]);
 
     const appliedCouponCodes = useMemo(() => {
         // Use discount info from checkout store
@@ -527,6 +590,30 @@ const Checkout = () => {
             return;
         }
 
+        // Save manually entered address to account (non-blocking) if checkbox is checked
+        if (saveManualAddressToAccount && !isGuest && !selectedAddressId && shippingMethod !== 'pickup') {
+            const addressData: AddAddressInput = {
+                firstName: shippingForm.firstName,
+                lastName: shippingForm.lastName,
+                phoneNumber: shippingForm.phoneNumber,
+                address1: shippingForm.streetAddress,
+                address2: '',
+                city: shippingForm.city,
+                zipCode: shippingForm.postalCode,
+                state: shippingForm.state,
+                lga: shippingForm.lga,
+                country: shippingForm.country,
+                active: false,
+            };
+
+            try {
+                await createAddressMutation.mutateAsync(addressData);
+                toast.success('Address saved to your account');
+            } catch (error) {
+                console.error('Failed to save address:', error);
+            }
+        }
+
         setIsSubmittingCheckout(true);
         setCheckoutError(null);
         setCheckoutSuccess(null);
@@ -652,6 +739,11 @@ const Checkout = () => {
         handleCheckoutCorrectionError,
         addPaymentReference,
         verifyPaymentReference,
+        clearCart,
+        saveManualAddressToAccount,
+        selectedAddressId,
+        shippingForm,
+        createAddressMutation
     ]);
 
     // Check if shipping form is complete (only needed for delivery methods)
@@ -1003,19 +1095,62 @@ const Checkout = () => {
                                                 </div>
 
                                                 {isShippingExpanded && (
-                                                    <div className="p-5 pt-0 grid sm:grid-cols-2 gap-4 gap-y-5">
-                                                        <div className="">
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="firstName">First Name *</label>
-                                                            <input
-                                                                className="border-line px-4 py-3 w-full rounded-lg"
-                                                                id="firstName"
-                                                                type="text"
-                                                                placeholder="First Name"
-                                                                value={shippingForm.firstName}
-                                                                onChange={(e) => handleShippingFormChange('firstName', e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
+                                                    <div className="p-5 pt-0">
+                                                        {/* Address Selector for Authenticated Users */}
+                                                        {!isGuest && addresses && addresses.length > 0 && (
+                                                            <div className="mb-6">
+                                                                <AddressSelector
+                                                                    addresses={addresses}
+                                                                    selectedId={selectedAddressId}
+                                                                    onSelect={(addr) => {
+                                                                        setAddressValidationError(null);
+                                                                        if (addr) {
+                                                                            populateFormFromAddress(addr);
+                                                                            setSelectedAddressId(addr._id);
+                                                                        } else {
+                                                                            setSelectedAddressId(null);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                
+                                                                {addressValidationError && (
+                                                                    <div className="mt-2 text-red text-sm flex items-start gap-2">
+                                                                        <Icon.WarningCircle size={16} weight="bold" className="flex-shrink-0 mt-0.5" />
+                                                                        <span>{addressValidationError}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Save manual address checkbox - only show when entering manually */}
+                                                        {!isGuest && !selectedAddressId && (
+                                                            <div className="mb-4">
+                                                                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={saveManualAddressToAccount}
+                                                                        onChange={(e) => setSaveManualAddressToAccount(e.target.checked)}
+                                                                        className="w-4 h-4 cursor-pointer"
+                                                                    />
+                                                                    <span className="text-secondary">Save this address to my account</span>
+                                                                </label>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Shipping Form Fields */}
+                                                        <div className="grid sm:grid-cols-2 gap-4 gap-y-5">
+                                                            <div className="">
+                                                                <label className="text-secondary text-sm mb-2 block" htmlFor="firstName">First Name *</label>
+                                                                <input
+                                                                    className="border-line px-4 py-3 w-full rounded-lg"
+                                                                    id="firstName"
+                                                                    type="text"
+                                                                    placeholder="First Name"
+                                                                    value={shippingForm.firstName}
+                                                                    onChange={(e) => handleShippingFormChange('firstName', e.target.value)}
+                                                                    required
+                                                                />
+                                                            </div>
                                                         <div className="">
                                                             <label className="text-secondary text-sm mb-2 block" htmlFor="lastName">Last Name *</label>
                                                             <input
@@ -1181,6 +1316,7 @@ const Checkout = () => {
                                                                 onChange={(e) => handleShippingFormChange('postalCode', e.target.value)}
                                                                 required
                                                             />
+                                                        </div>
                                                         </div>
                                                     </div>
                                                 )}

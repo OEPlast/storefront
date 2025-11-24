@@ -4,42 +4,43 @@ import React from 'react';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { formatToNaira } from '@/utils/currencyFormatter';
 
-interface CouponInfo {
-    code: string;
-    discountAmount?: number;
-    reason?: string;
+interface CheckoutSummary {
+    itemsRemaining: number;
+    newSubtotal: number;
+    newTotal: number;
+    shippingCost: number;
+    deliveryType: 'shipping' | 'pickup';
+    couponDiscount: number;
 }
 
-interface ChangeDetail {
-    field: string;
-    previous: number | string | null;
-    current: number | string | null;
-    message: string;
-    context?: 'item' | 'coupon' | 'subtotal' | 'total' | 'shipping' | 'other';
-}
-
-interface CorrectedCart {
-    validatedCoupons?: CouponInfo[];
-    rejectedCoupons?: CouponInfo[];
-    couponDiscount?: number;
-    status?: string;
-    lastUpdated?: string;
-    updatedAt?: string;
+export interface CheckoutErrorsType {
+    products?: Array<{
+        productId: string;
+        message: string;
+    }>;
+    coupons?: Array<{
+        code: string;
+        reason: string;
+    }>;
+    shipping?: {
+        previousCost: number;
+        currentCost: number;
+        reason: string;
+    };
+    total?: {
+        message: string;
+    };
 }
 
 interface PendingCorrections {
     needsUpdate: true;
-    shippingCost: number;
-    deliveryType: 'shipping' | 'pickup';
-    correctedCart: CorrectedCart;
-    changes: string[];
-    changeDetails: ChangeDetail[];
+    errors?: CheckoutErrorsType;
+    summary: CheckoutSummary;
 }
 
 interface CheckoutSuccess {
     orderId: string;
-    order: {
-        _id: string;
+    summary: {
         total: number;
         subtotal: number;
     };
@@ -73,44 +74,32 @@ const CheckoutAlerts: React.FC<CheckoutAlertsProps> = ({
                                     We updated your cart to match current availability.
                                 </p>
                                 <ul className="space-y-1 text-xs text-amber-800">
-                                    {pendingCorrections.changeDetails.length > 0 ? (
-                                        pendingCorrections.changeDetails.map((detail, index) => (
-                                            <li key={`${detail.field}-${index}`}>
-                                                <span className="font-medium capitalize">{detail.field.replace(/_/g, ' ')}:</span>{' '}
-                                                {detail.message}
-                                            </li>
-                                        ))
-                                    ) : (
-                                        pendingCorrections.changes.map((change, index) => (
-                                            <li key={index}>{change}</li>
-                                        ))
+                                    {/* Product errors */}
+                                    {pendingCorrections.errors?.products?.map((error, index) => (
+                                        <li key={`product-${index}`}>
+                                            <span className="font-medium">Product:</span> {error.message}
+                                        </li>
+                                    ))}
+                                    {/* Coupon errors */}
+                                    {pendingCorrections.errors?.coupons?.map((error, index) => (
+                                        <li key={`coupon-${index}`}>
+                                            <span className="font-medium uppercase">{error.code}:</span> {error.reason}
+                                        </li>
+                                    ))}
+                                    {/* Shipping changes */}
+                                    {pendingCorrections.errors?.shipping && (
+                                        <li>
+                                            <span className="font-medium">Shipping:</span> {pendingCorrections.errors.shipping.reason}
+                                            {' '}({formatToNaira(pendingCorrections.errors.shipping.previousCost)} → {formatToNaira(pendingCorrections.errors.shipping.currentCost)})
+                                        </li>
+                                    )}
+                                    {/* Total errors */}
+                                    {pendingCorrections.errors?.total && (
+                                        <li>
+                                            <span className="font-medium">Total:</span> {pendingCorrections.errors.total.message}
+                                        </li>
                                     )}
                                 </ul>
-                                {(pendingCorrections.correctedCart.validatedCoupons?.length ?? 0) > 0 && (
-                                    <div className="mt-3">
-                                        <p className="text-xs font-semibold text-amber-700">Applied coupons</p>
-                                        <ul className="mt-1 space-y-1 text-xs text-amber-800">
-                                            {pendingCorrections.correctedCart.validatedCoupons?.map((coupon) => (
-                                                <li key={coupon.code} className="flex items-center justify-between gap-2">
-                                                    <span className="uppercase tracking-wide">{coupon.code}</span>
-                                                    <span>-{formatToNaira(coupon.discountAmount ?? 0)}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                                {(pendingCorrections.correctedCart.rejectedCoupons?.length ?? 0) > 0 && (
-                                    <div className="mt-3">
-                                        <p className="text-xs font-semibold text-amber-700">Coupons that need attention</p>
-                                        <ul className="mt-1 space-y-1 text-xs text-amber-800">
-                                            {pendingCorrections.correctedCart.rejectedCoupons?.map((coupon) => (
-                                                <li key={coupon.code}>
-                                                    <span className="uppercase tracking-wide">{coupon.code}</span> – {coupon.reason}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
                                 <p className="text-xs text-amber-700 mt-3">
                                     Review the changes and accept to continue checkout.
                                 </p>

@@ -77,7 +77,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               token: string;
             } & User;
           };
-          console.log('Login response:', res);
 
           return res.data ?? null;
         } catch (error) {
@@ -142,10 +141,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     //   return true;
     // },
     async jwt({ token, user, account, trigger, session }) {
-      console.log(
-        {user, account}
-      );
-      
       // On initial sign-in with Google - fetch token from backend
       if (account?.provider === 'google') {
         try {
@@ -161,7 +156,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
 
           const result = await response.json();
-          console.log('JWT callback - backend result:', result);
 
           if (response.ok && result.data?.token) {
             // Use backend data, not user object from database

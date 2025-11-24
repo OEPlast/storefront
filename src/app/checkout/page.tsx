@@ -29,6 +29,11 @@ import { parseCheckoutErrors, buildCartUpdatePayload, hasProductIssues, hasOnlyN
 import Paystack from '@paystack/inline-js';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import { useSession } from 'next-auth/react';
+import ShippingMethodSelector from '@/components/Checkout/ShippingMethodSelector';
+import ShippingInformationForm from '@/components/Checkout/ShippingInformationForm';
+import OrderNotesSection from '@/components/Checkout/OrderNotesSection';
+import OrderSummaryBlock from '@/components/Checkout/OrderSummaryBlock';
+import CartItemCard from '@/components/Checkout/CartItemCard';
 import { useAddresses } from '@/hooks/queries/useAddresses';
 import { useAddAddress } from '@/hooks/mutations/useAddressMutations';
 import { Address, AddAddressInput } from '@/types/user';
@@ -78,52 +83,33 @@ type CheckoutChangeDetail = {
 
 type CheckoutCorrectionPayload = {
     needsUpdate: true;
-    shippingCost: number;
-    deliveryType: 'shipping' | 'pickup';
-    correctedCart: CartSnapshotPayload & {
-        couponDiscount?: number;
-        validatedCoupons?: Array<{ code: string; discountAmount: number; }>;
-        rejectedCoupons?: Array<{ code: string; reason: string; }>;
-        status?: string;
-        lastUpdated?: string;
-        updatedAt?: string;
+    errors?: CheckoutErrors;
+    summary: {
+        itemsRemaining: number;
+        newSubtotal: number;
+        newTotal: number;
+        shippingCost: number;
+        deliveryType: 'shipping' | 'pickup';
+        couponDiscount: number;
     };
-    changes: string[];
-    changeDetails: CheckoutChangeDetail[];
-    checkoutErrors?: CheckoutErrors;
 };
 
 type SecureCheckoutSuccessResponse = {
     orderId: string;
-    order: {
-        _id: string;
-        total: number;
-        subtotal: number;
-        couponDiscount: number;
-        shippingPrice: number;
-        deliveryType: 'shipping' | 'pickup';
-        items: Array<{
-            product: string;
-            qty: number;
-            price: number;
-            attributes: Array<{ name: string; value: string; }>;
-            sale?: string;
-            saleType?: string;
-            saleDiscount?: number;
-        }>;
-        status: string;
-        isPaid: boolean;
-    };
-    validation: {
-        priceValidated: boolean;
-        totalDiscrepancy: number;
-    };
     payment: {
         paymentUrl: string;
         reference: string;
         transactionId: string;
         access_code: string;
     } | null;
+    summary: {
+        total: number;
+        subtotal: number;
+        couponDiscount: number;
+        shippingCost: number;
+        itemCount: number;
+        deliveryType: 'shipping' | 'pickup';
+    };
 };
 
 
@@ -134,7 +120,7 @@ const Checkout = () => {
     // Use Zustand store for checkout state
     const { shippingMethod: storedShippingMethod, discountInfo, setShippingMethod: setCheckoutShippingMethod } = useCheckoutStore();
     const { add: addPaymentReference, verify: verifyPaymentReference, clear: clearPaymentReference } = usePaymentStore();
-    const [currentShippingMethod, setCurrentShippingMethod] = React.useState<string>(storedShippingMethod);
+    const [currentShippingMethod, setCurrentShippingMethod] = React.useState<'pickup' | 'normal' | 'express'>(storedShippingMethod);
     const shippingMethod = currentShippingMethod; // pickup, normal, express
 
     const {
@@ -289,15 +275,16 @@ const Checkout = () => {
 
     // Function to populate form from selected address
     const populateFormFromAddress = useCallback((address: Address) => {
-        // Validate that the address's lga exists in available options
-        const lgaValid = availableLGAs?.some((lga) => lga.name === address.lga);
-        
-        if (!lgaValid && availableLGAs.length > 0) {
-            setAddressValidationError(
-                'Selected address has invalid location data. Please enter address manually or select a different address.'
-            );
-            return;
-        }
+        // Check if address country is in available shipping configs
+        const isCountryAvailable = shippingConfigs?.some((config) => config.countryName === address.country);
+
+        // If country is not available, default to Nigeria or empty string
+        const countryToUse = isCountryAvailable
+            ? address.country
+            : (shippingConfigs?.find((config) => config.countryName.toLowerCase() === 'nigeria')?.countryName || '');
+
+        // If country changed, clear state/lga/city
+        const shouldClearLocation = !isCountryAvailable;
 
         // Populate form with address data
         setShippingForm({
@@ -305,16 +292,16 @@ const Checkout = () => {
             lastName: address.lastName,
             email: session?.user?.email || '',
             phoneNumber: address.phoneNumber,
-            country: address.country,
-            state: address.state,
-            lga: address.lga,
-            city: address.city,
+            country: countryToUse,
+            state: shouldClearLocation ? '' : address.state,
+            lga: shouldClearLocation ? '' : address.lga,
+            city: shouldClearLocation ? '' : address.city,
             streetAddress: address.address1,
             postalCode: address.zipCode,
         });
-        
+
         setAddressValidationError(null);
-    }, [availableLGAs, session]);
+    }, [shippingConfigs, session]);
 
     // Auto-populate active address on mount
     React.useEffect(() => {
@@ -384,23 +371,23 @@ const Checkout = () => {
     // Calculate cart statistics
     const cartStats = useMemo(() => {
         const totalItems = items.reduce((sum, item) => sum + item.qty, 0);
-        const uniqueProducts = items.length;
+        const uniqueProducts = pendingCorrections?.summary.itemsRemaining ?? items.length;
         return { totalItems, uniqueProducts };
-    }, [items]);
+    }, [items, pendingCorrections]);
 
     // Use discount from Zustand store
     const resolvedDiscount = pendingCorrections
-        ? pendingCorrections.correctedCart.totalDiscount ?? pendingCorrections.correctedCart.couponDiscount ?? 0
+        ? pendingCorrections.summary.couponDiscount
         : discountInfo?.amount || 0;
 
-    const resolvedSubtotal = pendingCorrections?.correctedCart.subtotal ?? subtotal;
+    const resolvedSubtotal = pendingCorrections?.summary.newSubtotal ?? subtotal;
 
     const resolvedShippingCost = shippingMethod === 'pickup'
         ? 0
-        : calculatedShippingCost ?? pendingCorrections?.correctedCart.estimatedShipping?.cost ?? null;
+        : calculatedShippingCost ?? pendingCorrections?.summary.shippingCost ?? null;
 
     const totalBeforeShipping = pendingCorrections
-        ? pendingCorrections.correctedCart.total ?? (resolvedSubtotal - resolvedDiscount)
+        ? pendingCorrections.summary.newTotal - pendingCorrections.summary.shippingCost
         : resolvedSubtotal - resolvedDiscount;
 
     const resolvedTotal = resolvedShippingCost === null
@@ -411,7 +398,7 @@ const Checkout = () => {
         setPendingCorrections(null);
     }, [items]);
 
-    const buildCheckoutPayload = useCallback(() => {
+    const buildCheckoutPayload = useCallback((acceptChanges: boolean = false) => {
         const deliveryType: 'shipping' | 'pickup' = shippingMethod === 'pickup' ? 'pickup' : 'shipping';
         const shippingCostValue = deliveryType === 'shipping' ? calculatedShippingCost ?? 0 : 0;
         const etaDays = deliveryType === 'shipping' ? selectedLocationMeta?.etaDays ?? 0 : 0;
@@ -468,64 +455,92 @@ const Checkout = () => {
             },
             deliveryType,
             shippingCost: shippingCostValue,
+            acceptChanges,
         };
     }, [shippingMethod, calculatedShippingCost, selectedLocationMeta, items, shippingForm, activePayment, appliedCouponCodes, subtotal, resolvedDiscount]);
 
     const handleAcceptCorrections = useCallback(async () => {
-        if (!pendingCorrections || !parsedCheckoutErrors) {
+        if (!parsedCheckoutErrors) {
             return;
         }
 
         setIsAcceptingCorrections(true);
         setCheckoutError(null);
         setCheckoutSuccess(null);
+        setShowCorrectionModal(false);
 
         try {
-            // Build cart update operations from product issues
-            const correctionPayload = buildCartUpdatePayload(parsedCheckoutErrors.products || []);
+            // Step 1: Apply cart corrections locally (client-side only)
+            if (parsedCheckoutErrors.products && parsedCheckoutErrors.products.length > 0) {
+                // Process each product error
+                for (const productError of parsedCheckoutErrors.products) {
+                    // Find cart item by matching product ID (not cartItemId, as backend returns productId)
+                    const cartItem = items.find(item => {
+                        const itemProductId = item._id || item.id;
+                        return itemProductId === productError.productId;
+                    });
 
-            // Apply all updates
-            for (const operation of correctionPayload.operations) {
-                if (operation.action === 'remove') {
-                    await removeItem(operation.cartItemId);
-                } else if (operation.action === 'update' && operation.updates) {
-                    await updateItem(operation.cartItemId, operation.updates);
+                    if (!cartItem) {
+                        console.warn(`Cart item not found for product ${productError.productId}`);
+                        continue;
+                    }
+
+                    // Apply correction based on suggested action
+                    switch (productError.suggestedAction) {
+                        case 'remove':
+                            // Remove item from cart
+                            console.log(`Removing item ${cartItem.cartItemId} (${productError.productName})`);
+                            removeItem(cartItem.cartItemId);
+                            break;
+
+                        case 'reduceQuantity':
+                            // Update quantity to available stock
+                            console.log(`Reducing ${cartItem.cartItemId} quantity: ${cartItem.qty} → ${productError.availableStock}`);
+                            updateItem(cartItem.cartItemId, {
+                                qty: productError.availableStock,
+                            });
+                            break;
+
+                        case 'changeAttribute':
+                            // Update to first available attribute combination
+                            if (productError.availableAttributes && productError.availableAttributes.length > 0) {
+                                console.log(`Changing attributes for ${cartItem.cartItemId}`);
+                                updateItem(cartItem.cartItemId, {
+                                    selectedAttributes: productError.availableAttributes[0],
+                                });
+                            } else {
+                                // No available attributes - remove item
+                                console.log(`No available attributes, removing ${cartItem.cartItemId}`);
+                                removeItem(cartItem.cartItemId);
+                            }
+                            break;
+
+                        case 'acceptPrice':
+                            // Price changed - no cart action needed, just log
+                            console.log(`Price changed for ${cartItem.cartItemId}: ${productError.currentPrice} → ${productError.correctedPrice}`);
+                            break;
+                    }
                 }
+
+                // Small delay to ensure cart state updates propagate
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
 
-            // Refresh cart to get latest data
-            await refreshCart();
-
-            // Invalidate product queries for affected products
-            for (const slug of correctionPayload.affectedProductSlugs) {
-                queryClient.invalidateQueries({ queryKey: ['product', slug] });
-            }
-
-            // Update shipping cost from corrections if shipping changed
-            if (parsedCheckoutErrors.shipping) {
-                setCalculatedShippingCost(parsedCheckoutErrors.shipping.currentCost);
-            } else if (pendingCorrections.shippingCost !== undefined) {
-                const updatedShippingCost = pendingCorrections.correctedCart.estimatedShipping?.cost ?? pendingCorrections.shippingCost;
-                setCalculatedShippingCost(updatedShippingCost);
-            }
-
-            // Clear errors and close modal
-            setShippingCalculationError(null);
+            // Step 2: Close modal and clear pending corrections
             setPendingCorrections(null);
             setParsedCheckoutErrors(null);
-            setShowCorrectionModal(false);
 
-            // Show success message via checkoutSuccess state
-            // User will need to click "Place Order" again - this is safer than auto-retry
-            setCheckoutError(null);
-            // Set a temporary success message
-            alert('Cart corrections applied successfully. Please review and submit your order again.');
+            // User will need to manually click "Place Order" again after seeing updated cart
+            // This gives them a chance to review the corrected cart before proceeding
+
         } catch (acceptError) {
-            setCheckoutError(handleApiError(acceptError));
+            const errorMessage = handleApiError(acceptError);
+            setCheckoutError(errorMessage);
+            console.error('Accept corrections error:', acceptError);
         } finally {
             setIsAcceptingCorrections(false);
         }
-    }, [pendingCorrections, parsedCheckoutErrors, refreshCart, removeItem, updateItem, queryClient]);
+    }, [parsedCheckoutErrors, items, removeItem, updateItem]);
 
     /**
      * Reusable function to handle 400 checkout correction errors
@@ -534,44 +549,14 @@ const Checkout = () => {
     const handleCheckoutCorrectionError = useCallback((error: unknown): boolean => {
         // Check if this is a 400 error with correction data
         if (axios.isAxiosError(error) && error.response?.status === 400) {
-            const responseData = error.response.data;
+            const correctionData = error.response.data?.data as CheckoutCorrectionPayload | undefined;
 
-            // Backend returns: { message: "...", data: { needsUpdate: true, checkoutErrors: {...} } }
-            // Extract the nested data object
-            const correctionData = responseData?.data;
-
-            if (correctionData && 'needsUpdate' in correctionData && correctionData.needsUpdate) {
-                // Cast to CheckoutCorrectionResponse
-                const correctionPayload = correctionData as CheckoutCorrectionResponse;
-
-                setPendingCorrections(correctionPayload);
-                setCheckoutSuccess(null);
-
-                // Parse checkout errors
-                const errors = parseCheckoutErrors(correctionPayload);
-                setParsedCheckoutErrors(errors);
-
-                // Update shipping cost
-                const updatedShippingCost =
-                    correctionPayload.correctedCart.estimatedShipping?.cost ?? correctionPayload.shippingCost;
-                if (typeof updatedShippingCost === 'number') {
-                    setCalculatedShippingCost(updatedShippingCost);
-                }
-                setShippingCalculationError(null);
-
-                // Determine display strategy
-                if (errors && hasProductIssues(errors)) {
-                    // Product issues exist - show modal
-                    setShowCorrectionModal(true);
-                } else if (errors && errors.total) {
-                    // Total-only error - show blocking error
-                    setCheckoutError(errors.total.message || 'Order total verification failed. Please refresh and try again.');
-                } else {
-                    // Only shipping/coupon changes - these are shown as inline alerts (no modal)
-                    // User can proceed or accept changes via button
-                }
-
-                return true; // Handled as correction
+            if (correctionData?.needsUpdate && correctionData.errors) {
+                setPendingCorrections(correctionData);
+                setParsedCheckoutErrors(correctionData.errors);
+                setShowCorrectionModal(true);
+                setCheckoutError(null);
+                return true;
             }
         }
 
@@ -639,13 +624,11 @@ const Checkout = () => {
                 setCheckoutSuccess(null);
 
                 // Parse checkout errors
-                const errors = parseCheckoutErrors(responseData);
-
+                const errors = responseData.errors || null;
                 setParsedCheckoutErrors(errors);
 
-                // Update shipping cost
-                const updatedShippingCost =
-                    responseData.correctedCart.estimatedShipping?.cost ?? responseData.shippingCost;
+                // Update shipping cost from summary
+                const updatedShippingCost = responseData.summary.shippingCost;
                 if (typeof updatedShippingCost === 'number') {
                     setCalculatedShippingCost(updatedShippingCost);
                 }
@@ -676,8 +659,8 @@ const Checkout = () => {
                 await Promise.resolve(refreshResult);
             }
 
-            if (typeof successPayload.order.shippingPrice === 'number') {
-                setCalculatedShippingCost(successPayload.order.shippingPrice);
+            if (typeof successPayload.summary.shippingCost === 'number') {
+                setCalculatedShippingCost(successPayload.summary.shippingCost);
             }
 
             if (successPayload.payment?.paymentUrl) {
@@ -751,16 +734,16 @@ const Checkout = () => {
         if (shippingMethod === 'pickup') return true;
 
         return (
-            shippingForm.firstName.trim() !== '' &&
-            shippingForm.lastName.trim() !== '' &&
-            shippingForm.email.trim() !== '' &&
-            shippingForm.phoneNumber.trim() !== '' &&
+            (shippingForm.firstName || '').trim() !== '' &&
+            (shippingForm.lastName || '').trim() !== '' &&
+            (shippingForm.email || '').trim() !== '' &&
+            (shippingForm.phoneNumber || '').trim() !== '' &&
             shippingForm.state !== '' &&
-            shippingForm.lga.trim() !== '' &&
-            shippingForm.city.trim() !== '' &&
-            shippingForm.streetAddress.trim() !== '' &&
+            (shippingForm.lga || '').trim() !== '' &&
+            (shippingForm.city || '').trim() !== '' &&
+            (shippingForm.streetAddress || '').trim() !== '' &&
             shippingForm.country !== '' &&
-            shippingForm.postalCode.trim() !== ''
+            (shippingForm.postalCode || '').trim() !== ''
         );
     }, [shippingForm, shippingMethod]);
 
@@ -769,11 +752,11 @@ const Checkout = () => {
 
         return (
             shippingForm.state !== '' &&
-            shippingForm.lga.trim() !== '' &&
-            shippingForm.city.trim() !== '' &&
-            shippingForm.streetAddress.trim() !== '' &&
+            (shippingForm.lga || '').trim() !== '' &&
+            (shippingForm.city || '').trim() !== '' &&
+            (shippingForm.streetAddress || '').trim() !== '' &&
             shippingForm.country !== '' &&
-            shippingForm.postalCode.trim() !== ''
+            (shippingForm.postalCode || '').trim() !== ''
         );
     }, [shippingForm, shippingMethod]);
 
@@ -821,7 +804,8 @@ const Checkout = () => {
             const shippingAddressPayload = {
                 country: shippingForm.country,
                 state: shippingForm.state,
-                city: shippingForm.city || shippingForm.lga,
+                city: shippingForm.city,
+                lga: shippingForm.lga,
             };
 
             const destinationPayload = {
@@ -972,388 +956,56 @@ const Checkout = () => {
                             <div className="information mt-5">
                                 <div className="heading5">Information</div>
 
-                                {/* Shipping Method Badge - Outside form */}
-                                <div className="mt-5 mb-5 p-3 md:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                            <Icon.Truck size={20} weight="duotone" className="text-blue w-5 h-5 md:w-6 md:h-6 flex-shrink-0" />
-                                            <div>
-                                                <div className="text-xs sm:text-sm font-medium text-blue-900">
-                                                    Selected Method: <span className="capitalize">{shippingMethod === 'pickup' ? 'Pickup' : shippingMethod === 'normal' ? 'Normal Delivery' : 'Express Delivery'}</span>
-                                                </div>
-                                                {shippingMethod === 'pickup' && (
-                                                    <div className="text-xs text-blue-700 mt-0.5">No shipping address required</div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsChangingShippingMethod(!isChangingShippingMethod)}
-                                            className="text-xs sm:text-sm text-blue-700 hover:text-blue-900 font-medium underline flex items-center gap-1 whitespace-nowrap"
-                                        >
-                                            Change Method
-                                            {isChangingShippingMethod ? (
-                                                <Icon.CaretUp size={12} weight="bold" />
-                                            ) : (
-                                                <Icon.CaretDown size={12} weight="bold" />
-                                            )}
-                                        </button>
-                                    </div>
-
-                                    {/* Shipping Method Options - Show when changing */}
-                                    {isChangingShippingMethod && (
-                                        <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-blue-200 space-y-2">
-                                            <div className="text-xs sm:text-sm font-medium text-blue-900 mb-2">Choose shipping method:</div>
-
-                                            {/* Pickup Option */}
-                                            {shippingMethod !== 'pickup' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleChangeShippingMethod('pickup')}
-                                                    className="w-full flex items-center justify-between p-2 sm:p-3 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-all cursor-pointer"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <Icon.Storefront size={16} weight="duotone" className="text-blue" />
-                                                        <div>
-                                                            <div className="text-sm font-medium text-left">Pickup</div>
-                                                            <div className="text-xs text-secondary text-left">Free - Pick up from store</div>
-                                                        </div>
-                                                    </div>
-                                                    <Icon.ArrowRight size={16} weight="bold" className="text-blue" />
-                                                </button>
-                                            )}
-
-                                            {/* Normal Delivery Option */}
-                                            {shippingMethod !== 'normal' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleChangeShippingMethod('normal')}
-                                                    className="w-full flex items-center justify-between p-3 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-all cursor-pointer"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <Icon.Package size={16} weight="duotone" className="text-blue" />
-                                                        <div>
-                                                            <div className="text-sm font-medium text-left">Normal Delivery</div>
-                                                            <div className="text-xs text-secondary text-left">Calculated at checkout</div>
-                                                        </div>
-                                                    </div>
-                                                    <Icon.ArrowRight size={16} weight="bold" className="text-blue" />
-                                                </button>
-                                            )}
-
-                                            {/* Express Delivery Option */}
-                                            {shippingMethod !== 'express' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleChangeShippingMethod('express')}
-                                                    className="w-full flex items-center justify-between p-3 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-all cursor-pointer"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        <Icon.Lightning size={16} weight="duotone" className="text-blue" />
-                                                        <div>
-                                                            <div className="text-sm font-medium text-left">Express Delivery</div>
-                                                            <div className="text-xs text-secondary text-left">Fastest - Calculated at checkout</div>
-                                                        </div>
-                                                    </div>
-                                                    <Icon.ArrowRight size={16} weight="bold" className="text-blue" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                                <ShippingMethodSelector
+                                    currentMethod={shippingMethod}
+                                    isExpanded={isChangingShippingMethod}
+                                    onToggle={() => setIsChangingShippingMethod(!isChangingShippingMethod)}
+                                    onMethodChange={handleChangeShippingMethod}
+                                />
 
                                 <div className="form-checkout">
                                     <form>
                                         {/* Shipping Information - Only for delivery methods */}
                                         {shippingMethod !== 'pickup' && (
-                                            <div className="shipping-section border border-line rounded-lg mb-5 overflow-hidden">
-                                                <div
-                                                    className="flex items-center justify-between p-5 cursor-pointer bg-surface hover:bg-surface-variant1 transition-all"
-                                                    onClick={() => setIsShippingExpanded(!isShippingExpanded)}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <Icon.Package size={24} weight="duotone" className="text-blue" />
-                                                        <div>
-                                                            <div className="heading6">Shipping Information *</div>
-                                                            <div className="text-secondary caption1 mt-1">
-                                                                {isShippingFormComplete ? (
-                                                                    <span className="text-green-600 flex items-center gap-1">
-                                                                        <Icon.CheckCircle size={14} weight="bold" />
-                                                                        Complete
-                                                                    </span>
-                                                                ) : (
-                                                                    'Required for delivery cost calculation'
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    {isShippingExpanded ? (
-                                                        <Icon.CaretUp size={20} weight="bold" />
-                                                    ) : (
-                                                        <Icon.CaretDown size={20} weight="bold" />
-                                                    )}
-                                                </div>
-
-                                                {isShippingExpanded && (
-                                                    <div className="p-5 pt-0">
-                                                        {/* Address Selector for Authenticated Users */}
-                                                        {!isGuest && addresses && addresses.length > 0 && (
-                                                            <div className="mb-6">
-                                                                <AddressSelector
-                                                                    addresses={addresses}
-                                                                    selectedId={selectedAddressId}
-                                                                    onSelect={(addr) => {
-                                                                        setAddressValidationError(null);
-                                                                        if (addr) {
-                                                                            populateFormFromAddress(addr);
-                                                                            setSelectedAddressId(addr._id);
-                                                                        } else {
-                                                                            setSelectedAddressId(null);
-                                                                        }
-                                                                    }}
-                                                                />
-                                                                
-                                                                {addressValidationError && (
-                                                                    <div className="mt-2 text-red text-sm flex items-start gap-2">
-                                                                        <Icon.WarningCircle size={16} weight="bold" className="flex-shrink-0 mt-0.5" />
-                                                                        <span>{addressValidationError}</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        {/* Save manual address checkbox - only show when entering manually */}
-                                                        {!isGuest && !selectedAddressId && (
-                                                            <div className="mb-4">
-                                                                <label className="flex items-center gap-2 cursor-pointer text-sm">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={saveManualAddressToAccount}
-                                                                        onChange={(e) => setSaveManualAddressToAccount(e.target.checked)}
-                                                                        className="w-4 h-4 cursor-pointer"
-                                                                    />
-                                                                    <span className="text-secondary">Save this address to my account</span>
-                                                                </label>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Shipping Form Fields */}
-                                                        <div className="grid sm:grid-cols-2 gap-4 gap-y-5">
-                                                            <div className="">
-                                                                <label className="text-secondary text-sm mb-2 block" htmlFor="firstName">First Name *</label>
-                                                                <input
-                                                                    className="border-line px-4 py-3 w-full rounded-lg"
-                                                                    id="firstName"
-                                                                    type="text"
-                                                                    placeholder="First Name"
-                                                                    value={shippingForm.firstName}
-                                                                    onChange={(e) => handleShippingFormChange('firstName', e.target.value)}
-                                                                    required
-                                                                />
-                                                            </div>
-                                                        <div className="">
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="lastName">Last Name *</label>
-                                                            <input
-                                                                className="border-line px-4 py-3 w-full rounded-lg"
-                                                                id="lastName"
-                                                                type="text"
-                                                                placeholder="Last Name"
-                                                                value={shippingForm.lastName}
-                                                                onChange={(e) => handleShippingFormChange('lastName', e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div className="">
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="email">Email Address *</label>
-                                                            <input
-                                                                className="border-line px-4 py-3 w-full rounded-lg"
-                                                                id="email"
-                                                                type="email"
-                                                                placeholder="Email Address"
-                                                                value={shippingForm.email}
-                                                                onChange={(e) => handleShippingFormChange('email', e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div className="">
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="phoneNumber">Phone Number *</label>
-                                                            <input
-                                                                className="border-line px-4 py-3 w-full rounded-lg"
-                                                                id="phoneNumber"
-                                                                type="tel"
-                                                                placeholder="Phone Number"
-                                                                value={shippingForm.phoneNumber}
-                                                                onChange={(e) => handleShippingFormChange('phoneNumber', e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div className='col-span-full'>
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="country">Country *</label>
-                                                            <div className="select-block">
-                                                                <select
-                                                                    className="border border-line px-4 py-3 w-full rounded-lg"
-                                                                    id="country"
-                                                                    name="country"
-                                                                    value={shippingForm.country}
-                                                                    onChange={(e) => {
-                                                                        const nextCountry = e.target.value;
-                                                                        setShippingForm((prev) => ({
-                                                                            ...prev,
-                                                                            country: nextCountry,
-                                                                            state: '',
-                                                                            lga: '',
-                                                                        }));
-                                                                    }}
-                                                                >
-                                                                    {(shippingConfigs ?? []).map((config) => (
-                                                                        <option key={config.countryCode} value={config.countryName}>
-                                                                            {config.countryName}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                                <Icon.CaretDown className='arrow-down' />
-                                                                {shippingConfigError && (
-                                                                    <p className="text-xs text-red-600 mt-1">{shippingConfigError.message}</p>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <div className="">
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="state">State *</label>
-                                                            <div className="select-block">
-                                                                <select
-                                                                    className="border border-line px-4 py-3 w-full rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                    id="state"
-                                                                    name="state"
-                                                                    value={shippingForm.state}
-                                                                    onChange={(e) => {
-                                                                        const nextState = e.target.value;
-                                                                        setShippingForm((prev) => ({
-                                                                            ...prev,
-                                                                            state: nextState,
-                                                                            lga: '',
-                                                                        }));
-                                                                    }}
-                                                                    disabled={isLoadingShippingConfigs || !availableStates?.length}
-                                                                >
-                                                                    <option value="">
-                                                                        {isLoadingShippingConfigs ? 'Loading states...' : 'Choose State'}
-                                                                    </option>
-                                                                    {availableStates?.map((state) => (
-                                                                        <option key={state.name} value={state.name}>
-                                                                            {state.name}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                                <Icon.CaretDown className='arrow-down' />
-                                                            </div>
-                                                        </div>
-                                                        <div className=''>
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="lga">Local Government Area *</label>
-                                                            <div className="select-block">
-                                                                <select
-                                                                    className="border border-line px-4 py-3 w-full rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                    id="lga"
-                                                                    name="lga"
-                                                                    value={shippingForm.lga}
-                                                                    onChange={(e) => handleShippingFormChange('lga', e.target.value)}
-                                                                    disabled={!shippingForm.state || (!availableCities.length && !availableLGAs.length)}
-                                                                >
-                                                                    <option value="">Choose LGA</option>
-                                                                    {availableCities.length > 0 && (
-                                                                        <optgroup label="Cities">
-                                                                            {availableCities.map((city) => (
-                                                                                <option key={city.name} value={city.name}>
-                                                                                    {city.name}
-                                                                                </option>
-                                                                            ))}
-                                                                        </optgroup>
-                                                                    )}
-                                                                    {availableLGAs.length > 0 && (
-                                                                        <optgroup label="LGAs">
-                                                                            {availableLGAs.map((lga) => (
-                                                                                <option key={lga.name} value={lga.name}>
-                                                                                    {lga.name}
-                                                                                </option>
-                                                                            ))}
-                                                                        </optgroup>
-                                                                    )}
-                                                                </select>
-                                                                <Icon.CaretDown className='arrow-down' />
-                                                            </div>
-                                                        </div>
-                                                        <div className="col-span-full">
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="apartment">Street Address *</label>
-                                                            <input
-                                                                className="border-line px-4 py-3 w-full rounded-lg"
-                                                                id="apartment"
-                                                                type="text"
-                                                                placeholder="Street Address"
-                                                                value={shippingForm.streetAddress}
-                                                                onChange={(e) => handleShippingFormChange('streetAddress', e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div className="">
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="city">City *</label>
-                                                            <input
-                                                                className="border-line px-4 py-3 w-full rounded-lg"
-                                                                id="city"
-                                                                type="text"
-                                                                placeholder="City"
-                                                                value={shippingForm.city}
-                                                                onChange={(e) => handleShippingFormChange('city', e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        <div className="">
-                                                            <label className="text-secondary text-sm mb-2 block" htmlFor="postal">Postal Code *</label>
-                                                            <input
-                                                                className="border-line px-4 py-3 w-full rounded-lg"
-                                                                id="postal"
-                                                                type="number"
-                                                                placeholder="Postal Code"
-                                                                value={shippingForm.postalCode}
-                                                                onChange={(e) => handleShippingFormChange('postalCode', e.target.value)}
-                                                                required
-                                                            />
-                                                        </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <ShippingInformationForm
+                                                isExpanded={isShippingExpanded}
+                                                onToggle={() => setIsShippingExpanded(!isShippingExpanded)}
+                                                formState={shippingForm}
+                                                onFormChange={handleShippingFormChange}
+                                                setFormState={setShippingForm}
+                                                addresses={addresses}
+                                                selectedAddressId={selectedAddressId}
+                                                onAddressSelect={(addr) => {
+                                                    if (addr) {
+                                                        populateFormFromAddress(addr);
+                                                        setSelectedAddressId(addr._id);
+                                                    } else {
+                                                        setSelectedAddressId(null);
+                                                    }
+                                                }}
+                                                setSelectedAddressId={setSelectedAddressId}
+                                                isGuest={isGuest}
+                                                shippingConfigs={shippingConfigs}
+                                                isLoadingConfigs={isLoadingShippingConfigs}
+                                                configError={shippingConfigError}
+                                                selectedCountryConfig={selectedCountryConfig}
+                                                selectedStateConfig={selectedStateConfig}
+                                                availableStates={availableStates}
+                                                availableCities={availableCities}
+                                                availableLGAs={availableLGAs}
+                                                addressValidationError={addressValidationError}
+                                                setAddressValidationError={setAddressValidationError}
+                                                saveToAccount={saveManualAddressToAccount}
+                                                onSaveToAccountChange={setSaveManualAddressToAccount}
+                                                isShippingFormComplete={isShippingFormComplete}
+                                                populateFormFromAddress={populateFormFromAddress}
+                                            />
                                         )}
 
-                                        {/* Order Notes - Collapsible */}
-                                        <div className="notes-section border border-line rounded-lg mb-5 overflow-hidden">
-                                            <div
-                                                className="flex items-center justify-between p-5 cursor-pointer bg-surface hover:bg-surface-variant1 transition-all"
-                                                onClick={() => setIsNotesExpanded(!isNotesExpanded)}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Icon.Note size={24} weight="duotone" className="text-green" />
-                                                    <div>
-                                                        <div className="heading6">Order Notes</div>
-                                                        <div className="text-secondary caption1 mt-1">Add special instructions</div>
-                                                    </div>
-                                                </div>
-                                                {isNotesExpanded ? (
-                                                    <Icon.CaretUp size={20} weight="bold" />
-                                                ) : (
-                                                    <Icon.CaretDown size={20} weight="bold" />
-                                                )}
-                                            </div>
-
-                                            {isNotesExpanded && (
-                                                <div className="p-5 pt-0">
-                                                    <textarea
-                                                        className="border border-line px-4 py-3 w-full rounded-lg min-h-[120px]"
-                                                        id="note"
-                                                        name="note"
-                                                        placeholder="Add any special instructions for your order...">
-                                                    </textarea>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <OrderNotesSection
+                                            isExpanded={isNotesExpanded}
+                                            onToggle={() => setIsNotesExpanded(!isNotesExpanded)}
+                                        />
 
                                         <CheckoutAlerts
                                             pendingCorrections={pendingCorrections}
@@ -1361,296 +1013,55 @@ const Checkout = () => {
                                             checkoutSuccess={checkoutSuccess}
                                         />
 
-                                        <CheckoutButton
-                                            pendingCorrections={!!pendingCorrections}
-                                            isAcceptingCorrections={isAcceptingCorrections}
-                                            canProceedToPayment={canProceedToPayment}
-                                            isCalculatingShipping={isCalculatingShipping}
-                                            isSubmittingCheckout={isSubmittingCheckout}
-                                            shippingMethod={shippingMethod}
-                                            isShippingFormComplete={isShippingFormComplete}
-                                            handleAcceptCorrections={handleAcceptCorrections}
-                                            handleSubmitCheckout={handleSubmitCheckout}
-                                        />
+                                        <span className="hidden lg:block">
+                                            <CheckoutButton
+                                                pendingCorrections={!!pendingCorrections}
+                                                isAcceptingCorrections={isAcceptingCorrections}
+                                                canProceedToPayment={canProceedToPayment}
+                                                isCalculatingShipping={isCalculatingShipping}
+                                                isSubmittingCheckout={isSubmittingCheckout}
+                                                shippingMethod={shippingMethod}
+                                                isShippingFormComplete={isShippingFormComplete}
+                                                handleAcceptCorrections={handleAcceptCorrections}
+                                                handleSubmitCheckout={handleSubmitCheckout}
+                                            />
+                                        </span>
                                     </form>
                                 </div>
                             </div>
 
                         </div>
                         <div className="right w-full lg:w-5/12">
-                            <div className="checkout-block lg:sticky lg:top-[120px] border border-line rounded-xl md:rounded-2xl p-4 md:p-6 bg-white shadow-sm">
-                                {/* Order Summary Header - Collapsible */}
-                                <div
-                                    className="flex items-center justify-between cursor-pointer pb-3 md:pb-4 border-b border-line"
-                                    onClick={() => setIsOrdersExpanded(!isOrdersExpanded)}
-                                >
-                                    <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                                        <Icon.ShoppingCart size={24} weight="duotone" className="text-blue w-5 h-5 md:w-6 md:h-6 flex-shrink-0" />
-                                        <div>
-                                            <div className="heading5">Your Order</div>
-                                            {!isOrdersExpanded && (
-                                                <div className="text-secondary text-xs sm:text-sm mt-1 flex flex-wrap items-center gap-1 sm:gap-2">
-                                                    <span className="whitespace-nowrap">{cartStats.totalItems} items</span>
-                                                    <span className="hidden xs:inline">•</span>
-                                                    <span className="whitespace-nowrap">{cartStats.uniqueProducts} products</span>
-
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {isOrdersExpanded ? (
-                                        <Icon.CaretUp size={20} weight="bold" />
-                                    ) : (
-                                        <Icon.CaretDown size={20} weight="bold" />
-                                    )}
-                                </div>
-
-                                {/* Order Items - Collapsible */}
-                                {isOrdersExpanded && (
-                                    <div className="list-product-checkout max-h-[300px] sm:max-h-[400px] overflow-y-auto">
-                                        {isLoading ? (
-                                            <div className="flex items-center justify-center py-10">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <Icon.CircleNotch size={32} weight="bold" className="animate-spin text-blue" />
-                                                    <p className='text-button text-secondary'>Loading cart...</p>
-                                                </div>
-                                            </div>
-                                        ) : items.length === 0 ? (
-                                            <div className="flex items-center justify-center py-10">
-                                                <div className="flex flex-col items-center gap-3 text-secondary">
-                                                    <Icon.ShoppingCartSimple size={32} weight="bold" />
-                                                    <p className='text-button'>No product in cart</p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            items.map((item) => {
-                                                // Use ModalCart's exact pricing calculation method
-                                                const pricing = calculateCartItemPricing(item);
-
-                                                const itemId = item._id || item.id;
-                                                const productName = item.name || 'Product';
-                                                const productImagePath =
-                                                    item.description_images?.find((img) => img.cover_image)?.url ??
-                                                    item.description_images?.[0]?.url;
-                                                const productImageUrl = productImagePath ? getCdnUrl(productImagePath) : '/images/placeholder.png';
-
-                                                // Check for active sale (not pricing tier discount)
-                                                const hasSale = !!pricing.sale;
-                                                const salePercentage = hasSale ? Math.round(pricing.saleDiscount) : 0;
-
-                                                // Check for pricing tier
-                                                const hasPricingTier = !!pricing.pricingTier;
-
-                                                // Show price slash if there's EITHER a sale OR pricing tier discount
-                                                const hasDiscount = hasSale || hasPricingTier;
-
-                                                // Original price before any discounts
-                                                const originalPrice = pricing.basePrice;
-
-                                                return (
-                                                    <div key={itemId} className="item flex items-start gap-3 md:gap-4 py-3 md:py-4 border-b border-line last:border-b-0">
-                                                        {/* Product Image */}
-                                                        <div className="bg-img w-[60px] md:w-[70px] aspect-square flex-shrink-0 rounded-lg overflow-hidden border border-line">
-                                                            <Image
-                                                                src={productImageUrl}
-                                                                width={200}
-                                                                height={200}
-                                                                alt={productName}
-                                                                className='w-full h-full object-cover'
-                                                            />
-                                                        </div>
-
-                                                        <div className="flex-1 min-w-0">
-                                                            {/* Product Name */}
-                                                            <div className="name text-sm font-medium line-clamp-2 mb-2">{productName}</div>
-
-                                                            {/* Quantity */}
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <span className="text-xs text-secondary">Qty:</span>
-                                                                <span className="text-sm font-semibold">{item.qty}</span>
-                                                            </div>
-
-                                                            {/* Badges */}
-                                                            <div className="flex flex-wrap gap-2 mb-2">
-                                                                {/* Sale Badge */}
-                                                                {hasSale && (
-                                                                    <span className="inline-block text-[10px] bg-red text-white px-2 py-0.5 rounded font-bold uppercase tracking-wide">
-                                                                        SALE {salePercentage}% OFF
-                                                                    </span>
-                                                                )}
-
-                                                                {/* Bulk/Pricing Tier Badge */}
-                                                                {hasPricingTier && (
-                                                                    <span className="inline-block text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded font-semibold uppercase">
-                                                                        BULK DEALS
-                                                                    </span>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Pricing */}
-                                                            <div className="flex items-center justify-between mt-2">
-                                                                {/* Unit Price with slash if discounted */}
-                                                                <div className="text-xs">
-                                                                    {hasDiscount ? (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <span className="text-secondary line-through">
-                                                                                ${originalPrice.toFixed(2)}
-                                                                            </span>
-                                                                            <span className="text-red font-medium">
-                                                                                ${pricing.unitPrice.toFixed(2)} each
-                                                                            </span>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <span className="text-secondary">
-                                                                            ${pricing.unitPrice.toFixed(2)} each
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Total Price */}
-                                                                <div className="text-base font-bold text-blue">
-                                                                    ${pricing.totalPrice.toFixed(2)}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Order Summary - Always Visible */}
-                                <div className="order-summary mt-4 md:mt-5 pt-4 md:pt-5 border-t border-line space-y-2 md:space-y-3">
-                                    {/* Subtotal */}
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-secondary text-sm md:text-base">Subtotal</span>
-                                        <span className="text-sm md:text-base font-medium">{formatToNaira(resolvedSubtotal)}</span>
-                                    </div>
-
-                                    {/* Discount */}
-                                    {resolvedDiscount > 0 && (
-                                        <div className="flex justify-between items-center text-green-600">
-                                            <span className="flex items-center gap-1 text-sm md:text-base">
-                                                <Icon.Tag size={16} weight="duotone" className="w-4 h-4 flex-shrink-0" />
-                                                Discount {discountInfo?.couponCode && `(${discountInfo.couponCode})`}
-                                            </span>
-                                            <span className="font-semibold">-${resolvedDiscount.toFixed(2)}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Shipping */}
-                                    <div className="flex justify-between items-center">
-                                        <span className="flex items-center gap-1 text-secondary text-sm md:text-base">
-                                            <Icon.Truck size={16} weight="duotone" className="w-4 h-4 flex-shrink-0" />
-                                            Shipping
-                                        </span>
-                                        <span className="text-button">
-                                            {shippingMethod === 'pickup' ? (
-                                                <span className="text-green-600 font-semibold">Free (Pickup)</span>
-                                            ) : isCalculatingShipping ? (
-                                                <span className="flex items-center gap-1 text-blue">
-                                                    <Icon.CircleNotch size={14} weight="bold" className="animate-spin" />
-                                                    Calculating...
-                                                </span>
-                                            ) : shippingCalculationError ? (
-                                                <span className="text-red-600 text-xs">Error</span>
-                                            ) : calculatedShippingCost !== null ? (
-                                                formatToNaira(calculatedShippingCost)
-                                            ) : (
-                                                <span className="text-secondary text-xs">Enter address</span>
-                                            )}
-                                        </span>
-                                    </div>
-
-                                    {/* Shipping Calculation Error */}
-                                    {shippingCalculationError && (
-                                        <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                                            <Icon.WarningCircle size={14} weight="bold" className="flex-shrink-0 mt-0.5" />
-                                            <span>{shippingCalculationError}</span>
-                                        </div>
-                                    )}
-
-                                    {pendingCorrections && (
-                                        <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
-                                            <Icon.WarningDiamond size={14} weight="duotone" className="mt-0.5 flex-shrink-0" />
-                                            <div>
-                                                <p className="font-medium">Cart updated by store</p>
-                                                <p className="mt-0.5 leading-snug">
-                                                    Accept the updates to keep your totals accurate before completing payment.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Total */}
-                                    <div className="flex justify-between items-center pt-2 md:pt-3 border-t border-line">
-                                        <span className="text-base md:text-lg font-semibold">Total</span>
-                                        <span className="text-lg md:text-xl lg:text-2xl font-bold text-blue">
-                                            {resolvedTotal !== null ? (
-                                                formatToNaira(resolvedTotal)
-                                            ) : (
-                                                <span className="text-secondary text-sm">Add shipping info</span>
-                                            )}
-                                        </span>
-                                    </div>
-                                </div>
-
-
-                                {/* Trust Badges - Always Visible */}
-                                <div className="trust-badges mt-4 md:mt-5 pt-4 md:pt-5 grid grid-cols-2 gap-2 md:gap-3 justify-center">
-                                    <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-secondary">
-                                        <Icon.ShieldCheck size={16} weight="duotone" className="text-green-600" />
-                                        <span>Secure Payment</span>
-                                    </div>
-                                </div>
-
-                                {/* Inline Alerts for Shipping/Coupon Changes */}
-                                {parsedCheckoutErrors && !hasProductIssues(parsedCheckoutErrors) && (
-                                    <div className="mt-4 space-y-2">
-                                        {/* Shipping Update Alert */}
-                                        {parsedCheckoutErrors.shipping && (
-                                            <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-                                                <Icon.Truck className="text-blue text-xl flex-shrink-0 mt-0.5" />
-                                                <div>
-                                                    <p className="font-semibold text-blue-900">Shipping Cost Updated</p>
-                                                    <p className="text-blue-700 text-xs mt-1">
-                                                        {parsedCheckoutErrors.shipping.reason} (₦
-                                                        {parsedCheckoutErrors.shipping.previousCost.toLocaleString()} → ₦
-                                                        {parsedCheckoutErrors.shipping.currentCost.toLocaleString()})
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Coupon Rejection Alert */}
-                                        {parsedCheckoutErrors.coupons && parsedCheckoutErrors.coupons.length > 0 && (
-                                            <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
-                                                <Icon.Warning className="text-yellow-600 text-xl flex-shrink-0 mt-0.5" />
-                                                <div className="flex-1">
-                                                    <p className="font-semibold text-yellow-900 mb-1">Coupon Issue</p>
-                                                    {parsedCheckoutErrors.coupons.map((coupon, idx) => (
-                                                        <p key={idx} className="text-yellow-700 text-xs">
-                                                            • {coupon.code}: {coupon.reason}
-                                                        </p>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Total-Only Error (Blocking) */}
-                                {parsedCheckoutErrors?.total && (
-                                    <div className="mt-4 flex items-start gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-sm">
-                                        <Icon.XCircle className="text-red-600 text-xl flex-shrink-0 mt-0.5" />
-                                        <div>
-                                            <p className="font-semibold text-red-900">Checkout Error</p>
-                                            <p className="text-red-700 text-xs mt-1">{parsedCheckoutErrors.total.message}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            <OrderSummaryBlock
+                                items={items}
+                                isLoading={isLoading}
+                                isExpanded={isOrdersExpanded}
+                                onToggle={() => setIsOrdersExpanded(!isOrdersExpanded)}
+                                cartStats={cartStats}
+                                resolvedSubtotal={resolvedSubtotal}
+                                resolvedDiscount={resolvedDiscount}
+                                resolvedShippingCost={resolvedShippingCost}
+                                resolvedTotal={resolvedTotal}
+                                shippingMethod={shippingMethod}
+                                isCalculatingShipping={isCalculatingShipping}
+                                shippingCalculationError={shippingCalculationError}
+                                pendingCorrections={pendingCorrections}
+                                parsedCheckoutErrors={parsedCheckoutErrors}
+                                discountInfo={discountInfo}
+                            />
+                            <span className="block lg:hidden">
+                                <CheckoutButton
+                                    pendingCorrections={!!pendingCorrections}
+                                    isAcceptingCorrections={isAcceptingCorrections}
+                                    canProceedToPayment={canProceedToPayment}
+                                    isCalculatingShipping={isCalculatingShipping}
+                                    isSubmittingCheckout={isSubmittingCheckout}
+                                    shippingMethod={shippingMethod}
+                                    isShippingFormComplete={isShippingFormComplete}
+                                    handleAcceptCorrections={handleAcceptCorrections}
+                                    handleSubmitCheckout={handleSubmitCheckout}
+                                />
+                            </span>
                         </div>
                     </div>
                 </div>

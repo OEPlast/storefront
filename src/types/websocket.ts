@@ -12,7 +12,7 @@ export interface BaseEvent {
 // Product event data
 export interface ProductEventData extends BaseEvent {
   productId: string;
-  type: "product_update" | "inventory_update" | "price_update";
+  type: 'product_update' | 'inventory_update' | 'price_update';
   data: ProductUpdateData | InventoryUpdateData | PriceUpdateData;
 }
 
@@ -22,7 +22,7 @@ export interface ProductUpdateData {
   name: string;
   price: number;
   stock: number;
-  action: "created" | "updated" | "deleted";
+  action: 'created' | 'updated' | 'deleted';
   timestamp: string;
 }
 
@@ -84,12 +84,12 @@ export interface ServerToClientEvents {
 
 // WebSocket notification from event-bus
 export interface WebSocketNotification {
-  type: "product_update" | "inventory_update" | "price_update";
+  type: 'product_update' | 'inventory_update' | 'price_update';
   data: ProductUpdateData | InventoryUpdateData | PriceUpdateData;
 }
 
 // Socket connection status
-export type SocketStatus = "connecting" | "connected" | "disconnected" | "error";
+export type SocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
 // Product subscription tracker
 export interface ProductSubscription {

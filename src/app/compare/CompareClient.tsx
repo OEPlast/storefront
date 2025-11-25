@@ -68,14 +68,8 @@ const CompareClient = () => {
     }));
 
     const handleAddToCart = (product: ProductDetail) => {
-        // Simple add to cart without full conversion
-        addToCart({
-            id: product._id,
-            name: product.name,
-            price: product.price,
-            slug: product.slug,
-            quantity: 1,
-        } as any);
+        // Use CartContext signature: (product, qty, selectedAttributes, selectedVariant)
+        addToCart(product, 1, [], undefined);
         openModalCart();
     };
 

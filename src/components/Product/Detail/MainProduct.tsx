@@ -22,6 +22,7 @@ import { convert as htmlToText } from 'html-to-text';
 import PricingTiersHorizontal from './PricingTiersHorizontal';
 import { useProduct } from '@/hooks/queries/useProduct';
 import RelatedProducts from '../RelatedProducts';
+import PaymentMethodsBadge from '@/components/Product/PaymentMethodsBadge';
 import ReviewsList from '../Reviews/ReviewsList';
 import { getCdnUrl } from '@/libs/cdn-url';
 import Color from 'color';
@@ -326,7 +327,14 @@ const Sale: React.FC<Props> = ({ slug }) => {
             setSelectedAttributes(initialSelection);
         }
     }, [attributes, selectedAttributes]);
+    const limitedSaleStats = useMemo(() => {
+        if (normalizedSale?.type !== 'Limited') return { sold: 0, total: 0 };
 
+        const sold = normalizedSale.variants.reduce((acc, variant) => acc + (variant.boughtCount || 0), 0);
+        const total = normalizedSale.variants.reduce((acc, variant) => acc + (variant.maxBuys || 0), 0);
+
+        return { sold, total };
+    }, [normalizedSale]);
     // Handle loading state
     if (isLoading) {
         return (
@@ -447,14 +455,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
         setActiveTab(tab);
     };
 
-    const limitedSaleStats = useMemo(() => {
-        if (normalizedSale?.type !== 'Limited') return { sold: 0, total: 0 };
 
-        const sold = normalizedSale.variants.reduce((acc, variant) => acc + (variant.boughtCount || 0), 0);
-        const total = normalizedSale.variants.reduce((acc, variant) => acc + (variant.maxBuys || 0), 0);
-
-        return { sold, total };
-    }, [normalizedSale]);
 
 
     return (
@@ -747,58 +748,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
                                         <div className="text-secondary">{product.type}</div>
                                     </div>
                                 </div>
-                                <div className="list-payment mt-7">
-                                    <div className="main-content lg:pt-8 pt-6 lg:pb-6 pb-4 sm:px-4 px-3 border border-line rounded-xl relative max-md:w-2/3 max-sm:w-full">
-                                        <div className="heading6 px-5 bg-white absolute -top-[14px] left-1/2 -translate-x-1/2 whitespace-nowrap">Guranteed safe checkout</div>
-                                        <div className="list grid grid-cols-5 w-full max-w-[500px] justify-self-center">
-                                            <div className="item flex items-center justify-center lg:px-3 px-1">
-                                                <Image
-                                                    src={'/images/payment/visa.webp'}
-                                                    width={500}
-                                                    height={450}
-                                                    alt='payment'
-                                                    className='w-full'
-                                                />
-                                            </div>
-                                            <div className="item flex items-center justify-center lg:px-3 px-1">
-                                                <Image
-                                                    src={'/images/payment/verve.png'}
-                                                    width={500}
-                                                    height={450}
-                                                    alt='payment'
-                                                    className='w-full'
-                                                />
-                                            </div>
-                                            <div className="item flex items-center justify-center lg:px-3 px-1">
-                                                <Image
-                                                    src={'/images/payment/mastercard.webp'}
-                                                    width={500}
-                                                    height={450}
-                                                    alt='payment'
-                                                    className='w-full'
-                                                />
-                                            </div>
-                                            <div className="item flex items-center justify-center lg:px-3 px-1">
-                                                <Image
-                                                    src={'/images/payment/opay.jpeg'}
-                                                    width={500}
-                                                    height={450}
-                                                    alt='payment'
-                                                    className='w-full'
-                                                />
-                                            </div>
-                                            <div className="item flex items-center justify-center lg:px-3 px-1">
-                                                <Image
-                                                    src={'/images/payment/paystack.png'}
-                                                    width={500}
-                                                    height={450}
-                                                    alt='payment'
-                                                    className='w-full'
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <PaymentMethodsBadge className="mt-7" title="Guaranteed safe checkout" />
                             </div>
                             <div className="get-it mt-6">
                                 <div className="heading5">Get it today</div>

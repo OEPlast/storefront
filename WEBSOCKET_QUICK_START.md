@@ -230,25 +230,25 @@ export default function ProductPage({ product }: { product: ProductType }) {
 
 #### Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `productIds` | `string[]` | `[]` | Array of product IDs to subscribe to |
-| `autoReconnect` | `boolean` | `true` | Enable automatic reconnection |
-| `debounceMs` | `number` | `1000` | Debounce time before triggering query invalidation |
-| `enabled` | `boolean` | `true` | Enable/disable the WebSocket connection |
-| `onUpdate` | `function` | - | Callback when product updates are received |
-| `onStatusChange` | `function` | - | Callback when connection status changes |
+| Option           | Type       | Default | Description                                        |
+| ---------------- | ---------- | ------- | -------------------------------------------------- |
+| `productIds`     | `string[]` | `[]`    | Array of product IDs to subscribe to               |
+| `autoReconnect`  | `boolean`  | `true`  | Enable automatic reconnection                      |
+| `debounceMs`     | `number`   | `1000`  | Debounce time before triggering query invalidation |
+| `enabled`        | `boolean`  | `true`  | Enable/disable the WebSocket connection            |
+| `onUpdate`       | `function` | -       | Callback when product updates are received         |
+| `onStatusChange` | `function` | -       | Callback when connection status changes            |
 
 #### Return Values
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `status` | `SocketStatus` | Current connection status: `'connecting'` \| `'connected'` \| `'disconnected'` \| `'error'` |
-| `isConnected` | `boolean` | Whether the socket is connected |
-| `subscribeToProduct` | `function` | Manually subscribe to a product |
-| `unsubscribeFromProduct` | `function` | Manually unsubscribe from a product |
-| `requestSync` | `function` | Request sync for reconnection recovery |
-| `socket` | `Socket \| null` | Raw Socket.IO instance (advanced usage) |
+| Property                 | Type             | Description                                                                                 |
+| ------------------------ | ---------------- | ------------------------------------------------------------------------------------------- |
+| `status`                 | `SocketStatus`   | Current connection status: `'connecting'` \| `'connected'` \| `'disconnected'` \| `'error'` |
+| `isConnected`            | `boolean`        | Whether the socket is connected                                                             |
+| `subscribeToProduct`     | `function`       | Manually subscribe to a product                                                             |
+| `unsubscribeFromProduct` | `function`       | Manually unsubscribe from a product                                                         |
+| `requestSync`            | `function`       | Request sync for reconnection recovery                                                      |
+| `socket`                 | `Socket \| null` | Raw Socket.IO instance (advanced usage)                                                     |
 
 ## Integration Checklist
 
@@ -342,8 +342,7 @@ Then observe the product data update without page refresh.
 The hook automatically invalidates these query keys:
 
 ```typescript
-['product', productId]  // Single product
-['products']            // Product lists
+['product', productId]['products']; // Single product // Product lists
 ```
 
 Make sure your TanStack Query hooks use these keys:

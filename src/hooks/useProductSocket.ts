@@ -102,34 +102,43 @@ export function useProductSocket(options: UseProductSocketOptions = {}) {
   );
 
   // Subscribe to product updates
-  const subscribeToProduct = useCallback((productId: string) => {
-    if (!socketRef.current || !isConnected) return;
+  const subscribeToProduct = useCallback(
+    (productId: string) => {
+      if (!socketRef.current || !isConnected) return;
 
-    if (!subscribedProductsRef.current.has(productId)) {
-      socketRef.current.emit('join_product', productId);
-      subscribedProductsRef.current.add(productId);
-      console.log(`[WebSocket] Subscribed to product: ${productId}`);
-    }
-  }, [isConnected]);
+      if (!subscribedProductsRef.current.has(productId)) {
+        socketRef.current.emit('join_product', productId);
+        subscribedProductsRef.current.add(productId);
+        console.log(`[WebSocket] Subscribed to product: ${productId}`);
+      }
+    },
+    [isConnected]
+  );
 
   // Unsubscribe from product updates
-  const unsubscribeFromProduct = useCallback((productId: string) => {
-    if (!socketRef.current || !isConnected) return;
+  const unsubscribeFromProduct = useCallback(
+    (productId: string) => {
+      if (!socketRef.current || !isConnected) return;
 
-    if (subscribedProductsRef.current.has(productId)) {
-      socketRef.current.emit('leave_product', productId);
-      subscribedProductsRef.current.delete(productId);
-      console.log(`[WebSocket] Unsubscribed from product: ${productId}`);
-    }
-  }, [isConnected]);
+      if (subscribedProductsRef.current.has(productId)) {
+        socketRef.current.emit('leave_product', productId);
+        subscribedProductsRef.current.delete(productId);
+        console.log(`[WebSocket] Unsubscribed from product: ${productId}`);
+      }
+    },
+    [isConnected]
+  );
 
   // Request sync for a product (reconnection recovery)
-  const requestSync = useCallback((productId: string, lastTimestamp?: string) => {
-    if (!socketRef.current || !isConnected) return;
+  const requestSync = useCallback(
+    (productId: string, lastTimestamp?: string) => {
+      if (!socketRef.current || !isConnected) return;
 
-    socketRef.current.emit('request_sync', productId, lastTimestamp);
-    console.log(`[WebSocket] Requested sync for product: ${productId}`);
-  }, [isConnected]);
+      socketRef.current.emit('request_sync', productId, lastTimestamp);
+      console.log(`[WebSocket] Requested sync for product: ${productId}`);
+    },
+    [isConnected]
+  );
 
   // Initialize socket connection
   useEffect(() => {

@@ -682,7 +682,7 @@ const Cart = () => {
                                                             <div className="text-xs text-secondary mt-0.5">Pick up from store</div>
                                                         </div>
                                                     </div>
-                                                    <div className="font-semibold">$0.00</div>
+                                                    <div className="font-semibold">&#8358 0.00</div>
                                                 </label>
 
                                                 <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${shippingMethod === 'normal' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}>
@@ -702,7 +702,7 @@ const Cart = () => {
                                                     <div className="font-semibold text-secondary text-sm">TBD</div>
                                                 </label>
 
-                                                <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${shippingMethod === 'express' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}>
+                                                {/* <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${shippingMethod === 'express' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}>
                                                     <div className="flex items-center gap-2">
                                                         <input
                                                             type="radio"
@@ -717,7 +717,7 @@ const Cart = () => {
                                                         </div>
                                                     </div>
                                                     <div className="font-semibold text-secondary text-sm">TBD</div>
-                                                </label>
+                                                </label> */}
                                             </div>
 
                                         </div>

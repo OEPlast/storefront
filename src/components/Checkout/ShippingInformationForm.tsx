@@ -25,14 +25,14 @@ interface ShippingInformationFormProps {
     formState: ShippingFormState;
     onFormChange: <K extends keyof ShippingFormState>(field: K, value: ShippingFormState[K]) => void;
     setFormState: React.Dispatch<React.SetStateAction<ShippingFormState>>;
-    
+
     // Address management (for authenticated users)
     addresses?: Address[];
     selectedAddressId: string | null;
     onAddressSelect: (addr: Address | null) => void;
     setSelectedAddressId: (id: string | null) => void;
     isGuest: boolean;
-    
+
     // Shipping configs
     shippingConfigs: LogisticsConfigRecord[] | undefined;
     isLoadingConfigs: boolean;
@@ -42,18 +42,18 @@ interface ShippingInformationFormProps {
     availableStates: LogisticsStateConfig[];
     availableCities: LogisticsLocationConfig[];
     availableLGAs: LogisticsLocationConfig[];
-    
+
     // Address validation
     addressValidationError: string | null;
     setAddressValidationError: (error: string | null) => void;
-    
+
     // Save address checkbox
     saveToAccount: boolean;
     onSaveToAccountChange: (save: boolean) => void;
-    
+
     // Form completion status
     isShippingFormComplete: boolean;
-    
+
     // Address population function
     populateFormFromAddress: (address: Address) => void;
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import Breadcrumb from '@/components/Breadcrumb/Breadcrumb';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
+import { ProductSkeleton } from '@/components/Product/ProductLoading';
 
 export default function WishlistLoading() {
     return (
@@ -29,20 +30,11 @@ export default function WishlistLoading() {
                             </div>
                         </div>
 
-                        <div className="list-filtered flex items-center gap-3 mt-4">
-                            <div className="total-product">
-                                <span className='text-secondary'>Loading products...</span>
-                            </div>
-                        </div>
 
                         {/* Loading skeleton */}
                         <div className="grid lg:grid-cols-4 sm:grid-cols-3 grid-cols-2 sm:gap-[30px] gap-[20px] mt-7">
-                            {[...Array(12)].map((_, index) => (
-                                <div key={index} className="product-item animate-pulse">
-                                    <div className="bg-surface rounded-lg aspect-square mb-3"></div>
-                                    <div className="h-4 bg-surface rounded w-3/4 mb-2"></div>
-                                    <div className="h-4 bg-surface rounded w-1/2"></div>
-                                </div>
+                            {Array(15).fill(0).map((_, index) => (
+                                <ProductSkeleton key={`productSkeleton__${index}`} />
                             ))}
                         </div>
                     </div>

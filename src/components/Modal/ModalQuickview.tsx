@@ -422,9 +422,7 @@ const ModalQuickview = () => {
                                                 <div className="button-main w-full text-center bg-surface text-secondary2 border border-line hover:bg-surface hover:text-secondary">Out Of Stock</div>
                                             )}
                                         </div>
-                                        <div className="button-block mt-5">
-                                            <div className="button-main w-full text-center">Buy It Now</div>
-                                        </div>
+
                                         <div className="flex items-center flex-wrap lg:gap-20 gap-8 gap-y-4 mt-5">
                                             <div className="compare flex items-center gap-3 cursor-pointer" onClick={handleAddToCompare}>
                                                 <div

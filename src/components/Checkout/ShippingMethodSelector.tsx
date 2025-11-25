@@ -91,23 +91,6 @@ const ShippingMethodSelector: React.FC<ShippingMethodSelectorProps> = ({
                         </button>
                     )}
 
-                    {/* Express Delivery Option */}
-                    {currentMethod !== 'express' && (
-                        <button
-                            type="button"
-                            onClick={() => onMethodChange('express')}
-                            className="w-full flex items-center justify-between p-3 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-all cursor-pointer"
-                        >
-                            <div className="flex items-center gap-2">
-                                <Icon.Lightning size={16} weight="duotone" className="text-blue" />
-                                <div>
-                                    <div className="text-sm font-medium text-left">Express Delivery</div>
-                                    <div className="text-xs text-secondary text-left">Fastest - Calculated at checkout</div>
-                                </div>
-                            </div>
-                            <Icon.ArrowRight size={16} weight="bold" className="text-blue" />
-                        </button>
-                    )}
                 </div>
             )}
         </div>
@@ -115,3 +98,21 @@ const ShippingMethodSelector: React.FC<ShippingMethodSelectorProps> = ({
 };
 
 export default ShippingMethodSelector;
+/*
+{currentMethod !== 'express' && (
+    <button
+        type="button"
+        onClick={() => onMethodChange('express')}
+        className="w-full flex items-center justify-between p-3 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-all cursor-pointer"
+    >
+        <div className="flex items-center gap-2">
+            <Icon.Lightning size={16} weight="duotone" className="text-blue" />
+            <div>
+                <div className="text-sm font-medium text-left">Express Delivery</div>
+                <div className="text-xs text-secondary text-left">Fastest - Calculated at checkout</div>
+            </div>
+        </div>
+        <Icon.ArrowRight size={16} weight="bold" className="text-blue" />
+    </button>
+)}
+*/

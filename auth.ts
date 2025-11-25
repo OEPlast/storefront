@@ -42,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           lastname: profile.family_name,
           email: profile.email,
           image: profile.picture,
+          country: profile.country,
           emailVerified: profile.email_verified ? new Date() : null,
         };
       },

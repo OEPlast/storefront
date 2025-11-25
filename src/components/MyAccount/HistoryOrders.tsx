@@ -135,11 +135,8 @@ const OrderItem = ({ order }: { order: OrderHistoryType; }) => {
 
 export default function HistoryOrders() {
   const { activeTab, activeOrders, setActiveOrders, orderPage, setOrderPage, orderLimit } = useAccountStore();
-  console.log('Active Orders:', activeOrders); // Debug log
-  console.log('Order Page:', orderPage); // Debug log
 
   const handleActiveOrders = (order: OrderQueryParams['status']) => {
-    console.log('Changing to:', order); // Debug log
     setActiveOrders(order);
     setOrderPage(1);
   };

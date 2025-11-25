@@ -10,6 +10,7 @@ import { useWeekProducts } from '@/hooks/queries/useProductLists';
 import { useWeekProductsFilters } from '@/hooks/queries/useProductFilters';
 import CategoryFilterSidebar from '@/components/Shop/CategoryFilterSidebar';
 import type { SortOption } from '@/types/product';
+import { ProductSkeleton } from '@/components/Product/ProductLoading';
 
 type LayoutType = 'grid3' | 'grid4' | 'grid5';
 
@@ -351,9 +352,9 @@ export default function WeekProductsClient() {
                         {/* Products Grid */}
                         <div className={`list-filtered mt-7 ${gridClass} sm:gap-[30px] gap-[20px]`}>
                             {isLoading || isFetching ? (
-                                <div className="col-span-full text-center py-10">
-                                    <div className="text-secondary">Loading products...</div>
-                                </div>
+                                Array(15).fill(0).map((_, index) => (
+                                    <ProductSkeleton key={`productSkeleton__${index}`} />
+                                ))
                             ) : products && products.length > 0 ? (
                                 products.map((product, index) => (
                                     <Product key={index} data={product} type="grid" />

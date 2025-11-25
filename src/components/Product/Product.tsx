@@ -213,7 +213,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
         if (activeSize) {
             attributes.push({ name: 'Size', value: activeSize });
         }
-console.log(data);
+        console.log(data);
 
         // Add full product to cart with quantity and selected attributes
         addToCart(data, qty, attributes);
@@ -496,9 +496,13 @@ console.log(data);
                                     </Marquee>
                                 </>
                             )}
-                            <div className="list-action grid grid-cols-2 gap-3 px-3 absolute w-full bottom-5 max-lg:hidden">
+                            <div className="list-action grid gap-3 px-3 absolute w-full bottom-5 max-lg:hidden"
+                                style={{
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 105px), 1fr))'
+                                }}
+                            >
                                 <div
-                                    className="quick-view-btn w-full text-button-uppercase py-2 text-center rounded-full duration-300 bg-white hover:bg-black hover:text-white"
+                                    className="quick-view-btn w-full text-button-uppercase py-2 text-center rounded-full duration-300 bg-white hover:bg-black hover:text-white whitespace-nowrap"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleQuickviewOpen();
@@ -507,8 +511,8 @@ console.log(data);
                                     Quick View
                                 </div>
                                 {!hasNonColorAttributes ? (
-                                    data.stock >= 0 ? (<div
-                                        className="add-cart-btn w-full text-button-uppercase py-2 px-0.5 text-center rounded-full duration-500 bg-white hover:bg-black hover:text-white cursor-pointer"
+                                    data.stock > 0 ? (<div
+                                        className="add-cart-btn w-full text-button-uppercase py-2 px-0.5 text-center rounded-full duration-500 bg-white hover:bg-black hover:text-white cursor-pointer whitespace-nowrap"
                                         onClick={e => {
                                             e.stopPropagation();
                                             handleAddToCart();
@@ -516,13 +520,13 @@ console.log(data);
                                     >
                                         Add To Cart
                                     </div>) : (
-                                        <div className="add-cart-btn w-full text-button-uppercase py-2 px-0.5 text-center rounded-full duration-500 bg-surface text-secondary2 border border-line hover:bg-surface hover:text-secondary">Out Of Stock</div>
+                                        <div className="add-cart-btn w-full text-button-uppercase py-2 px-0.5 text-center rounded-full duration-500 bg-surface/90 text-secondary2 border border-line whitespace-nowrap">Out Of Stock</div>
 
                                     )
                                 ) : (
                                     <>
                                         <div
-                                            className="quick-shop-btn text-button-uppercase py-2 text-center rounded-full duration-500 bg-white hover:bg-black hover:text-white"
+                                            className="quick-shop-btn text-button-uppercase py-2 text-center rounded-full duration-500 bg-white hover:bg-black hover:text-white whitespace-nowrap"
                                             onClick={e => {
                                                 e.stopPropagation();
                                                 setOpenQuickShop(!openQuickShop);
@@ -559,7 +563,7 @@ console.log(data);
                                                 >
                                                     Add To cart
                                                 </div>) : (
-                                                <div className="button-main w-full text-center rounded-full py-3 mt-4 bg-surface text-secondary2 border border-line hover:bg-surface hover:text-secondary">Out Of Stock</div>
+                                                <div className="button-main w-full text-center rounded-full py-3 mt-4 bg-surface/90 text-secondary2 border border-line">Out Of Stock</div>
 
                                             )}
                                         </div>

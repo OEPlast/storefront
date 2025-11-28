@@ -1,27 +1,26 @@
-'use client'
-import React, { useState } from 'react'
+'use client';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useRouter } from 'next/navigation'
-import TopNavOne from '@/components/Header/TopNav/TopNavOne'
-import MenuOne from '@/components/Header/Menu/MenuOne'
-import blogData from '@/data/Blog.json'
+import { useRouter } from 'next/navigation';
+import TopNavOne from '@/components/Header/TopNav/TopNavOne';
+import blogData from '@/data/Blog.json';
 import NewsInsight from '@/components/Home3/NewsInsight';
-import Footer from '@/components/Footer/Footer'
+import Footer from '@/components/Footer/Footer';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import Rate from '@/components/Other/Rate';
 
 const BlogDetailTwo = () => {
-    const searchParams = useSearchParams()
-    const router = useRouter()
+    const searchParams = useSearchParams();
+    const router = useRouter();
 
-    let blogId = searchParams.get('id')
+    let blogId = searchParams.get('id');
     if (blogId === null) {
-        blogId = '14'
+        blogId = '14';
     }
 
-    const blogMain = blogData[Number(blogId) - 1]
+    const blogMain = blogData[Number(blogId) - 1];
 
     const handleBlogClick = (category: string) => {
         // Go to blog detail with category selected
@@ -35,10 +34,6 @@ const BlogDetailTwo = () => {
 
     return (
         <>
-            <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
-            <div id="header" className='relative w-full'>
-                <MenuOne props="bg-white" />
-            </div>
             <div className='blog detail2 md:mt-[74px] mt-[56px] border-t border-line'>
                 <div className="container lg:pt-20 md:pt-14 pt-10">
                     <div className="blog-content flex justify-between max-lg:flex-col gap-y-10">
@@ -445,7 +440,7 @@ const BlogDetailTwo = () => {
             </div>
             <Footer />
         </>
-    )
-}
+    );
+};
 
-export default BlogDetailTwo
+export default BlogDetailTwo;

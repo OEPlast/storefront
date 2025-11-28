@@ -75,9 +75,8 @@ export default function ChangePasswordForm() {
         }}
       >
         {/* Current Password Field */}
-        <form.Field
-          name="currentPassword"
-          children={(field) => {
+        <form.Field name="currentPassword">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -102,12 +101,11 @@ export default function ChangePasswordForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
         {/* New Password Field */}
-        <form.Field
-          name="newPassword"
-          children={(field) => {
+        <form.Field name="newPassword">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -133,12 +131,11 @@ export default function ChangePasswordForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
         {/* Confirm Password Field */}
-        <form.Field
-          name="confirmPassword"
-          children={(field) => {
+        <form.Field name="confirmPassword">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -163,13 +160,13 @@ export default function ChangePasswordForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
         {/* Submit Button */}
         <div className="block-button lg:mt-10 mt-6">
           <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-            children={([canSubmit, isSubmitting]) => (
+            selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            {([canSubmit, isSubmitting]) => (
               <button
                 type="submit"
                 className="button-main"
@@ -178,7 +175,7 @@ export default function ChangePasswordForm() {
                 {changePasswordMutation.isPending ? 'Changing Password...' : 'Submit'}
               </button>
             )}
-          />
+          </form.Subscribe>
         </div>
       </form>
     </div>

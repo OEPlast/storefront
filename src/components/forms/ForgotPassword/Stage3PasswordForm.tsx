@@ -102,9 +102,8 @@ export default function Stage3PasswordForm() {
         className="md:mt-7 mt-4">
         <div className="space-y-5">
           {/* New Password */}
-          <form.Field
-            name="newPassword"
-            children={(field) => {
+          <form.Field name="newPassword">
+            {(field) => {
               const hasError =
                 field.state.meta.isTouched && !field.state.meta.isValid;
 
@@ -134,12 +133,11 @@ export default function Stage3PasswordForm() {
                 </div>
               );
             }}
-          />
+          </form.Field>
 
           {/* Confirm Password */}
-          <form.Field
-            name="confirmPassword"
-            children={(field) => {
+          <form.Field name="confirmPassword">
+            {(field) => {
               const hasError =
                 field.state.meta.isTouched && !field.state.meta.isValid;
 
@@ -167,7 +165,7 @@ export default function Stage3PasswordForm() {
                 </div>
               );
             }}
-          />
+          </form.Field>
         </div>
 
         {/* Error Message */}
@@ -180,8 +178,8 @@ export default function Stage3PasswordForm() {
         {/* Reset Password Button */}
         <div className="block-button mt-7">
           <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-            children={([canSubmit, isSubmitting]) => (
+            selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            {([canSubmit, isSubmitting]) => (
               <button
                 type="submit"
                 disabled={!canSubmit || isSubmitting}
@@ -189,7 +187,7 @@ export default function Stage3PasswordForm() {
                 {isSubmitting ? "Resetting Password..." : "Reset Password"}
               </button>
             )}
-          />
+          </form.Subscribe>
         </div>
       </form>
     </>

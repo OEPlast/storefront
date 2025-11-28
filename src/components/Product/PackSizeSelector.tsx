@@ -20,6 +20,14 @@ const PackSizeSelector: React.FC<PackSizeSelectorProps> = ({
 }) => {
     const [selectedPackIndex, setSelectedPackIndex] = useState<number | null>(null);
 
+    // Auto-select first pack on mount
+    useEffect(() => {
+        if (packSizes && packSizes.length > 0 && selectedPackIndex === null) {
+            handlePackSelect(0);
+        }
+    }, [packSizes]);
+
+
     // If no pack sizes defined, return null (product sold as single unit)
     if (!packSizes || packSizes.length === 0) {
         return null;
@@ -57,12 +65,6 @@ const PackSizeSelector: React.FC<PackSizeSelectorProps> = ({
         onPackChange(selectedPack, effectivePrice, effectiveStock);
     };
 
-    // Auto-select first pack on mount
-    useEffect(() => {
-        if (packSizes.length > 0 && selectedPackIndex === null) {
-            handlePackSelect(0);
-        }
-    }, [packSizes]);
 
     return (
         <div className={`pack-size-selector ${className}`}>
@@ -80,8 +82,8 @@ const PackSizeSelector: React.FC<PackSizeSelectorProps> = ({
                         <div
                             key={index}
                             className={`pack-size-item relative p-4 rounded-lg border-2 cursor-pointer transition-all ${isSelected
-                                    ? 'border-black bg-gray-50'
-                                    : 'border-line bg-white hover:border-gray-400'
+                                ? 'border-black bg-gray-50'
+                                : 'border-line bg-white hover:border-gray-400'
                                 } ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}`}
                             onClick={() => !isOutOfStock && handlePackSelect(index)}
                         >

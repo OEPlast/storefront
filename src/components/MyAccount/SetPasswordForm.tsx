@@ -72,9 +72,8 @@ export default function SetPasswordForm() {
         }}
       >
         {/* New Password Field */}
-        <form.Field
-          name="newPassword"
-          children={(field) => {
+        <form.Field name="newPassword">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -100,12 +99,11 @@ export default function SetPasswordForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
         {/* Confirm Password Field */}
-        <form.Field
-          name="confirmPassword"
-          children={(field) => {
+        <form.Field name="confirmPassword">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -130,13 +128,13 @@ export default function SetPasswordForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
         {/* Submit Button */}
         <div className="block-button lg:mt-10 mt-6">
           <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-            children={([canSubmit, isSubmitting]) => (
+            selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            {([canSubmit, isSubmitting]) => (
               <button
                 type="submit"
                 className="button-main"
@@ -145,7 +143,7 @@ export default function SetPasswordForm() {
                 {setPasswordMutation.isPending ? 'Setting Password...' : 'Set Password'}
               </button>
             )}
-          />
+          </form.Subscribe>
         </div>
       </form>
     </div>

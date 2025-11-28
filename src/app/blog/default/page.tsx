@@ -1,29 +1,28 @@
-'use client'
-import React, { useState } from 'react'
+'use client';
+import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import TopNavOne from '@/components/Header/TopNav/TopNavOne'
-import MenuOne from '@/components/Header/Menu/MenuOne'
+import TopNavOne from '@/components/Header/TopNav/TopNavOne';
 import Breadcrumb from '@/components/Breadcrumb/Breadcrumb';
-import blogData from '@/data/Blog.json'
+import blogData from '@/data/Blog.json';
 import BlogItem from '@/components/Blog/BlogItem';
-import Footer from '@/components/Footer/Footer'
-import HandlePagination from '@/components/Other/HandlePagination'
-import { useRouter } from 'next/navigation'
+import Footer from '@/components/Footer/Footer';
+import HandlePagination from '@/components/Other/HandlePagination';
+import { useRouter } from 'next/navigation';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 
 const BlogDefault = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const productsPerPage = 3;
     const offset = currentPage * productsPerPage;
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    let dataCategory = searchParams.get('category')
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    let dataCategory = searchParams.get('category');
     const [category, setCategory] = useState<string | null>(dataCategory);
 
     const handleCategory = (category: string) => {
-        setCategory(prevCategory => prevCategory === category ? null : category)
-    }
+        setCategory(prevCategory => prevCategory === category ? null : category);
+    };
 
     const handleBlogClick = (blogId: string) => {
         // Go to blog detail with blogId selected
@@ -31,13 +30,13 @@ const BlogDefault = () => {
     };
 
     let filteredData = blogData.filter(blog => {
-        let isCategoryMatched = true
+        let isCategoryMatched = true;
         if (category) {
-            isCategoryMatched = blog.category === category && blog.category !== 'underwear'
+            isCategoryMatched = blog.category === category && blog.category !== 'underwear';
         }
 
-        return isCategoryMatched
-    })
+        return isCategoryMatched;
+    });
 
     if (filteredData.length === 0) {
         filteredData = [{
@@ -75,11 +74,7 @@ const BlogDefault = () => {
 
     return (
         <>
-            <TopNavOne props="style-one bg-black" slogan="New customers save 10% with the code GET10" />
-            <div id="header" className='relative w-full'>
-                <MenuOne props="bg-transparent" />
-                <Breadcrumb heading='Blog Default' subHeading='Blog Default' />
-            </div>
+
             <div className='blog default md:py-20 py-10'>
                 <div className="container">
                     <div className="flex justify-between max-md:flex-col gap-y-12">
@@ -213,7 +208,7 @@ const BlogDefault = () => {
             </div>
             <Footer />
         </>
-    )
-}
+    );
+};
 
-export default BlogDefault
+export default BlogDefault;

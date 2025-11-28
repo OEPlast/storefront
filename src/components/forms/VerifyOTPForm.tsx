@@ -111,9 +111,8 @@ export default function VerifyOTPForm() {
       </div>
 
       {/* OTP Input */}
-      <form.Field
-        name="otp"
-        children={(field) => {
+      <form.Field name="otp">
+        {(field) => {
           const hasError =
             field.state.meta.isTouched && !field.state.meta.isValid;
 
@@ -139,7 +138,7 @@ export default function VerifyOTPForm() {
             </div>
           );
         }}
-      />
+      </form.Field>
 
       {/* Error Message */}
       {submitError && (
@@ -151,8 +150,8 @@ export default function VerifyOTPForm() {
       {/* Submit Button */}
       <div className="block-button mb-4">
         <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-          children={([canSubmit, isSubmitting]) => (
+          selector={(state) => [state.canSubmit, state.isSubmitting]}>
+          {([canSubmit, isSubmitting]) => (
             <button
               type="submit"
               disabled={!canSubmit || isSubmitting}
@@ -160,7 +159,7 @@ export default function VerifyOTPForm() {
               {isSubmitting ? "Verifying..." : "Verify OTP"}
             </button>
           )}
-        />
+        </form.Subscribe>
       </div>
 
       {/* Resend OTP */}

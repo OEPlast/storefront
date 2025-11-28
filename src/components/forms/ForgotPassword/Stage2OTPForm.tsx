@@ -111,9 +111,8 @@ export default function Stage2OTPForm() {
         }}
         className="md:mt-7 mt-4">
         {/* OTP Input */}
-        <form.Field
-          name="code"
-          children={(field) => {
+        <form.Field name="code">
+          {(field) => {
             const hasError =
               field.state.meta.isTouched && !field.state.meta.isValid;
 
@@ -139,7 +138,7 @@ export default function Stage2OTPForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
         {/* Resend OTP */}
         <div className="text-center mb-6">
@@ -184,8 +183,8 @@ export default function Stage2OTPForm() {
         {/* Next Button */}
         <div className="block-button">
           <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-            children={([canSubmit, isSubmitting]) => (
+            selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            {([canSubmit, isSubmitting]) => (
               <button
                 type="submit"
                 disabled={!canSubmit || isSubmitting}
@@ -193,7 +192,7 @@ export default function Stage2OTPForm() {
                 {isSubmitting ? "Verifying..." : "Continue"}
               </button>
             )}
-          />
+          </form.Subscribe>
         </div>
       </form>
     </>

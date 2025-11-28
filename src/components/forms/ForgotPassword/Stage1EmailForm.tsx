@@ -95,9 +95,8 @@ export default function Stage1EmailForm() {
         }}
         className="md:mt-7 mt-4">
         {/* Email */}
-        <form.Field
-          name="email"
-          children={(field) => {
+        <form.Field name="email">
+          {(field) => {
             const hasError =
               field.state.meta.isTouched && !field.state.meta.isValid;
 
@@ -120,7 +119,7 @@ export default function Stage1EmailForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
         {/* Success Message */}
         {successMessage && (
@@ -139,8 +138,8 @@ export default function Stage1EmailForm() {
         {/* Submit Button */}
         <div className="block-button md:mt-7 mt-4">
           <form.Subscribe
-            selector={(state) => [state.canSubmit, state.isSubmitting]}
-            children={([canSubmit, isSubmitting]) => (
+            selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            {([canSubmit, isSubmitting]) => (
               <button
                 type="submit"
                 disabled={!canSubmit || isSubmitting || isTransitioning}
@@ -152,7 +151,7 @@ export default function Stage1EmailForm() {
                   : "Submit"}
               </button>
             )}
-          />
+          </form.Subscribe>
         </div>
 
         <div className="mt-4 text-center text-sm text-secondary2">

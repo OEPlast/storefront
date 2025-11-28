@@ -82,9 +82,8 @@ export default function RegisterForm() {
       className="md:mt-7 mt-4">
       {/* First Name and Last Name */}
       <div className="flex gap-4 max-lg:flex-col">
-        <form.Field
-          name="firstName"
-          children={(field) => {
+        <form.Field name="firstName">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -106,11 +105,10 @@ export default function RegisterForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
-        <form.Field
-          name="lastName"
-          children={(field) => {
+        <form.Field name="lastName">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -132,13 +130,12 @@ export default function RegisterForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
       </div>
 
       {/* Country */}
-      <form.Field
-        name="country"
-        children={(field) => {
+      <form.Field name="country">
+        {(field) => {
           const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
           
           return (
@@ -163,12 +160,11 @@ export default function RegisterForm() {
             </div>
           );
         }}
-      />
+      </form.Field>
 
       {/* Email */}
-      <form.Field
-        name="email"
-        children={(field) => {
+      <form.Field name="email">
+        {(field) => {
           const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
           
           return (
@@ -190,13 +186,12 @@ export default function RegisterForm() {
             </div>
           );
         }}
-      />
+      </form.Field>
 
       {/* Password and Confirm Password */}
       <div className="flex gap-4 max-lg:flex-col mt-5">
-        <form.Field
-          name="password"
-          children={(field) => {
+        <form.Field name="password">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -218,11 +213,10 @@ export default function RegisterForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
 
-        <form.Field
-          name="confirmPassword"
-          children={(field) => {
+        <form.Field name="confirmPassword">
+          {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
             
             return (
@@ -244,13 +238,12 @@ export default function RegisterForm() {
               </div>
             );
           }}
-        />
+        </form.Field>
       </div>
 
       {/* Terms Agreement */}
-      <form.Field
-        name="agreeToTerms"
-        children={(field) => (
+      <form.Field name="agreeToTerms">
+        {(field) => (
           <div className="mt-5">
             <div className="flex items-center">
               <div className="block-input">
@@ -274,7 +267,7 @@ export default function RegisterForm() {
             <FieldInfo field={field} />
           </div>
         )}
-      />
+      </form.Field>
 
       {/* Error Message */}
       {submitError && (
@@ -286,8 +279,8 @@ export default function RegisterForm() {
       {/* Submit Button */}
       <div className="block-button mt-4">
         <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-          children={([canSubmit, isSubmitting]) => (
+          selector={(state) => [state.canSubmit, state.isSubmitting]}>
+          {([canSubmit, isSubmitting]) => (
             <button 
               type="submit" 
               disabled={!canSubmit || isSubmitting} 
@@ -295,7 +288,7 @@ export default function RegisterForm() {
               {isSubmitting ? "Registering..." : "Register"}
             </button>
           )}
-        />
+        </form.Subscribe>
       </div>
       <div className="mt-2 text-center text-sm text-secondary2">
         Already have an account?{" "}

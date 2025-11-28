@@ -95,7 +95,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   adapter: MongoDBAdapter(client),
   session: { strategy: 'jwt' },
-
+  trustHost: true,
   callbacks: {
     // async signIn({ user, account, profile }) {
     //   if (account?.provider === 'google') {

@@ -331,7 +331,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode; }> = ({ childre
 
         // Optionally refetch from server if authenticated
         if (isAuthenticated) {
-            queryClient.invalidateQueries({ queryKey: ['cart', 'server'] });
+            queryClient.invalidateQueries({ queryKey: ['cart'] });
         }
     }, [isAuthenticated, queryClient]);
 

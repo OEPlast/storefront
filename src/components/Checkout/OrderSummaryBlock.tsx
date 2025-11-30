@@ -139,7 +139,7 @@ const OrderSummaryBlock: React.FC<OrderSummaryBlockProps> = ({
                             <Icon.Tag size={16} weight="duotone" className="w-4 h-4 flex-shrink-0" />
                             Discount {discountInfo?.couponCode && `(${discountInfo.couponCode})`}
                         </span>
-                        <span className="font-semibold">-${resolvedDiscount.toFixed(2)}</span>
+                        <span className="font-semibold">-{formatToNaira(resolvedDiscount)}</span>
                     </div>
                 )}
 

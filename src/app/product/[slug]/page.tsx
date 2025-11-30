@@ -12,6 +12,7 @@ import BreadcrumbProduct from '@/components/Breadcrumb/BreadcrumbProduct';
 import type { ProductDetail } from '@/hooks/queries/useProduct';
 import removeMarkdown from "markdown-to-text";
 import { getProductDisplayPrice } from '@/utils/cart-pricing';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 interface ProductPageProps {
     params: Promise<{ slug: string; }>;
@@ -63,8 +64,8 @@ export async function generateMetadata({ params }: ProductPageProps) {
     const discount = hasDiscount ? discountPercentage : null;
 
     const priceText = discount
-        ? `$${(product.price * (1 - discount / 100)).toFixed(2)} (${discount}% off)`
-        : `$${product.price.toFixed(2)}`;
+        ? `${formatToNaira(product.price * (1 - discount / 100))} (${discount}% off)`
+        : `${formatToNaira(product.price)}`;
 
     const description = product.description
         ? `${removeMarkdown(product.description).substring(0, 155)}...`

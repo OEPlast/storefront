@@ -18,6 +18,7 @@ import { useCartCoupons } from '@/hooks/useCoupons';
 import { useValidateCoupon } from '@/hooks/useValidateCoupon';
 import type { Coupon } from '@/types/coupon';
 import { useCheckoutStore } from '@/store/useCheckoutStore';
+import { formatToNaira } from '@/utils/currencyFormatter';
 const Cart = () => {
     const [timeLeft, setTimeLeft] = useState(countdownTime());
     const router = useRouter();
@@ -419,14 +420,14 @@ const Cart = () => {
                                                             {hasDiscount ? (
                                                                 <>
                                                                     <div className="text-xs text-secondary line-through">
-                                                                        ${pricing.basePrice.toFixed(2)}
+                                                                        {formatToNaira(pricing.basePrice)}
                                                                     </div>
                                                                     <div className="text-title text-center font-bold text-red mt-1">
-                                                                        ${pricing.unitPrice.toFixed(2)}
+                                                                        {formatToNaira(pricing.unitPrice)}
                                                                     </div>
                                                                 </>
                                                             ) : (
-                                                                <div className="text-title text-center font-semibold">&#8358;{pricing.unitPrice.toFixed(2)}</div>
+                                                                <div className="text-title text-center font-semibold">{formatToNaira(pricing.unitPrice)}</div>
                                                             )}
                                                             {/* {hasPricingTier && (
                                                                 <div className="text-[10px] text-blue-600 font-medium">
@@ -478,10 +479,10 @@ const Cart = () => {
                                                             </div>
                                                         </div>
                                                         <div className="w-1/6 flex flex-col items-center justify-center">
-                                                            <div className="text-title text-center font-bold">&#8358;{displayTotal.toFixed(2)}</div>
+                                                            <div className="text-title text-center font-bold">{formatToNaira(displayTotal)}</div>
                                                             {currentQty > 1 && (
                                                                 <div className="text-xs text-secondary mt-1">
-                                                                    ${pricing.unitPrice.toFixed(2)} × {currentQty}
+                                                                    {formatToNaira(pricing.unitPrice)} × {currentQty}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -549,7 +550,7 @@ const Cart = () => {
                                                     <div>
                                                         <p className="text-sm font-semibold text-lime-800">Coupon Applied!</p>
                                                         <p className="text-xs text-lime-600">
-                                                            {appliedCoupon.coupon} - Save ${discountCart.toFixed(2)}
+                                                            {appliedCoupon.coupon} - Save {formatToNaira(discountCart)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -647,7 +648,7 @@ const Cart = () => {
                                     <div className="space-y-4">
                                         <div className="total-block flex justify-between items-center">
                                             <div className="text-secondary">Subtotal ({cartItems.length} items)</div>
-                                            <div className="text-title font-semibold">&#8358;{totalCart.toFixed(2)}</div>
+                                            <div className="text-title font-semibold">{formatToNaira(totalCart)}</div>
                                         </div>
 
                                         {discountCart > 0 && (
@@ -656,7 +657,7 @@ const Cart = () => {
                                                     <Icon.Tag size={16} />
                                                     <span>Discount Applied</span>
                                                 </div>
-                                                <div className="font-semibold">-${discountCart.toFixed(2)}</div>
+                                                <div className="font-semibold">-{formatToNaira(discountCart)}</div>
                                             </div>
                                         )}
 
@@ -727,7 +728,7 @@ const Cart = () => {
                                         <div className="border-t border-line pt-4">
                                             <div className="flex justify-between items-center">
                                                 <div className="heading5">Total</div>
-                                                <div className="heading4 text-red">&#8358;{(totalCart - discountCart).toFixed(2)}</div>
+                                                <div className="heading4 text-red">{formatToNaira(totalCart - discountCart)}</div>
                                             </div>
                                             {(shippingMethod === 'normal' || shippingMethod === 'express') && (
                                                 <div className="text-xs text-secondary mt-2">

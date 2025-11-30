@@ -10,6 +10,7 @@ import { useWishlistStore } from '@/store/useWishlistStore';
 import { useRemoveFromWishlist } from '@/hooks/mutations/useWishlistMutations';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { ProductDescriptionImage } from '@/types/product';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 // Helper: select best image (cover → first)
 const selectWishlistImage = (images?: ProductDescriptionImage[]): string => {
@@ -104,7 +105,7 @@ const ModalWishlist = () => {
                                                     <div className=''>
                                                         <div className="name text-button">{wishlistItem.product.name}</div>
                                                         <div className="flex items-center gap-2 mt-2">
-                                                            <div className="product-price text-title">${wishlistItem.product.price.toFixed(2)}</div>
+                                                            <div className="product-price text-title">{formatToNaira(wishlistItem.product.price)}</div>
                                                         </div>
                                                     </div>
                                                 </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProductPackSize } from '@/types/product';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 interface PackSizeSelectorProps {
     packSizes?: ProductPackSize[];
@@ -132,10 +133,10 @@ const PackSizeSelector: React.FC<PackSizeSelectorProps> = ({
                             <div className="flex items-end justify-between mt-3">
                                 <div>
                                     <div className="text-xl font-bold">
-                                        ${effectivePrice.toFixed(2)}
+                                        {formatToNaira(effectivePrice)}
                                     </div>
                                     <div className="text-xs text-secondary">
-                                        ${unitPrice.toFixed(2)} per unit
+                                        {formatToNaira(unitPrice)} per unit
                                     </div>
                                 </div>
 

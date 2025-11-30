@@ -1,4 +1,5 @@
 import { ProductSale, SaleVariant } from '@/types/product';
+import { formatToNaira } from './currencyFormatter';
 
 export interface SaleCalculation {
   hasActiveSale: boolean;
@@ -317,5 +318,5 @@ export function shouldShowSaleProgress(sale: ProductSale | null | undefined): bo
  * @returns Formatted price string
  */
 export function formatPrice(price: number): string {
-  return `$${price.toFixed(2)}`;
+  return formatToNaira(price);
 }

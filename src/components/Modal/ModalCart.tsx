@@ -13,31 +13,32 @@ import { useCart, useCartCount } from '@/context/CartContext';
 import { calculateCartItemPricing } from '@/utils/cart-pricing';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { TrashIcon } from '@phosphor-icons/react';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) => {
-   /*
-    const [timeLeft, setTimeLeft] = useState(serverTimeLeft);
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                const newTime = countdownTime();
-                // Only update if values actually changed
-                if (
-                    prev.days !== newTime.days ||
-                    prev.hours !== newTime.hours ||
-                    prev.minutes !== newTime.minutes ||
-                    prev.seconds !== newTime.seconds
-                ) {
-                    return newTime;
-                }
-                return prev;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
-    */
+    /*
+     const [timeLeft, setTimeLeft] = useState(serverTimeLeft);
+ 
+     useEffect(() => {
+         const timer = setInterval(() => {
+             setTimeLeft((prev) => {
+                 const newTime = countdownTime();
+                 // Only update if values actually changed
+                 if (
+                     prev.days !== newTime.days ||
+                     prev.hours !== newTime.hours ||
+                     prev.minutes !== newTime.minutes ||
+                     prev.seconds !== newTime.seconds
+                 ) {
+                     return newTime;
+                 }
+                 return prev;
+             });
+         }, 1000);
+ 
+         return () => clearInterval(timer);
+     }, []);
+     */
 
     const [activeTab, setActiveTab] = useState<string | undefined>('');
     const { isModalOpen, closeModalCart } = useModalCartContext();
@@ -204,17 +205,17 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) =
                                                             <div className="flex flex-col items-end gap-1">
                                                                 {/* Total Price (qty × unit price) */}
                                                                 <div className="text-title font-bold text-lg">
-                                                                    &#8358;{item.totalPrice.toFixed(2)}
+                                                                    {formatToNaira(item.totalPrice)}
                                                                 </div>
                                                                 {/* Unit prices with slash if discounted */}
                                                                 <div className="flex items-center gap-2">
                                                                     {item.hasDiscount && (
                                                                         <span className="text-secondary2 line-through text-xs">
-                                                                            ${item.originalPrice.toFixed(2)}
+                                                                            {formatToNaira(item.originalPrice)}
                                                                         </span>
                                                                     )}
                                                                     <span className="text-secondary text-xs">
-                                                                        &#8358;{item.unitPrice.toFixed(2)} per unit
+                                                                        {formatToNaira(item.unitPrice)} per unit
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -252,7 +253,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType; }) =
                                 </div>
                                 <div className="flex items-center justify-between pt-6 px-6">
                                     <div className="heading5">Subtotal</div>
-                                    <div className="heading5">&#8358;{totalCart.toFixed(2)}</div>
+                                    <div className="heading5">{formatToNaira(totalCart)}</div>
                                 </div>
                                 <div className="block-button text-center p-6">
                                     <div className="flex items-center gap-4">

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatToNaira } from '@/utils/currencyFormatter';
 import React from 'react';
 
 interface PricingTier {
@@ -119,7 +120,7 @@ const PricingTiers: React.FC<PricingTiersProps> = ({
                                 )}
                                 <div className="text-right">
                                     <div className="font-bold text-lg">
-                                        ${finalPrice.toFixed(2)}
+                                        {formatToNaira(finalPrice)}
                                     </div>
                                     <div className="text-xs opacity-70">per unit</div>
                                 </div>
@@ -147,7 +148,7 @@ const PricingTiers: React.FC<PricingTiersProps> = ({
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-blue rounded-full"></div>
                         <div className="text-sm text-blue font-semibold">
-                            Selected variant price: ${attributePrice.toFixed(2)} (base: ${basePrice.toFixed(2)})
+                            Selected variant price: {formatToNaira(attributePrice)} (base: {formatToNaira(basePrice)})
                         </div>
                     </div>
                 </div>

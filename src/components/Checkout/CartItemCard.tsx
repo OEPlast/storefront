@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { CartItem } from '@/context/CartContext';
 import { calculateCartItemPricing } from '@/utils/cart-pricing';
 import { getCdnUrl } from '@/libs/cdn-url';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 interface CartItemCardProps {
     item: CartItem;
@@ -81,22 +82,22 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
                         {hasDiscount ? (
                             <div className="flex items-center gap-2">
                                 <span className="text-secondary line-through">
-                                    ${originalPrice.toFixed(2)}
+                                    {formatToNaira(originalPrice)}
                                 </span>
                                 <span className="text-red font-medium">
-                                    ${pricing.unitPrice.toFixed(2)} each
+                                    {formatToNaira(pricing.unitPrice)} each
                                 </span>
                             </div>
                         ) : (
                             <span className="text-secondary">
-                                ${pricing.unitPrice.toFixed(2)} each
+                                {formatToNaira(pricing.unitPrice)} each
                             </span>
                         )}
                     </div>
 
                     {/* Total Price */}
                     <div className="text-base font-bold text-blue">
-                        ${pricing.totalPrice.toFixed(2)}
+                        {formatToNaira(pricing.totalPrice)}
                     </div>
                 </div>
             </div>

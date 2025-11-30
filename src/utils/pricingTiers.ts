@@ -4,6 +4,7 @@
  */
 
 import type { ProductPricingTier } from '@/types/product';
+import { formatToNaira } from './currencyFormatter';
 
 export interface AppliedPricingTier {
   minQty: number;
@@ -71,11 +72,11 @@ export function calculateTierPrice(
 export function getTierDescription(tier: ProductPricingTier | AppliedPricingTier): string {
   switch (tier.strategy) {
     case 'fixedPrice':
-      return `Fixed price $${tier.value.toFixed(2)}`;
+      return `Fixed price ${formatToNaira(tier.value)}`;
     case 'percentOff':
       return `${tier.value}%`;
     case 'amountOff':
-      return `$${tier.value.toFixed(2)} off`;
+      return `${formatToNaira(tier.value)} off`;
     default:
       return '';
   }

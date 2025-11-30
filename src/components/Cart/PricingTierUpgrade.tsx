@@ -5,6 +5,7 @@ import * as Icon from '@phosphor-icons/react/dist/ssr';
 import type { CartItem } from '@/context/CartContext';
 import { calculateCartItemPricing } from '@/utils/cart-pricing';
 import { calculateNextTierSavings, getTierDescription, formatTierRange } from '@/utils/pricingTiers';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 interface PricingTierUpgradeProps {
     item: CartItem;
@@ -71,7 +72,7 @@ const PricingTierUpgrade: React.FC<PricingTierUpgradeProps> = React.memo(({
                 ) : (
                     <span className="text-black">
                         Buy <span className="font-semibold">{qtyNeeded}</span> more: <span className="font-semibold text-green-600">{getTierDescription(nextTier)}</span>
-                        {' '}<span className="text-green-600">(save ${savingsPerUnit.toFixed(2)}/unit)</span>
+                        {' '}<span className="text-green-600">(save {formatToNaira(savingsPerUnit)}/unit)</span>
                     </span>
                 )}
             </div>

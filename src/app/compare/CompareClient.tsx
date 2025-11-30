@@ -10,6 +10,7 @@ import Rate from '@/components/Other/Rate'
 import { getCdnUrl } from '@/libs/cdn-url'
 import { useProductBySlug } from '@/hooks/queries/useProducts'
 import type { ProductSpecification, ProductDimension, ProductDetail } from '@/types/product'
+import { formatToNaira } from '@/utils/currencyFormatter'
 
 const CompareClient = () => {
     const searchParams = useSearchParams();
@@ -187,7 +188,7 @@ const CompareClient = () => {
                                             {loadedProducts.map((item, index) => (
                                                 <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
                                                     <div className='h-full flex items-center justify-center'>
-                                                        ${item.price.toFixed(2)}
+                                                        {formatToNaira(item.price)}
                                                     </div>
                                                 </td>
                                             ))}

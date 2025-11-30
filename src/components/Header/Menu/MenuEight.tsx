@@ -226,15 +226,6 @@ const MenuEight = () => {
                                     <NavCategoriesComponent isOpen={openSubMenuDepartment} />
                                     <div className="menu-main style-eight h-full pl-12 max-lg:hidden">
                                         <ul className='flex items-center gap-8 h-full'>
-
-                                            <li className='h-full relative'>
-                                                <Link
-                                                    href="/promos"
-                                                    className={`text-button-uppercase duration-300 h-full flex items-center justify-center ${pathname.includes('/pages') ? 'active' : ''}`}
-                                                >
-                                                    Promos
-                                                </Link>
-                                            </li>
                                         </ul>
                                     </div>
                                 </div>

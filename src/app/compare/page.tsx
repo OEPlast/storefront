@@ -11,6 +11,7 @@ import Rate from '@/components/Other/Rate'
 import { getCdnUrl } from '@/libs/cdn-url'
 import { useCompareProducts } from '@/hooks/queries/useProducts'
 import type { ProductSpecification, ProductDimension, ProductDetail } from '@/types/product'
+import { formatToNaira } from '@/utils/currencyFormatter'
 
 const CompareContent = () => {
     const searchParams = useSearchParams();
@@ -207,7 +208,7 @@ const CompareContent = () => {
                                             {productsWithAvailability.map(({ product, identifier, isAvailable }, index) => (
                                                 <td className={`w-full border border-line h-[60px] border-t-0 border-r-0 ${!isAvailable ? 'bg-gray-200' : ''}`} key={identifier}>
                                                     <div className='h-full flex items-center justify-center'>
-                                                        {isAvailable && product ? `$${product.price.toFixed(2)}` : null}
+                                                        {isAvailable && product ? `${formatToNaira(product.price)}` : null}
                                                     </div>
                                                 </td>
                                             ))}

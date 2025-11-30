@@ -9,6 +9,7 @@ import { WithPagination } from '@/components/common/WithPaginationIndependent';
 import { OrdersResponse, OrderHistoryType, OrderQueryParams } from '@/types/order';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
 import { getCdnUrl } from '@/libs/cdn-url';
+import { formatToNaira } from '@/utils/currencyFormatter';
 
 // Loading skeleton component
 const OrderSkeleton = () => (
@@ -109,7 +110,7 @@ const OrderItem = ({ order }: { order: OrderHistoryType; }) => {
             <div className="text-title">
               <span className="prd_quantity">{item.quantity}</span>
               <span> X </span>
-              <span className="prd_price">₦{item.price.toFixed(2)}</span>
+              <span className="prd_price">{formatToNaira(item.price)}</span>
             </div>
           </div>
         ))}

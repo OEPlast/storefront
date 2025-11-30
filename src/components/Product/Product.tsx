@@ -529,7 +529,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                                     >
                                         Add To Cart
                                     </div>) : (
-                                        <div className="add-cart-btn w-full text-button-uppercase py-2 px-0.5 text-center rounded-full duration-500 bg-surface/90 text-secondary2 border border-line whitespace-nowrap">Out Of Stock</div>
+                                        <div className="add-cart-btn w-full text-button-uppercase py-2 px-0.5 text-center rounded-full duration-500 bg-surface/90 text-secondary2 border border-line whitespace-nowrap text-xs">Out Of Stock</div>
 
                                     )
                                 ) : (

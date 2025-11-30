@@ -2,7 +2,7 @@
 
 // Quickview.tsx
 import React, { useState, useEffect, useMemo } from 'react';
-import Image from 'next/image';
+import { LazyLoadImage as Image } from 'react-lazy-load-image-component';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { useModalQuickviewContext } from '@/context/ModalQuickviewContext';
 import { useCart } from '@/context/CartContext';
@@ -28,6 +28,11 @@ import { ProductVariant } from '@/types/product';
 import Link from 'next/link';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import PaymentMethodsBadge from '../Product/PaymentMethodsBadge';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Thumbs } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 const ModalQuickview = () => {
     const [photoIndex, setPhotoIndex] = useState(0);
@@ -285,12 +290,12 @@ const ModalQuickview = () => {
                                     {product?.description_images?.map((item, index) => (
                                         <div className="bg-img w-full aspect-[3/4] max-md:w-[150px] max-md:flex-shrink-0 rounded-[20px] overflow-hidden md:mt-6" key={index}>
                                             <Image
+                                                wrapperClassName="w-full h-full object-cover object-center"
                                                 src={getCdnUrl(item.url)}
-                                                width={1500}
-                                                height={2000}
                                                 alt={product.name}
-                                                priority={true}
-                                                className='w-full h-full object-cover'
+                                                effect="blur"
+                                                placeholderSrc={`${getCdnUrl(item.url)}?class=minify`}
+                                                className='w-auto h-full object-cover'
                                             />
                                         </div>
                                     ))}
@@ -332,19 +337,36 @@ const ModalQuickview = () => {
                                         <span className='caption1 text-secondary'>({product?.reviewStats.totalReviews || 0} reviews)</span>
                                     </div>
 
-                                    <div className="list-img !h-auto items-center gap-4 my-4 flex md:hidden">
-                                        {product?.description_images?.map((item, index) => (
-                                            <div className="bg-img w-full aspect-video  rounded-[20px] overflow-hidden md:mt-6" key={index}>
-                                                <Image
-                                                    src={getCdnUrl(item.url)}
-                                                    width={1500}
-                                                    height={2000}
-                                                    alt={product.name}
-                                                    priority={true}
-                                                    className='w-full h-full object-cover'
-                                                />
-                                            </div>
-                                        ))}
+                                    <div className="list-img !h-auto my-4 md:hidden ">
+                                        <Swiper
+                                            spaceBetween={16}
+                                            slidesPerView={1.02}
+                                            modules={[Pagination]}
+                                            pagination={{ clickable: true }}
+                                            breakpoints={{
+                                                640: {
+                                                    slidesPerView: 1,
+                                                    spaceBetween: 16,
+                                                },
+                                            }}
+                                            className="quickview-swiper"
+                                        >
+                                            {product?.description_images?.map((item, index) => (
+                                                <SwiperSlide key={index} className=''>
+                                                    <div className="bg-img w-full aspect-video border rounded-md overflow-hidden">
+                                                        <Image
+                                                            wrapperClassName="w-full h-full object-cover object-center"
+                                                            src={getCdnUrl(item.url)}
+
+                                                            alt={product.name}
+                                                            className="w-full h-full object-cover select-none"
+                                                            effect="blur"
+                                                            placeholderSrc={`${getCdnUrl(item.url)}?class=minify`}
+                                                        />
+                                                    </div>
+                                                </SwiperSlide>
+                                            ))}
+                                        </Swiper>
                                     </div>
 
 

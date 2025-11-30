@@ -18,23 +18,14 @@ export default function HomeClient() {
     const { data: weekProducts, isLoading: isLoadingWeek } = useWeekProducts(1);
     const { data: topSoldProducts, isLoading: isLoadingTopSold } = useTopSoldProducts(1);
 
-    // Convert ProductListItem to ProductDetail (legacy type compatibility)
-    const convertProducts = (data: any): ProductDetail[] => {
-        if (!data?.data) return [];
-        return data.data.map((item: any) => ({
-            ...item,
-            quantity: item.stock || 0,
-            categoryName: item.category?.name,
-            categorySlug: item.category?.slug,
-        }));
-    };
+
 
     return (
         <>
             {/* Deals of the Day Section - Featured at top with countdown */}
             {dealsOfTheDay && dealsOfTheDay.data.length > 0 && (
                 <ProductSection
-                    data={convertProducts(dealsOfTheDay)}
+                    data={dealsOfTheDay.data}
                     showCountdown={true}
                     start={0}
                     limit={15}
@@ -45,12 +36,12 @@ export default function HomeClient() {
             )}
 
             {/* New Products Section */}
-            {newProducts && (
+            {newProducts && newProducts.data.length > 0 && (
                 <ProductSection
                     start={0}
                     limit={10}
                     isLoading={isLoadingNew}
-                    data={convertProducts(newProducts)}
+                    data={newProducts.data}
                     header="New Arrivals"
                     viewAllLink="/new-products"
                 />
@@ -59,12 +50,12 @@ export default function HomeClient() {
             <CatB_Banner />
 
             {/* Top Sold Products Section */}
-            {topSoldProducts && (
+            {topSoldProducts && topSoldProducts.data.length > 0 && (
                 <ProductSection
                     start={0}
                     limit={10}
                     isLoading={isLoadingTopSold}
-                    data={convertProducts(topSoldProducts)}
+                    data={topSoldProducts.data}
                     header="Best Sellers"
                     viewAllLink="/top-sold-products"
                 />
@@ -76,7 +67,7 @@ export default function HomeClient() {
                     start={0}
                     limit={10}
                     isLoading={isLoadingWeek}
-                    data={convertProducts(weekProducts)}
+                    data={weekProducts.data}
                     header="Top of the Week"
                     viewAllLink="/week-products"
                 />

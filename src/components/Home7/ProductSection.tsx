@@ -3,12 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import Product from '../Product/Product';
-import { ProductDetail } from '@/types/product';
+import { ProductDetail, ProductListItem } from '@/types/product';
 import CountdownTimer from './CountdownTimer';
 import { ProductSkeleton } from '../Product/ProductLoading';
 
 interface Props {
-    data: Array<ProductDetail>;
+    data: Array<ProductListItem>;
     start?: number;
     limit?: number;
     header: string;

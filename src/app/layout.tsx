@@ -23,8 +23,8 @@ const serverTimeLeft: CountdownTimeType = countdownTime();
 const instrument = Instrument_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "OEPlast",
-  description: "Multipurpose eCommerce Template",
+  title: "Rawura",
+  description: "Rawura Online Store - Your One-Stop Shop for Affordable Quality Products",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {

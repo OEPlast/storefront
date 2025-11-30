@@ -1026,36 +1026,39 @@ const Checkout = () => {
 
                         </div>
                         <div className="right w-full lg:w-5/12">
-                            <OrderSummaryBlock
-                                items={items}
-                                isLoading={isLoading}
-                                isExpanded={isOrdersExpanded}
-                                onToggle={() => setIsOrdersExpanded(!isOrdersExpanded)}
-                                cartStats={cartStats}
-                                resolvedSubtotal={resolvedSubtotal}
-                                resolvedDiscount={resolvedDiscount}
-                                resolvedShippingCost={resolvedShippingCost}
-                                resolvedTotal={resolvedTotal}
-                                shippingMethod={shippingMethod}
-                                isCalculatingShipping={isCalculatingShipping}
-                                shippingCalculationError={shippingCalculationError}
-                                pendingCorrections={pendingCorrections}
-                                parsedCheckoutErrors={parsedCheckoutErrors}
-                                discountInfo={discountInfo}
-                            />
-                            <span className="hidden lg:block">
-                                <CheckoutButton
-                                    pendingCorrections={!!pendingCorrections}
-                                    isAcceptingCorrections={isAcceptingCorrections}
-                                    canProceedToPayment={canProceedToPayment}
-                                    isCalculatingShipping={isCalculatingShipping}
-                                    isSubmittingCheckout={isSubmittingCheckout}
+                            <div className="checkout-block lg:sticky lg:top-[120px] border border-line rounded-xl md:rounded-2xl p-4 md:p-6 bg-white shadow-sm">
+
+                                <OrderSummaryBlock
+                                    items={items}
+                                    isLoading={isLoading}
+                                    isExpanded={isOrdersExpanded}
+                                    onToggle={() => setIsOrdersExpanded(!isOrdersExpanded)}
+                                    cartStats={cartStats}
+                                    resolvedSubtotal={resolvedSubtotal}
+                                    resolvedDiscount={resolvedDiscount}
+                                    resolvedShippingCost={resolvedShippingCost}
+                                    resolvedTotal={resolvedTotal}
                                     shippingMethod={shippingMethod}
-                                    isShippingFormComplete={isShippingFormComplete}
-                                    handleAcceptCorrections={handleAcceptCorrections}
-                                    handleSubmitCheckout={handleSubmitCheckout}
+                                    isCalculatingShipping={isCalculatingShipping}
+                                    shippingCalculationError={shippingCalculationError}
+                                    pendingCorrections={pendingCorrections}
+                                    parsedCheckoutErrors={parsedCheckoutErrors}
+                                    discountInfo={discountInfo}
                                 />
-                            </span>
+                                <span className="hidden lg:block">
+                                    <CheckoutButton
+                                        pendingCorrections={!!pendingCorrections}
+                                        isAcceptingCorrections={isAcceptingCorrections}
+                                        canProceedToPayment={canProceedToPayment}
+                                        isCalculatingShipping={isCalculatingShipping}
+                                        isSubmittingCheckout={isSubmittingCheckout}
+                                        shippingMethod={shippingMethod}
+                                        isShippingFormComplete={isShippingFormComplete}
+                                        handleAcceptCorrections={handleAcceptCorrections}
+                                        handleSubmitCheckout={handleSubmitCheckout}
+                                    />
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

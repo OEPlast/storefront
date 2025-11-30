@@ -75,7 +75,7 @@ const OrderSummaryBlock: React.FC<OrderSummaryBlockProps> = ({
     discountInfo,
 }) => {
     return (
-        <div className="checkout-block lg:sticky lg:top-[120px] border border-line rounded-xl md:rounded-2xl p-4 md:p-6 bg-white shadow-sm">
+        <div >
             {/* Order Summary Header - Collapsible */}
             <div
                 className="flex items-center justify-between cursor-pointer pb-3 md:pb-4"

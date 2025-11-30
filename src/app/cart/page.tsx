@@ -682,7 +682,7 @@ const Cart = () => {
                                                             <div className="text-xs text-secondary mt-0.5">Pick up from store</div>
                                                         </div>
                                                     </div>
-                                                    <div className="font-semibold">&#8358 0.00</div>
+                                                    <div className="font-semibold">&#8358;0.00</div>
                                                 </label>
 
                                                 <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${shippingMethod === 'normal' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}>

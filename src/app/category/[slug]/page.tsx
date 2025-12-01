@@ -16,10 +16,10 @@ export async function generateMetadata({
     params: Promise<{ slug: string; }>;
 }): Promise<Metadata> {
     const { slug } = await params;
-    
+
     try {
         const category = await serverGet<CategoryDetail>(api.categories.bySlug(slug));
-        
+
         if (!category) {
             return getDefaultMetadata({
                 title: 'Category Not Found',
@@ -27,7 +27,7 @@ export async function generateMetadata({
             });
         }
 
-        const description = category.description 
+        const description = category.description
             ? category.description.substring(0, 155) + '...'
             : `Browse ${category.name} products at Rawura. Shop quality ${category.name.toLowerCase()} items.`;
 

@@ -12,7 +12,7 @@ interface SearchPageProps {
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
     const params = await searchParams;
     const query = params.query || '';
-    
+
     if (query) {
         return getDefaultMetadata({
             title: `Search Results for "${query}"`,
@@ -24,7 +24,7 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
             },
         });
     }
-    
+
     return getDefaultMetadata({
         title: 'Search Products',
         description: 'Search for products at Rawura. Find what you\'re looking for.',

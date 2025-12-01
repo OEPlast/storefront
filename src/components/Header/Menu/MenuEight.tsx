@@ -20,6 +20,7 @@ import { useProductSearchAutocomplete } from '@/hooks/queries/useProducts';
 import AutocompleteDropdown from '@/components/Search/AutocompleteDropdown';
 import UserIcon from './Usericon';
 import { WhatsappLogoIcon } from '@phosphor-icons/react';
+import Logo from '@/components/Logo';
 
 // Data constants
 
@@ -144,7 +145,7 @@ const MenuEight = () => {
                             <i className="icon-category text-2xl"></i>
                         </div>
                         <Link href={'/'} className='flex items-center'>
-                            <div className="heading4">OEPlast</div>
+                            <Logo />
                         </Link>
                         {shouldShowTopNavigation && (
                             <div className="form-search w-2/3 pl-8 flex items-center h-[44px] max-lg:hidden">
@@ -250,7 +251,7 @@ const MenuEight = () => {
                                 >
                                     <Icon.X size={14} />
                                 </div>
-                                <Link href={'/'} className='logo text-3xl font-semibold text-center'>OEPlast</Link>
+                                <Link href={'/'} className='logo text-3xl font-semibold text-center'>Rawura</Link>
                             </div>
                             <div className="form-search relative mt-2" ref={mobileInputAnchorRef}>
                                 <div className='flex w-full h-[40px]'>

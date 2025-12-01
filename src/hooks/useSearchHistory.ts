@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-const STORAGE_KEY = 'oeplast.searchHistory';
+const STORAGE_KEY = 'Rawura.searchHistory';
 const MAX_ITEMS_DEFAULT = 5;
 
 function readHistory(): string[] {

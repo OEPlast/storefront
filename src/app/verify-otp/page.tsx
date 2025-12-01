@@ -8,7 +8,7 @@ import { auth } from "../../../auth";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Verify OTP - OEPlast",
+  title: "Verify OTP - Rawura",
   description: "Verify your email address with OTP",
 };
 

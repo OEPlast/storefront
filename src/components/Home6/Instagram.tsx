@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import React from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
 import 'swiper/css/bundle';
@@ -12,7 +12,7 @@ const Instagram = () => {
         <>
             <div className="instagram-block md:pt-20 pt-10">
                 <div className="heading">
-                    <div className="heading3 text-center">OEPlast On Instagram</div>
+                    <div className="heading3 text-center">Rawura On Instagram</div>
                     <div className="text-center mt-3">#Anvougetheme</div>
                 </div>
                 <div className="list-instagram md:mt-7 mt-4">
@@ -126,7 +126,7 @@ const Instagram = () => {
                 </div>
             </div>
         </>
-    )
-}
+    );
+};
 
-export default Instagram
+export default Instagram;

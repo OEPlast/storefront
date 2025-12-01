@@ -10,12 +10,12 @@ const PrivacyPolicyClient = () => {
                     <div className="content-main">
                         <h3 className="heading3 mb-4">1. Introduction</h3>
                         <p className="body1 text-secondary mb-8">
-                            Welcome to OEPlast. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you as to how we look after your personal data when you visit our website (regardless of where you visit it from) and tell you about your privacy rights and how the law protects you.
+                            Welcome to Rawura. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you as to how we look after your personal data when you visit our website (regardless of where you visit it from) and tell you about your privacy rights and how the law protects you.
                         </p>
 
                         <h3 className="heading3 mb-4">2. Important Information and Who We Are</h3>
                         <p className="body1 text-secondary mb-8">
-                            This privacy policy aims to give you information on how OEPlast collects and processes your personal data through your use of this website, including any data you may provide through this website when you sign up to our newsletter, purchase a product or service or take part in a competition.
+                            This privacy policy aims to give you information on how Rawura collects and processes your personal data through your use of this website, including any data you may provide through this website when you sign up to our newsletter, purchase a product or service or take part in a competition.
                         </p>
 
                         <h3 className="heading3 mb-4">3. The Data We Collect About You</h3>
@@ -51,7 +51,7 @@ const PrivacyPolicyClient = () => {
                         <p className="body1 text-secondary mb-8">
                             We may have to share your personal data with the parties set out below for the purposes set out in the table in paragraph 4 above.
                             <br />
-                            - Internal Third Parties: Other companies in the OEPlast Group acting as joint controllers or processors.
+                            - Internal Third Parties: Other companies in the Rawura Group acting as joint controllers or processors.
                             <br />
                             - External Third Parties: Service providers acting as processors who provide IT and system administration services, professional advisers acting as processors or joint controllers including lawyers, bankers, auditors and insurers.
                             <br />
@@ -89,7 +89,7 @@ const PrivacyPolicyClient = () => {
 
                         <h3 className="heading3 mb-4">10. Contact Us</h3>
                         <p className="body1 text-secondary mb-8">
-                            If you have any questions about this privacy policy or our privacy practices, please contact us at support@oeplast.com.
+                            If you have any questions about this privacy policy or our privacy practices, please contact us at support@Rawura.com.
                         </p>
                     </div>
                 </div>

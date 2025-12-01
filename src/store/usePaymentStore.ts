@@ -53,7 +53,7 @@ export const usePaymentStore = create<PaymentStore>()(
       },
     }),
     {
-      name: 'payment-storage-oeplast', // localStorage key
+      name: 'payment-storage-Rawura', // localStorage key
     }
   )
 );

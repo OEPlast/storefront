@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
     if (!product) {
         return {
-            title: 'Product Not Found | OEPlast',
+            title: 'Product Not Found | Rawura',
             description: 'The product you are looking for does not exist.',
         };
     }
@@ -69,10 +69,10 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
     const description = product.description
         ? `${removeMarkdown(product.description).substring(0, 155)}...`
-        : `Buy ${product.name} at OEPlast. ${priceText}. ${product.category?.name || 'Quality products'}.`;
+        : `Buy ${product.name} at Rawura. ${priceText}. ${product.category?.name || 'Quality products'}.`;
 
     return {
-        title: `${product.name} | OEPlast`,
+        title: `${product.name} | Rawura`,
         description,
         keywords: [
             product.name,
@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
                     alt: product.name,
                 }))
                 : [],
-            siteName: 'OEPlast',
+            siteName: 'Rawura',
         },
         twitter: {
             card: 'summary_large_image',

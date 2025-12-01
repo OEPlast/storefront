@@ -15,6 +15,7 @@ import TopNavOne from "@/components/Header/TopNav/TopNavOne";
 import MenuEight from "@/components/Header/Menu/MenuEight";
 import SliderNine from "@/components/Slider/SliderNine";
 import Footer from "@/components/Footer/Footer";
+import { getDefaultMetadata } from "@/libs/seo";
 import 'react-quill-new/dist/quill.snow.css';
 import 'react-lazy-load-image-component/src/effects/blur.css';
 
@@ -22,10 +23,7 @@ const serverTimeLeft: CountdownTimeType = countdownTime();
 
 const instrument = Instrument_Sans({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Rawura",
-  description: "Rawura Online Store - Your One-Stop Shop for Affordable Quality Products",
-};
+export const metadata: Metadata = getDefaultMetadata();
 
 export default function RootLayout({ children }: { children: React.ReactNode; }) {
   return (

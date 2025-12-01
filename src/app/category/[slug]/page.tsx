@@ -7,11 +7,54 @@ import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query
 import { serverGet } from '@/libs/query/server-api-client';
 import api from '@/libs/api/endpoints';
 import type { CategoryDetail } from '@/hooks/queries/useCategoryBySlug';
+import { getDefaultMetadata } from '@/libs/seo';
 
-export const metadata: Metadata = {
-    title: 'Category - OEPlast',
-    description: 'Browse products in this category',
-};
+// Generate metadata for SEO
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string; }>;
+}): Promise<Metadata> {
+    const { slug } = await params;
+    
+    try {
+        const category = await serverGet<CategoryDetail>(api.categories.bySlug(slug));
+        
+        if (!category) {
+            return getDefaultMetadata({
+                title: 'Category Not Found',
+                description: 'The category you are looking for does not exist.',
+            });
+        }
+
+        const description = category.description 
+            ? category.description.substring(0, 155) + '...'
+            : `Browse ${category.name} products at Rawura. Shop quality ${category.name.toLowerCase()} items.`;
+
+        return getDefaultMetadata({
+            title: category.name,
+            description,
+            keywords: [category.name, 'products', 'shop', 'Rawura'],
+            openGraph: {
+                title: category.name,
+                description,
+                images: category.image ? [{ url: category.image, alt: category.name }] : undefined,
+            },
+            twitter: {
+                card: 'summary_large_image',
+                title: category.name,
+                description,
+                images: category.image ? [category.image] : undefined,
+            },
+        });
+    } catch (error) {
+        console.error('Error generating category metadata:', error);
+        return getDefaultMetadata({
+            title: 'Category',
+            description: 'Browse products in this category',
+        });
+    }
+}
 
 export default async function CategoryPage({
     params,

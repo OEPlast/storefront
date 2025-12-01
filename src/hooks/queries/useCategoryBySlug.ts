@@ -16,6 +16,7 @@ export interface CategoryDetail {
   name: string;
   slug: string;
   image: string;
+  description?: string;
   banner?: string;
   sub_categories: CategorySubcategory[];
 }

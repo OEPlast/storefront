@@ -6,11 +6,54 @@ import { serverGet } from '@/libs/query/server-api-client';
 import api from '@/libs/api/endpoints';
 import type { Campaign } from '@/types/campaign';
 import Link from 'next/link';
+import { getDefaultMetadata } from '@/libs/seo';
 
-export const metadata: Metadata = {
-    title: 'Campaign - OEPlast',
-    description: 'Browse products in this campaign',
-};
+// Generate dynamic metadata for campaign page
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ slug: string; }>;
+}): Promise<Metadata> {
+    const { slug } = await params;
+
+    try {
+        const campaign = await serverGet<Campaign>(`${api.campaigns.info(slug)}`);
+
+        if (!campaign) {
+            return getDefaultMetadata({
+                title: 'Campaign Not Found',
+                description: 'The campaign you are looking for does not exist.',
+            });
+        }
+
+        const description = campaign.description
+            ? campaign.description.substring(0, 155) + '..'
+            : `Shop ${campaign.title} campaign at Rawura. Exclusive deals and offers.`;
+
+        return getDefaultMetadata({
+            title: campaign.title,
+            description,
+            keywords: [campaign.title, 'campaign', 'deals', 'offers', 'sale'],
+            openGraph: {
+                title: campaign.title,
+                description,
+                images: campaign.image ? [{ url: campaign.image, alt: campaign.title }] : undefined,
+            },
+            twitter: {
+                card: 'summary_large_image',
+                title: campaign.title,
+                description,
+                images: campaign.image ? [campaign.image] : undefined,
+            },
+        });
+    } catch (error) {
+        console.error('Error generating campaign metadata:', error);
+        return getDefaultMetadata({
+            title: 'Campaign',
+            description: 'Browse products in this campaign',
+        });
+    }
+}
 
 export default async function CampaignPage({
     params,

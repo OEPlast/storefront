@@ -5,8 +5,8 @@ import { auth } from "../../../auth";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Login - OEPlast",
-  description: "Login to your OEPlast account",
+  title: "Login - Rawura",
+  description: "Login to your Rawura account",
 };
 
 export default async function LoginPage() {

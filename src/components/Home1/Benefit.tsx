@@ -17,8 +17,8 @@ const Benefit: React.FC<Props> = ({ props }) => {
                         </div>
                         <div className="benefit-item flex flex-col items-center justify-center">
                             <i className="icon-return lg:text-7xl text-5xl"></i>
-                            <div className="heading6 text-center mt-5">1-Day Money Back</div>
-                            <div className="caption1 text-secondary text-center mt-3">If you&apos;re not satisfied with your purchase, simply return it within 1 day for a refund.</div>
+                            <div className="heading6 text-center mt-5">2-Days Money Back</div>
+                            <div className="caption1 text-secondary text-center mt-3">If you&apos;re not satisfied with your purchase, simply return it within 2 day for a refund.</div>
                         </div>
                         <div className="benefit-item flex flex-col items-center justify-center">
                             <i className="icon-guarantee lg:text-7xl text-5xl"></i>

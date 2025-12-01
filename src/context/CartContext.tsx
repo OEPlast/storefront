@@ -18,7 +18,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/libs/api/axios';
 import api from '@/libs/api/endpoints';
 
-const CART_STORAGE_KEY = 'oeplast-cart';
+const CART_STORAGE_KEY = 'Rawura-cart';
 
 // Cart item = Full product + cart metadata
 export interface CartItem extends ProductDetail {

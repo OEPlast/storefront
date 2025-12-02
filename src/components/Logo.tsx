@@ -36,7 +36,7 @@ const Logo: React.FC<LogoProps> = ({ alwaysFull = false }) => {
             </div>
 
             {/* Mini logo for mobile screens */}
-            <div className="block sm:hidden max-w-[50px]">
+            <div className="block sm:hidden max-w-[40px] xs:max-w-[50px] my-1">
                 <Image
                     src={'/images/brand/logoMiniLight.png'}
                     alt="Rawura"

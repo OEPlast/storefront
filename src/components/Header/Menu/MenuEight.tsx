@@ -145,7 +145,7 @@ const MenuEight = () => {
                             <i className="icon-category text-2xl"></i>
                         </div>
                         <Link href={'/'} className='flex items-center'>
-                            <Logo />
+                            <Logo alwaysFull />
                         </Link>
                         {shouldShowTopNavigation && (
                             <div className="form-search w-2/3 pl-8 flex items-center h-[44px] max-lg:hidden">

@@ -1,3 +1,4 @@
+/*
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -93,3 +94,6 @@ const ModalNewsletter = () => {
 };
 
 export default ModalNewsletter;
+
+
+*/

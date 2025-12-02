@@ -1,6 +1,6 @@
 // useWishlist.ts
 import { useState } from 'react';
-import { ProductType } from '@/type/ProductType';
+import { ProductType } from '@/types/ProductType';
 
 interface WishlistItem {
     product: Array<ProductType>

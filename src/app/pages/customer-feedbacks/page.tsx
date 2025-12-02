@@ -1,11 +1,7 @@
 'use client';
 import React from 'react';
-import TopNavOne from '@/components/Header/TopNav/TopNavOne';
-import MenuEight from '@/components/Header/Menu/MenuEight';
-import Breadcrumb from '@/components/Breadcrumb/Breadcrumb';
 import reviewData from '@/data/Testimonial.json';
 import TestimonialItem from '@/components/Testimonial/TestimonialItem';
-import Footer from '@/components/Footer/Footer';
 
 const CustomerFeedbacks = () => {
     return (

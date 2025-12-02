@@ -16,8 +16,6 @@ import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/mutations/useWi
 import { useModalWishlistContext } from '@/context/ModalWishlistContext';
 import { useCompare } from '@/context/CompareContext';
 import { useModalCompareContext } from '@/context/ModalCompareContext';
-import ModalSizeguide from '@/components/Modal/ModalSizeguide';
-import { countdownTime } from '@/store/countdownTime';
 import { convert as htmlToText } from 'html-to-text';
 import PricingTiersHorizontal from './PricingTiersHorizontal';
 import { useProduct } from '@/hooks/queries/useProduct';

@@ -1,20 +1,14 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import TopNavOne from '@/components/Header/TopNav/TopNavOne';
 import Breadcrumb from '@/components/Breadcrumb/Breadcrumb';
-import Footer from '@/components/Footer/Footer';
 import Sidebar from '@/components/MyAccount/Sidebar';
 import Dashboard from '@/components/MyAccount/Dashboard';
 import HistoryOrders from '@/components/MyAccount/HistoryOrders';
 import MyAddress from '@/components/MyAccount/MyAddress';
 import Settings from '@/components/MyAccount/Settings';
-import { useAccountStore } from '@/store/accountStore';
 
 export default function MyAccountClient() {
-  const { openDetail, setOpenDetail } = useAccountStore();
 
   return (
     <>

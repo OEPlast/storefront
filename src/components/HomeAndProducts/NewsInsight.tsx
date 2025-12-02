@@ -1,6 +1,6 @@
 import React from 'react'
 import BlogItem from '../Blog/BlogItem'
-import { BlogType } from '@/type/BlogType'
+import { BlogType } from '@/types/BlogType'
 
 interface Props {
     data: Array<BlogType>;

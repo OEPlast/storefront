@@ -2,15 +2,13 @@
 import React, { Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import Footer from '@/components/Footer/Footer'
-import * as Icon from "@phosphor-icons/react/dist/ssr"
+import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext'
 import { useModalCartContext } from '@/context/ModalCartContext'
 import Rate from '@/components/Other/Rate'
 import { getCdnUrl } from '@/libs/cdn-url'
 import { useCompareProducts } from '@/hooks/queries/useProducts'
-import type { ProductSpecification, ProductDimension, ProductDetail } from '@/types/product'
+import type { ProductDimension, ProductDetail } from '@/types/product'
 import { formatToNaira } from '@/utils/currencyFormatter'
 
 const CompareContent = () => {

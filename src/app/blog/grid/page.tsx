@@ -1,8 +1,6 @@
 'use client';
 import React, { useState } from 'react';
 import Image from 'next/image';
-import TopNavOne from '@/components/Header/TopNav/TopNavOne';
-import Breadcrumb from '@/components/Breadcrumb/Breadcrumb';
 import blogData from '@/data/Blog.json';
 import BlogItem from '@/components/Blog/BlogItem';
 import Footer from '@/components/Footer/Footer';

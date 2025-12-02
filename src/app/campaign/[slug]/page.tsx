@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Footer from '@/components/Footer/Footer';
 import CampaignClient from './CampaignClient';
 import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/libs/query/server-api-client';

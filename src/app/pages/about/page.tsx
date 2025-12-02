@@ -1,9 +1,8 @@
 'use client';
 import React from 'react';
 import Image from 'next/image';
-import Newsletter from '@/components/Home4/Newsletter';
-import Instagram from '@/components/Home6/Instagram';
-import Footer from '@/components/Footer/Footer';
+import Newsletter from '@/components/HomeAndProducts/Newsletter';
+import Instagram from '@/components/HomeAndProducts/Instagram';
 
 const AboutUs = () => {
     return (

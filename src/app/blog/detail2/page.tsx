@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import TopNavOne from '@/components/Header/TopNav/TopNavOne';
 import blogData from '@/data/Blog.json';
-import NewsInsight from '@/components/Home3/NewsInsight';
+import NewsInsight from '@/components/HomeAndProducts/NewsInsight';
 import Footer from '@/components/Footer/Footer';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import Rate from '@/components/Other/Rate';

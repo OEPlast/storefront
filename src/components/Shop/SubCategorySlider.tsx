@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Grid } from 'swiper/modules';
 import 'swiper/css/bundle';
 import 'swiper/css/grid';
 import Link from 'next/link';
-import { getCdnBaseUrl, getCdnUrl } from '@/libs/cdn-url';
+import { getCdnUrl } from '@/libs/cdn-url';
 
 interface SubCategory {
     name: string;

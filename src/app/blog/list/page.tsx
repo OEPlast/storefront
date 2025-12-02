@@ -2,11 +2,8 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import TopNavOne from '@/components/Header/TopNav/TopNavOne';
-import Breadcrumb from '@/components/Breadcrumb/Breadcrumb';
 import blogData from '@/data/Blog.json';
 import BlogItem from '@/components/Blog/BlogItem';
-import Footer from '@/components/Footer/Footer';
 import HandlePagination from '@/components/Other/HandlePagination';
 import { useRouter } from 'next/navigation';
 import * as Icon from "@phosphor-icons/react/dist/ssr";

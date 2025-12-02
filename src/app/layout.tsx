@@ -4,11 +4,10 @@ import "@/styles/styles.scss";
 import GlobalProvider from "./GlobalProvider";
 import ModalCart from "@/components/Modal/ModalCart";
 import ModalWishlist from "@/components/Modal/ModalWishlist";
-import ModalSearch from "@/components/Modal/ModalSearch";
 import ModalQuickview from "@/components/Modal/ModalQuickview";
 import ModalCompare from "@/components/Modal/ModalCompare";
 import ModalLogin from "@/components/Modal/ModalLogin";
-import CountdownTimeType from "@/type/CountdownType";
+import CountdownTimeType from "@/types/CountdownType";
 import { countdownTime } from "@/store/countdownTime";
 import NextTopLoader from "nextjs-toploader";
 import TopNavOne from "@/components/Header/TopNav/TopNavOne";
@@ -53,7 +52,6 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
           <ModalLogin />
           <ModalCart serverTimeLeft={serverTimeLeft} />
           <ModalWishlist />
-          <ModalSearch />
           <ModalQuickview />
           <ModalCompare />
         </body>

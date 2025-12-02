@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ProductType } from '@/type/ProductType';
+import { ProductType } from '@/types/ProductType';
 
 interface FilterOptions {
   showOnlySale: boolean;

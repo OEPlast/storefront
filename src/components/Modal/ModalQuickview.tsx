@@ -12,7 +12,6 @@ import { useModalWishlistContext } from '@/context/ModalWishlistContext';
 import { useCompare } from '@/context/CompareContext';
 import { useModalCompareContext } from '@/context/ModalCompareContext';
 import Rate from '../Other/Rate';
-import ModalSizeguide from './ModalSizeguide';
 import { useProductById } from '@/hooks/queries/useProducts';
 import { useSession } from 'next-auth/react';
 import { getCdnUrl } from '@/libs/cdn-url';

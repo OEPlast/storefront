@@ -3,7 +3,7 @@
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import api from '@/libs/api/endpoints';
 import { Product } from '@/types/product';
-import { ProductType } from '@/type/ProductType';
+import { ProductType } from '@/types/ProductType';
 
 interface UseRelatedProductsOptions
   extends Omit<UseQueryOptions<ProductType[], Error>, 'queryKey' | 'queryFn'> {

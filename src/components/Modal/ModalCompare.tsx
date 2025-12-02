@@ -6,7 +6,7 @@ import Image from 'next/image';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { useModalCompareContext } from '@/context/ModalCompareContext';
 import { CompareItem, useCompare } from '@/context/CompareContext';
-import { ProductType } from '@/type/ProductType';
+import { ProductType } from '@/types/ProductType';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { formatToNaira } from '@/utils/currencyFormatter';
 

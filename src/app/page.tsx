@@ -1,6 +1,6 @@
 import React from "react";
-import Benefit from "@/components/Home1/Benefit";
-import TrendingNow from '@/components/Home9/TrendingNow';
+import Benefit from "@/components/HomeAndProducts/Benefit";
+import TrendingNow from '@/components/HomeAndProducts/TrendingNow';
 import HomeClient from './HomeClient';
 
 export default function Home() {

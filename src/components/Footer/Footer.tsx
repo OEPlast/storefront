@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
+import Logo from '../Logo';
 
 const Footer = () => {
     return (
@@ -12,7 +13,7 @@ const Footer = () => {
                         <div className="content-footer py-[60px] flex justify-between flex-wrap gap-y-8">
                             <div className="company-infor basis-2/4 max-lg:basis-full pr-7">
                                 <Link href={'/'} className="logo">
-                                    <div className="heading4">Rawura</div>
+                                    <Logo />
                                 </Link>
                                 <div className='flex gap-3 mt-3'>
                                     <div className="flex flex-col ">
@@ -86,7 +87,6 @@ const Footer = () => {
                                     <div className="choose-currency flex items-center gap-1.5">
                                         <select name="currency" id="chooseCurrencyFooter" className='caption2 bg-transparent'>
                                             <option value="EUR">NGN</option>
-                                            <option value="USD">USD</option>
                                         </select>
                                         <Icon.CaretDown size={12} color='#1F1F1F' />
                                     </div>

@@ -170,6 +170,12 @@ export const api = {
   settings: {
     get: '/settings',
   },
+
+  // Sitemap endpoints
+  sitemap: {
+    products: '/sitemap/products',
+    categories: '/sitemap/categories',
+  },
 } as const;
 
 export default api;

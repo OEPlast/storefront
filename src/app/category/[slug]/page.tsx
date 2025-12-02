@@ -8,6 +8,8 @@ import { serverGet } from '@/libs/query/server-api-client';
 import api from '@/libs/api/endpoints';
 import type { CategoryDetail } from '@/hooks/queries/useCategoryBySlug';
 import { getDefaultMetadata } from '@/libs/seo';
+import { getCdnUrl } from '@/libs/cdn-url';
+import { prefetchImages } from '@/config/siteConfig';
 
 // Generate metadata for SEO
 export async function generateMetadata({
@@ -31,6 +33,11 @@ export async function generateMetadata({
             ? category.description.substring(0, 155) + '...'
             : `Browse ${category.name} products at Rawura. Shop quality ${category.name.toLowerCase()} items.`;
 
+        // Prefetch category image
+        if (category.image) {
+            await prefetchImages([getCdnUrl(category.image)]);
+        }
+
         return getDefaultMetadata({
             title: category.name,
             description,
@@ -38,13 +45,13 @@ export async function generateMetadata({
             openGraph: {
                 title: category.name,
                 description,
-                images: category.image ? [{ url: category.image, alt: category.name }] : undefined,
+                images: category.image ? [{ url: getCdnUrl(category.image), alt: category.name }] : undefined,
             },
             twitter: {
                 card: 'summary_large_image',
                 title: category.name,
                 description,
-                images: category.image ? [category.image] : undefined,
+                images: category.image ? [getCdnUrl(category.image)] : undefined,
             },
         });
     } catch (error) {

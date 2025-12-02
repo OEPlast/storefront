@@ -7,6 +7,8 @@ import api from '@/libs/api/endpoints';
 import type { Campaign } from '@/types/campaign';
 import Link from 'next/link';
 import { getDefaultMetadata } from '@/libs/seo';
+import { getCdnUrl } from '@/libs/cdn-url';
+import { prefetchImages } from '@/config/siteConfig';
 
 // Generate dynamic metadata for campaign page
 export async function generateMetadata({
@@ -30,6 +32,11 @@ export async function generateMetadata({
             ? campaign.description.substring(0, 155) + '..'
             : `Shop ${campaign.title} campaign at Rawura. Exclusive deals and offers.`;
 
+        // Prefetch campaign image
+        if (campaign.image) {
+            await prefetchImages([getCdnUrl(campaign.image)]);
+        }
+
         return getDefaultMetadata({
             title: campaign.title,
             description,
@@ -37,13 +44,13 @@ export async function generateMetadata({
             openGraph: {
                 title: campaign.title,
                 description,
-                images: campaign.image ? [{ url: campaign.image, alt: campaign.title }] : undefined,
+                images: campaign.image ? [{ url: getCdnUrl(campaign.image), alt: campaign.title }] : undefined,
             },
             twitter: {
                 card: 'summary_large_image',
                 title: campaign.title,
                 description,
-                images: campaign.image ? [campaign.image] : undefined,
+                images: campaign.image ? [getCdnUrl(campaign.image)] : undefined,
             },
         });
     } catch (error) {

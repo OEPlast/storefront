@@ -6,12 +6,7 @@ import api from '@/libs/api/endpoints';
 // Cache the sitemap for 1 hour
 export const revalidate = 3600;
 
-interface Product {
-  slug: string;
-  updatedAt?: string;
-}
-
-interface Category {
+interface SlugItem {
   slug: string;
   updatedAt?: string;
 }
@@ -34,22 +29,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/new-products`,
+      url: `${baseUrl}/search-results`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/new-products`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/top-sold-products`,
       lastModified: new Date(),
       changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/blog`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.7,
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/privacy-policy`,
@@ -60,9 +55,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    // Fetch all products for sitemap
-    const productsResponse = await serverAPI.get<{ products: Product[] }>(api.products.list);
-    const products = productsResponse.data?.products || [];
+    // Fetch product slugs
+    const productsResponse = await serverAPI.get<SlugItem[]>(api.sitemap.products);
+    const products = productsResponse.data || [];
 
     const productPages: MetadataRoute.Sitemap = products.map((product) => ({
       url: `${baseUrl}/product/${product.slug}`,
@@ -71,8 +66,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    // Fetch all categories for sitemap
-    const categoriesResponse = await serverAPI.get<Category[]>(api.categories.list);
+    // Fetch category slugs
+    const categoriesResponse = await serverAPI.get<SlugItem[]>(api.sitemap.categories);
     const categories = categoriesResponse.data || [];
 
     const categoryPages: MetadataRoute.Sitemap = categories.map((category) => ({

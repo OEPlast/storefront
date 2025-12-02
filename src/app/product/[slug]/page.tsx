@@ -13,6 +13,8 @@ import type { ProductDetail } from '@/hooks/queries/useProduct';
 import removeMarkdown from "markdown-to-text";
 import { getProductDisplayPrice } from '@/utils/cart-pricing';
 import { formatToNaira } from '@/utils/currencyFormatter';
+import { getCdnUrl } from '@/libs/cdn-url';
+import { prefetchImages } from '@/config/siteConfig';
 
 interface ProductPageProps {
     params: Promise<{ slug: string; }>;
@@ -71,8 +73,11 @@ export async function generateMetadata({ params }: ProductPageProps) {
         ? `${removeMarkdown(product.description).substring(0, 155)}...`
         : `Buy ${product.name} at Rawura. ${priceText}. ${product.category?.name || 'Quality products'}.`;
 
+    const imageUrls = product.description_images?.map(img => getCdnUrl(img.url)) || [];
+    await prefetchImages(imageUrls);
+
     return {
-        title: `${product.name} | Rawura`,
+        title: `${product.name}`,
         description,
         keywords: [
             product.name,
@@ -81,12 +86,14 @@ export async function generateMetadata({ params }: ProductPageProps) {
         ].filter(Boolean).join(', '),
         openGraph: {
             title: product.name,
-            description: product.description || description,
+            description: description,
             type: 'website',
             images: product.description_images?.length
                 ? product.description_images.map(img => ({
-                    url: img.url,
+                    url: getCdnUrl(img.url),
                     alt: product.name,
+                    width: 1200,
+                    height: 630,
                 }))
                 : [],
             siteName: 'Rawura',
@@ -94,9 +101,9 @@ export async function generateMetadata({ params }: ProductPageProps) {
         twitter: {
             card: 'summary_large_image',
             title: product.name,
-            description: product.description || description,
+            description: description,
             images: product.description_images?.[0]?.url
-                ? [product.description_images[0].url]
+                ? [getCdnUrl(product.description_images[0].url)]
                 : [],
         },
         alternates: {
@@ -112,6 +119,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
         },
     };
 }
+
 
 export default async function ProductPage({ params }: ProductPageProps) {
     const { slug } = await params;

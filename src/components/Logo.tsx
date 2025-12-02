@@ -8,14 +8,16 @@ interface LogoProps {
 const Logo: React.FC<LogoProps> = ({ alwaysFull = false }) => {
     if (alwaysFull) {
         return (
-            <Image
-                src={'/images/brand/logoTransparent.png'}
-                alt="Rawura Logo"
-                width={120}
-                height={60}
-                priority
-                className="w-full h-auto"
-            />
+            <div className="max-w-[120px]">
+                <Image
+                    src={'/images/brand/logoTransparent.png'}
+                    alt="Rawura Logo"
+                    width={120}
+                    height={60}
+                    priority
+                    className="w-full h-auto"
+                />
+            </div>
         );
     }
 

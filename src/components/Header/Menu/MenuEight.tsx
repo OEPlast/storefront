@@ -286,7 +286,7 @@ const MenuEight = () => {
                                             classname='mt-0 top-0'
                                             open={shouldShowDropdown}
                                             loading={isFetching}
-                                            suggestions={searchKeyword.trim().length >= 2 ? suggestions : []}
+                                            suggestions={searchKeyword.trim().length >= 2 ? suggestions.slice(0, 7) : []}
                                             history={searchKeyword.trim().length < 2 ? history : []}
                                             activeIndex={activeIndex}
                                             anchorRef={mobileInputAnchorRef}

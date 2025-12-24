@@ -1,13 +1,14 @@
 'use client';
 
 // Quickview.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { LazyLoadImage as Image } from 'react-lazy-load-image-component';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { useModalQuickviewContext } from '@/context/ModalQuickviewContext';
 import { useCart } from '@/context/CartContext';
 import { useModalCartContext } from '@/context/ModalCartContext';
-import { useWishlist } from '@/context/WishlistContext';
+import { useWishlistStore } from '@/store/useWishlistStore';
+import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/mutations/useWishlistMutations';
 import { useModalWishlistContext } from '@/context/ModalWishlistContext';
 import { useCompare } from '@/context/CompareContext';
 import { useModalCompareContext } from '@/context/ModalCompareContext';
@@ -23,7 +24,8 @@ import {
     calculateSaleProgress,
     shouldShowSaleProgress,
 } from '@/utils/calculateSale';
-import { ProductVariant } from '@/types/product';
+import { ProductVariant, ProductListItem } from '@/types/product';
+import { OptimisticWishlistProduct } from '@/types/wishlist';
 import Link from 'next/link';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import PaymentMethodsBadge from '../Product/PaymentMethodsBadge';
@@ -43,7 +45,17 @@ const ModalQuickview = () => {
     const [quantity, setQuantity] = useState(1);
     const { addToCart, items: cartItems } = useCart();
     const { openModalCart } = useModalCartContext();
-    const { addToWishlist, removeFromWishlist, wishlistState } = useWishlist();
+
+    // Modern wishlist pattern: Zustand + React Query
+    const isInWishlist = useWishlistStore(state => state.isInWishlist(selectedProductId || ''));
+    const wishlistItems = useWishlistStore(state => state.items);
+    const wishlistItem = wishlistItems.find(item => item.productId === (selectedProductId || ''));
+    const wishlistItemId = wishlistItem?._id;
+    const addToWishlistStore = useWishlistStore(state => state.addItem);
+    const removeFromWishlistStore = useWishlistStore(state => state.removeItem);
+    const { mutate: addToWishlistMutation } = useAddToWishlist();
+    const { mutate: removeFromWishlistMutation } = useRemoveFromWishlist();
+
     const { openModalWishlist } = useModalWishlistContext();
     const { addToCompare, removeFromCompare, compareState } = useCompare();
     const { openModalCompare } = useModalCompareContext();
@@ -186,23 +198,95 @@ const ModalQuickview = () => {
         closeQuickview();
     };
 
-    const handleAddToWishlist = () => {
-        if (product) {
-            const productId = product._id;
-            if (wishlistState.wishlistArray.some(item => item.id === productId)) {
-                removeFromWishlist(productId);
+    // Debounce state for wishlist toggle
+    const [wishlistPending, setWishlistPending] = useState(false);
+
+    const handleAddToWishlist = useCallback(() => {
+        // Prevent rapid-fire clicks
+        if (wishlistPending || !product) return;
+
+        setWishlistPending(true);
+
+        // if product existed in wishlist, remove from wishlist
+        if (isInWishlist) {
+            // Optimistically remove from Zustand
+            removeFromWishlistStore(product._id);
+
+            if (wishlistItemId) {
+                // Send to server
+                removeFromWishlistMutation(wishlistItemId, {
+                    onSuccess: () => {
+                        setWishlistPending(false);
+                    },
+                    onError: () => {
+                        // Rollback on error - re-add to Zustand
+                        if (wishlistItem) {
+                            addToWishlistStore(product._id, wishlistItem.product);
+                        }
+                        setWishlistPending(false);
+                    },
+                });
             } else {
-                // TODO: Wire to real wishlist API
-                const legacyProduct = {
-                    id: product._id,
-                    name: product.name,
-                    price: product.price,
-                } as any;
-                addToWishlist(legacyProduct);
+                setWishlistPending(false);
             }
+        } else {
+            // Build product data for optimistic update
+            const productImages = product.description_images || [];
+
+            const optimisticProduct: ProductListItem = {
+                _id: product._id,
+                name: product.name,
+                slug: product.slug,
+                price: product.price,
+                images: productImages.map(img => ({
+                    url: img.url,
+                    cover_image: img.cover_image ?? false,
+                })),
+                description_images: productImages.map(img => ({
+                    url: img.url,
+                    cover_image: img.cover_image ?? false,
+                })),
+                category: {
+                    _id: product.category?._id || '',
+                    name: product.category?.name || '',
+                    image: product.category?.image || '',
+                    slug: product.category?.slug || '',
+                },
+                stock: product.stock,
+                originStock: product.originStock,
+                sku: product.sku ?? '',
+                sale: null,
+            };
+
+            // Optimistically add to Zustand
+            addToWishlistStore(product._id, optimisticProduct);
+
+            // Send to server (mutation only uses productId, but pass full product for type safety)
+            // Ensure sale is explicitly null for OptimisticWishlistProduct type
+            const wishlistPayload: OptimisticWishlistProduct = {
+                ...optimisticProduct,
+                sale: null, // Wishlist products don't have sales
+            };
+
+            addToWishlistMutation(
+                { productId: product._id, product: wishlistPayload },
+                {
+                    onSuccess: () => {
+                        setWishlistPending(false);
+                    },
+                    onError: () => {
+                        // Rollback on error - remove from Zustand
+                        removeFromWishlistStore(product._id);
+                        setWishlistPending(false);
+                    },
+                }
+            );
         }
+
         openModalWishlist();
-    };
+    }, [product, isInWishlist, wishlistItemId, wishlistItem, wishlistPending,
+        removeFromWishlistStore, removeFromWishlistMutation, addToWishlistStore,
+        addToWishlistMutation, openModalWishlist]);
 
     const handleAddToCompare = () => {
         if (product) {
@@ -211,13 +295,7 @@ const ModalQuickview = () => {
                 if (compareState.compareArray.some(item => item._id === productId)) {
                     removeFromCompare(productId);
                 } else {
-                    // TODO: Wire to real compare API
-                    const legacyProduct = {
-                        id: product._id,
-                        name: product.name,
-                        price: product.price,
-                    } as any;
-                    addToCompare(legacyProduct);
+                    addToCompare(product);
                 }
             } else {
                 alert('Compare up to 3 products');
@@ -317,10 +395,10 @@ const ModalQuickview = () => {
                                             <div className="heading4 mt-1">{product?.name}</div>
                                         </div>
                                         <div
-                                            className={`add-wishlist-btn w-10 h-10 flex items-center justify-center border border-line cursor-pointer rounded-lg duration-300 flex-shrink-0 hover:bg-black hover:text-white ${wishlistState.wishlistArray.some(item => item.id === product?._id) ? 'active' : ''}`}
+                                            className={`add-wishlist-btn w-10 h-10 flex items-center justify-center border border-line cursor-pointer rounded-lg duration-300 flex-shrink-0 hover:bg-black hover:text-white ${isInWishlist ? 'active' : ''}`}
                                             onClick={handleAddToWishlist}
                                         >
-                                            {wishlistState.wishlistArray.some(item => item.id === product?._id) ? (
+                                            {isInWishlist ? (
                                                 <>
                                                     <Icon.Heart size={20} weight='fill' className='text-red' />
                                                 </>

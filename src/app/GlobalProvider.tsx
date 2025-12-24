@@ -1,7 +1,6 @@
 import React from 'react';
 import { CartProvider } from '@/context/CartContext';
 import { ModalCartProvider } from '@/context/ModalCartContext';
-import { WishlistProvider } from '@/context/WishlistContext';
 import { ModalWishlistProvider } from '@/context/ModalWishlistContext';
 import { CompareProvider } from '@/context/CompareContext';
 import { ModalCompareProvider } from '@/context/ModalCompareContext';
@@ -18,19 +17,17 @@ const GlobalProvider: React.FC<{ children: React.ReactNode; }> = ({ children }) 
                 <ServerQueries>
                     <CartProvider>
                         <ModalCartProvider>
-                            <WishlistProvider>
-                                <ModalWishlistProvider>
-                                    <CompareProvider>
-                                        <ModalCompareProvider>
-                                            <ModalSearchProvider>
-                                                <ModalQuickviewProvider>
-                                                    {children}
-                                                </ModalQuickviewProvider>
-                                            </ModalSearchProvider>
-                                        </ModalCompareProvider>
-                                    </CompareProvider>
-                                </ModalWishlistProvider>
-                            </WishlistProvider>
+                            <ModalWishlistProvider>
+                                <CompareProvider>
+                                    <ModalCompareProvider>
+                                        <ModalSearchProvider>
+                                            <ModalQuickviewProvider>
+                                                {children}
+                                            </ModalQuickviewProvider>
+                                        </ModalSearchProvider>
+                                    </ModalCompareProvider>
+                                </CompareProvider>
+                            </ModalWishlistProvider>
                         </ModalCartProvider>
                     </CartProvider>
                 </ServerQueries>

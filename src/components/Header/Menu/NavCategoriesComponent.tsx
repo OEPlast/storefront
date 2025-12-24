@@ -53,15 +53,15 @@ const NavCategoriesComponent = ({ isOpen }: NavCategoriesComponentProps) => {
                 onClick={toggleNavCategories}
                 onMouseOver={() => setIsCategoryExpanded(true)}
                 onMouseLeave={hideCategoryPanel}
-                className="menu-department-btn relative flex h-full min-w-[215px] flex-1 cursor-pointer items-center gap-4 bg-black px-4 sm:gap-16">
-                <div className="text-button-uppercase whitespace-nowrap text-white">All Categories</div>
+                className="menu-department-btn relative flex h-full min-w-[235px] flex-1 cursor-pointer items-center gap-4 bg-black px-4 sm:gap-16">
+                <Link href={'/category'} className="text-button-uppercase whitespace-nowrap text-white hover:underline">All Categories</Link>
             </div>
             <div
                 onMouseOver={showCategoryAndExpand}
                 onMouseLeave={hideCategoryPanel}
                 className={`sub-menu-department absolute left-0 top-[43px] h-max rounded-b-2xl bg-white transition-all duration-200 ${showFixedCategories ? 'open' : ''} ${showNavCategories ? 'open' : ''} ${isCategoryExpanded
                     ? 'w-full border border-line border-t-0 max-h-[70vh] overflow-hidden'
-                    : 'w-[215px]'
+                    : 'w-[235px]'
                     }`}
             >
                 <div className="flex relative h-full">

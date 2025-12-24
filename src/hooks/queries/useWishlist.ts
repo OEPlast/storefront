@@ -39,6 +39,7 @@ const fetchWishlistCount = async (): Promise<number> => {
 /**
  * Hook to get wishlist items with pagination
  * Syncs data to Zustand store for client-side state management
+ * On first authenticated fetch, merges guest wishlist with server data
  */
 export const useWishlistItems = (
   page: number = 1,
@@ -46,6 +47,8 @@ export const useWishlistItems = (
 ): UseQueryResult<{ data: WishlistItem[]; meta: WishlistMeta }, Error> => {
   const { data: session } = useSession();
   const syncFromServer = useWishlistStore(state => state.syncFromServer);
+  const localItems = useWishlistStore(state => state.items);
+  const hasMergedRef = React.useRef(false);
 
   const query = useQuery({
     queryKey: queryKeys.wishlist.list(page),
@@ -59,10 +62,17 @@ export const useWishlistItems = (
 
   // Sync to Zustand when data is successfully fetched
   React.useEffect(() => {
-    if (query.data?.data) {
-      syncFromServer(query.data.data);
+    if (query.data?.data && session?.user) {
+      // First authenticated fetch: merge guest + server items (server version wins on duplicates)
+      if (!hasMergedRef.current && localItems.length > 0 && page === 1) {
+        syncFromServer(query.data.data, 'merge');
+        hasMergedRef.current = true;
+      } else {
+        // Subsequent fetches: replace with server data
+        syncFromServer(query.data.data, 'replace');
+      }
     }
-  }, [query.data, syncFromServer]);
+  }, [query.data, syncFromServer, session?.user, localItems.length, page]);
 
   return query;
 };
@@ -72,6 +82,7 @@ export const useWishlistItems = (
  */
 export const useWishlistCount = (): UseQueryResult<number, Error> => {
   const { data: session } = useSession();
+  const localItems = useWishlistStore(state => state.items);
 
   return useQuery({
     queryKey: queryKeys.wishlist.count(),
@@ -81,26 +92,22 @@ export const useWishlistCount = (): UseQueryResult<number, Error> => {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: true,
+    // If not authenticated, use local count as placeholder
+    placeholderData: !session?.user ? localItems.length : undefined,
   });
 };
 
 /**
  * Hook to check if a product is in the wishlist
- * Uses Zustand store for client-side state
+ * Uses Zustand store for client-side state (works for both guest and authenticated)
  * Returns wishlist item ID for removal operations
  */
 export const useIsInWishlist = (
   productId: string
 ): { isInWishlist: boolean; wishlistItemId: string | null } => {
-  const { data: session } = useSession();
   const items = useWishlistStore(state => state.items);
 
-  // If not authenticated, product cannot be in wishlist
-  if (!session?.user) {
-    return { isInWishlist: false, wishlistItemId: null };
-  }
-
-  // Search for product in Zustand store
+  // Search for product in Zustand store (guest or authenticated)
   const wishlistItem = items.find((item) => item.productId === productId);
 
   return {

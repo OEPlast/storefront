@@ -21,12 +21,12 @@ const SliderNine = () => {
     if (!data) return null;
     if (TopGroupBanners.length === 0) return null;
 
-    TopGroupBanners.splice(1, 2)
+    TopGroupBanners.splice(1, 2);
 
     return (
         <>
-            <div className="slider-block style-nine lg:h-[480px] md:h-[400px] sm:h-[320px] h-[280px] w-full">
-                <div className="container lg:pt-5 flex justify-end h-full w-full">
+            <div className="slider-block style-nine lg:h-[500px] md:h-[400px] sm:h-[320px] h-[280px] w-full">
+                <div className="container lg:pt-2 flex justify-end h-full w-full">
                     <div className="slider-main lg:pl-5 h-full w-full">
                         <Swiper
                             spaceBetween={0}

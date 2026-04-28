@@ -11,12 +11,13 @@ import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { GetCountries } from "react-country-state-city";
 import { Country } from "react-country-state-city/dist/esm/types";
 import { FieldInfo } from "@/components/Form/FieldInfo";
-import { signIn, signOut } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export default function RegisterForm() {
   const [countriesList, setCountriesList] = useState<Country[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const router = useRouter();
+  const { update } = useSession();
 
   useEffect(() => {
     GetCountries().then((result) => {
@@ -53,8 +54,10 @@ export default function RegisterForm() {
           redirect: false,
         });
 
+
         // Step 3: Check login result
         if (loginResult?.ok) {
+          await update();
           // Success - redirect to OTP verification
           router.push("/verify-otp");
         } else {
@@ -76,7 +79,7 @@ export default function RegisterForm() {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        e.stopPropagation()
+        e.stopPropagation();
         form.handleSubmit();
       }}
       className="md:mt-7 mt-4">
@@ -85,13 +88,12 @@ export default function RegisterForm() {
         <form.Field name="firstName">
           {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
-            
+
             return (
               <div className="flex-1">
                 <input
-                  className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${
-                    hasError ? 'border-red-600' : ''
-                  }`}
+                  className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
+                    }`}
                   id={field.name}
                   name={field.name}
                   type="text"
@@ -110,13 +112,12 @@ export default function RegisterForm() {
         <form.Field name="lastName">
           {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
-            
+
             return (
               <div className="flex-1">
                 <input
-                  className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${
-                    hasError ? 'border-red-600' : ''
-                  }`}
+                  className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
+                    }`}
                   id={field.name}
                   name={field.name}
                   type="text"
@@ -137,13 +138,12 @@ export default function RegisterForm() {
       <form.Field name="country">
         {(field) => {
           const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
-          
+
           return (
             <div className="mt-5">
               <select
-                className={`border border-line px-4 pt-3 pb-3 w-full rounded-lg ${
-                  hasError ? 'border-red-600' : ''
-                }`}
+                className={`border border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
+                  }`}
                 id={field.name}
                 name={field.name}
                 value={field.state.value}
@@ -166,13 +166,12 @@ export default function RegisterForm() {
       <form.Field name="email">
         {(field) => {
           const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
-          
+
           return (
             <div className="mt-5">
               <input
-                className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${
-                  hasError ? 'border-red-600' : ''
-                }`}
+                className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
+                  }`}
                 id={field.name}
                 name={field.name}
                 type="email"
@@ -193,13 +192,12 @@ export default function RegisterForm() {
         <form.Field name="password">
           {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
-            
+
             return (
               <div className="flex-1">
                 <input
-                  className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${
-                    hasError ? 'border-red-600' : ''
-                  }`}
+                  className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
+                    }`}
                   id={field.name}
                   name={field.name}
                   type="password"
@@ -218,13 +216,12 @@ export default function RegisterForm() {
         <form.Field name="confirmPassword">
           {(field) => {
             const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
-            
+
             return (
               <div className="flex-1">
                 <input
-                  className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${
-                    hasError ? 'border-red-600' : ''
-                  }`}
+                  className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
+                    }`}
                   id={field.name}
                   name={field.name}
                   type="password"
@@ -281,9 +278,9 @@ export default function RegisterForm() {
         <form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
-            <button 
-              type="submit" 
-              disabled={!canSubmit || isSubmitting} 
+            <button
+              type="submit"
+              disabled={!canSubmit || isSubmitting}
               className="button-main w-full py-4 disabled:opacity-50 disabled:cursor-not-allowed">
               {isSubmitting ? "Registering..." : "Register"}
             </button>

@@ -8,7 +8,7 @@ import { loginSchema, LoginInput } from "@/libs/schemas/auth.schema";
 import { credentialsLogin } from "@/actions/login";
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { FieldInfo } from "@/components/Form/FieldInfo";
-
+import { useSession } from "next-auth/react";
 interface LoginFormProps {
   onLoginSuccess?: () => void;
   redirectPath?: string;
@@ -18,6 +18,7 @@ export default function LoginForm({ onLoginSuccess, redirectPath }: LoginFormPro
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { update } = useSession();
 
   const form = useForm({
     defaultValues: {
@@ -39,15 +40,13 @@ export default function LoginForm({ onLoginSuccess, redirectPath }: LoginFormPro
         );
 
         if (result.success) {
-          const nextRoute = redirectPath && result.emailVerified ? redirectPath : "/";
+          await update();
 
           if (!result.emailVerified) {
             router.push("/verify-otp");
           } else {
-            if (redirectPath) {
-
-              router.push(nextRoute);
-            }
+            router.replace(redirectPath ?? "/");
+            router.refresh();
           }
 
           onLoginSuccess?.();

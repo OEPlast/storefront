@@ -42,6 +42,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/libs/api/axios';
 import api from '@/libs/api/endpoints';
 import { Review } from '@/hooks/queries/useProductReviews';
+import { useProductSocket } from '@/hooks/useProductSocket';
 
 
 interface Props {
@@ -53,6 +54,14 @@ const Sale: React.FC<Props> = ({ slug }) => {
     const queryClient = useQueryClient();
     // Fetch product data using React Query
     const { data: productMain, isLoading, error } = useProduct({ slug });
+
+    useProductSocket({
+        productIds: productMain?._id ? [productMain._id] : [],
+        enabled: Boolean(productMain?._id),
+        onUpdate: () => {
+            queryClient.invalidateQueries({ queryKey: ['product', slug] });
+        },
+    });
 
     const swiperRef: any = useRef(undefined);
     const [photoIndex, setPhotoIndex] = useState(0);

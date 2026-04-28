@@ -58,7 +58,7 @@ const PricingTierUpgrade: React.FC<PricingTierUpgradeProps> = React.memo(({
     const savingsPerUnit = pricing.unitPrice - potentialUnitPrice;
 
     return (
-        <div className="mt-9">
+        <div className="mt-2">
             <div className="flex items-center gap-0.5 text-sm">
                 {/* <Icon.Tag weight='fill' size={14} className="text-green-900 flex-shrink-0" /> */}
                 {onQuantityChange ? (
@@ -67,10 +67,10 @@ const PricingTierUpgrade: React.FC<PricingTierUpgradeProps> = React.memo(({
                         className="text-black hover:text-green-600 transition-colors text-left text-[11px]"
                     >
                         <span className="font-semibold p-1 px-1.5 rounded-md cursor-pointer bg-black text-white text-[12px] hover:scale-105">Buy {qtyNeeded} more</span>
-                        {' : '}<span className="text-green-600 ">(to save <span className="font-semibold text-green-600">{getTierDescription(nextTier)}</span> )</span>
+                        {' : '}<span className="text-green-600 text-[12px]">(to save <span className="font-semibold text-green-600 text-[12px]">{getTierDescription(nextTier)}</span> )</span>
                     </button>
                 ) : (
-                    <span className="text-black">
+                    <span className="text-black text-[12px]">
                         Buy <span className="font-semibold">{qtyNeeded}</span> more: <span className="font-semibold text-green-600">{getTierDescription(nextTier)}</span>
                         {' '}<span className="text-green-600">(save {formatToNaira(savingsPerUnit)}/unit)</span>
                     </span>

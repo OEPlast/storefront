@@ -66,7 +66,7 @@ export default function CartItemsSection({
                                 item.description_images?.find((img) => img.cover_image)?.url ??
                                 item.description_images?.[0]?.url;
                             const productImageUrl = productImagePath ? getCdnUrl(productImagePath) : '';
-                            const isUnavailable = false;
+                            const isUnavailable = item.stock === 0;
                             const unavailableLabel = 'Out of stock';
                             const displayTotal = pricing.totalPrice;
 

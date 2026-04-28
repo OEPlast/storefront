@@ -19,7 +19,7 @@ const profileUpdateSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
   lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   country: z.string().min(1, 'Please select a country'),
-  dob: z.string().optional(),
+  dob: z.string().min(1, 'Date of birth is required'),
   notifications: z.boolean().optional(),
 });
 
@@ -149,7 +149,7 @@ export default function ProfileInformation() {
       form.setFieldValue('dob', userProfile.dob || '');
       form.setFieldValue('notifications', userProfile.notifications ?? true);
     }
-  }, [userProfile]);
+  }, [userProfile, form]);
 
   if (isLoading) {
     return (
@@ -310,7 +310,7 @@ export default function ProfileInformation() {
               return (
                 <div className="birth">
                   <label htmlFor="birth" className="caption1">
-                    Day of Birth
+                    Day of Birth <span className="text-red">*</span>
                   </label>
                   <input
                     className="border-line mt-2 px-4 py-3 w-full rounded-lg"

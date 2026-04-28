@@ -9,9 +9,10 @@ import { formatToNaira } from '@/utils/currencyFormatter';
 
 interface CartItemCardProps {
     item: CartItem;
+    isUnavailable?: boolean;
 }
 
-const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
+const CartItemCard: React.FC<CartItemCardProps> = ({ item, isUnavailable = false }) => {
     // Use ModalCart's exact pricing calculation method
     const pricing = calculateCartItemPricing(item);
 
@@ -60,14 +61,16 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item }) => {
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2 mb-2">
-                    {/* Sale Badge */}
+                    {isUnavailable && (
+                        <span className="inline-block text-[10px] bg-red-600 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wide">
+                            OUT OF STOCK
+                        </span>
+                    )}
                     {hasSale && (
                         <span className="inline-block text-[10px] bg-red text-white px-2 py-0.5 rounded font-bold uppercase tracking-wide">
                             SALE {salePercentage}% OFF
                         </span>
                     )}
-
-                    {/* Bulk/Pricing Tier Badge */}
                     {hasPricingTier && (
                         <span className="inline-block text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded font-semibold uppercase">
                             BULK DEALS

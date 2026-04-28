@@ -56,6 +56,9 @@ interface OrderSummaryBlockProps {
 
     // Discount info
     discountInfo: DiscountInfo | null;
+
+    // Live stock — productIds that went out of stock via socket
+    outOfStockProductIds?: Set<string>;
 }
 
 const OrderSummaryBlock: React.FC<OrderSummaryBlockProps> = ({
@@ -75,6 +78,7 @@ const OrderSummaryBlock: React.FC<OrderSummaryBlockProps> = ({
     pendingCorrections,
     parsedCheckoutErrors,
     discountInfo,
+    outOfStockProductIds,
 }) => {
     return (
         <div >
@@ -121,8 +125,26 @@ const OrderSummaryBlock: React.FC<OrderSummaryBlockProps> = ({
                             </div>
                         </div>
                     ) : (
-                        items.map((item) => <CartItemCard key={item._id || item.id} item={item} />)
+                        items.map((item) => (
+                            <CartItemCard
+                                key={item._id || item.id}
+                                item={item}
+                                isUnavailable={outOfStockProductIds?.has(item._id || item.id || '')}
+                            />
+                        ))
                     )}
+                </div>
+            )}
+
+            {outOfStockProductIds && outOfStockProductIds.size > 0 && (
+                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm mt-3">
+                    <Icon.WarningCircle size={16} weight="bold" className="text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold text-red-900">Item(s) no longer available</p>
+                        <p className="text-red-700 text-xs mt-0.5">
+                            One or more items sold out while you were checking out. Please return to your cart to remove them before placing your order.
+                        </p>
+                    </div>
                 </div>
             )}
 

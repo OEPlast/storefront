@@ -11,7 +11,6 @@ const UserIcon = () => {
     const { openLoginPopup, handleLoginPopup } = useLoginPopup();
     const { status, data } = useSession();
     const { data: userProfile, isLoading, isFetching, isError } = useUserProfile({ userId: data?.user.id });
-
     const isUserDataLoading = isLoading || isFetching;
 
     if (status === 'loading' || (status === 'authenticated' && isUserDataLoading)) {

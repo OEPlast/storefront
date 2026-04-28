@@ -29,6 +29,7 @@ import { useAddAddress } from '@/hooks/mutations/useAddressMutations';
 import { Address, AddAddressInput } from '@/types/user';
 import { useLoginModalStore } from '@/store/useLoginModalStore';
 import toast from 'react-hot-toast';
+import { useProductSocket } from '@/hooks/useProductSocket';
 
 type ShippingFormState = {
     firstName: string;
@@ -238,6 +239,42 @@ const Checkout = () => {
     const [isNotesExpanded, setIsNotesExpanded] = useState<boolean>(false);
     const [isOrdersExpanded, setIsOrdersExpanded] = useState<boolean>(true);
     const [isChangingShippingMethod, setIsChangingShippingMethod] = useState<boolean>(false);
+
+    // Live stock tracking via socket
+    const [outOfStockProductIds, setOutOfStockProductIds] = useState<Set<string>>(new Set());
+
+    const checkoutProductIds = useMemo(
+        () => items.map((i) => i._id || i.id).filter(Boolean) as string[],
+        [items]
+    );
+
+    useProductSocket({
+        productIds: checkoutProductIds,
+        onUpdate: (update) => {
+            for (const event of update.events) {
+                const e = event as unknown as { type: string; data: Record<string, unknown> };
+                const stock =
+                    e.type === 'product_update' ? e.data.stock :
+                    e.type === 'inventory_update' ? e.data.currentStock : undefined;
+                if (typeof stock === 'number' && stock === 0) {
+                    setOutOfStockProductIds((prev) => {
+                        const next = new Set(prev);
+                        next.add(update.productId);
+                        return next;
+                    });
+                }
+            }
+        },
+    });
+
+    // Clear out-of-stock flags for items that were removed from cart
+    React.useEffect(() => {
+        const cartIds = new Set(items.map((i) => i._id || i.id));
+        setOutOfStockProductIds((prev) => {
+            const next = new Set(Array.from(prev).filter((id) => cartIds.has(id)));
+            return next.size === prev.size ? prev : next;
+        });
+    }, [items]);
 
     // Refresh cart data when checkout page mounts to ensure accurate subtotal after cart edits
     React.useEffect(() => {
@@ -867,9 +904,10 @@ const Checkout = () => {
 
     // Check if payment button should be enabled
     const canProceedToPayment = useMemo(() => {
+        if (outOfStockProductIds.size > 0) return false;
         if (shippingMethod === 'pickup') return true;
         return isShippingFormComplete && calculatedShippingCost !== null && !isCalculatingShipping;
-    }, [shippingMethod, isShippingFormComplete, calculatedShippingCost, isCalculatingShipping]);
+    }, [outOfStockProductIds, shippingMethod, isShippingFormComplete, calculatedShippingCost, isCalculatingShipping]);
 
     // Geocode receiver address for GIG shipping (coordinates are mandatory)
     React.useEffect(() => {
@@ -1275,6 +1313,7 @@ const Checkout = () => {
                                     pendingCorrections={pendingCorrections}
                                     parsedCheckoutErrors={parsedCheckoutErrors}
                                     discountInfo={discountInfo}
+                                    outOfStockProductIds={outOfStockProductIds}
                                 />
                                 <span className="hidden lg:block">
                                     <CheckoutButton

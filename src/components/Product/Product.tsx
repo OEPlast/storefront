@@ -34,6 +34,7 @@ import { LazyLoadImage as Image } from 'react-lazy-load-image-component';
 import ProductSalesLeft from './ProductSalesLeft';
 import ProductNameColors from './ProductNameColors';
 import ProductPriceBlock from './ProductPriceBlock';
+import { useProductSocket } from '@/hooks/useProductSocket';
 
 // Cart context already imported correctly at top
 
@@ -101,10 +102,31 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
     const [activeColor, setActiveColor] = useState<string>('');
     const [activeSize, setActiveSize] = useState<string>('');
     const [openQuickShop, setOpenQuickShop] = useState<boolean>(false);
+    const [localStock, setLocalStock] = useState<number>(data.stock);
+
+    // Keep localStock in sync when parent data changes (e.g. React Query refetch)
+    useEffect(() => {
+        setLocalStock(data.stock);
+    }, [data.stock]);
 
     // PRIMARY cart (Context API - client-first with background server sync)
     const { addToCart, updateCart, items: cartItems, itemCount } = useCart();
     const { openModalCart } = useModalCartContext();
+
+    useProductSocket({
+        productIds: [data._id],
+        enabled: Boolean(data._id),
+        onUpdate: (update) => {
+            for (const event of update.events) {
+                const e = event as unknown as { type: string; data: Record<string, unknown> };
+                if (e.type === 'product_update' && typeof e.data.stock === 'number') {
+                    setLocalStock(e.data.stock);
+                } else if (e.type === 'inventory_update' && typeof e.data.currentStock === 'number') {
+                    setLocalStock(e.data.currentStock);
+                }
+            }
+        },
+    });
 
     // Zustand store for client-side wishlist state
     const isInWishlist = useWishlistStore(state => state.isInWishlist(data._id));
@@ -467,7 +489,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                                     alt={data.name}
                                     wrapperProps={
                                         {
-                                            style: { transitionDelay: '0.5s' }
+                                            style: { transitionDelay: '0.15s' }
                                         }
                                     }
                                     className='w-full h-full object-cover duration-700'
@@ -527,7 +549,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                                     Quick View
                                 </div>
                                 {!hasNonColorAttributes ? (
-                                    data.stock > 0 ? (<div
+                                    localStock > 0 ? (<div
                                         className="add-cart-btn w-full text-button-uppercase py-2 px-0.5 text-center rounded-full duration-500 bg-white hover:bg-black hover:text-white cursor-pointer whitespace-nowrap"
                                         onClick={e => {
                                             e.stopPropagation();
@@ -569,7 +591,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                                                     ))}
                                                 </div>
                                             )}
-                                            {data.stock > 0 ? (
+                                            {localStock > 0 ? (
                                                 <div
                                                     className="button-main w-full text-center rounded-full py-3 mt-4 cursor-pointer"
                                                     onClick={() => {

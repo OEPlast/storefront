@@ -20,6 +20,7 @@ import type { Coupon } from '@/types/coupon';
 import { useCheckoutStore } from '@/store/useCheckoutStore';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import { useFreeShippingThreshold } from '@/hooks/useFreeShippingThreshold';
+import { useProductSocket } from '@/hooks/useProductSocket';
 const Cart = () => {
     const [timeLeft, setTimeLeft] = useState(countdownTime());
     const router = useRouter();
@@ -36,6 +37,8 @@ const Cart = () => {
     }, []);
 
     const { items: cartItems, updateItem, removeItem, isGuest, refreshCart } = useCart();
+    const cartProductIds = useMemo(() => cartItems.map(i => i._id).filter(Boolean), [cartItems]);
+    useProductSocket({ productIds: cartProductIds });
     const [quantityMap, setQuantityMap] = useState<Record<string, number>>({});
     const debouncedQuantities = useDebouncedValue(quantityMap, 500);
 
@@ -411,156 +414,163 @@ const Cart = () => {
 
                                                 return (
                                                     <div
-                                                        className={`item flex mt-3 pb-3 border-b border-line w-full transition-colors rounded-lg md:p-3 ${isUnavailable ? 'bg-surface/50 opacity-80' : 'hover:bg-surface/50'
+                                                        className={`item mt-3 pb-3 border-b border-line w-full transition-colors rounded-lg md:p-3 ${isUnavailable ? 'bg-surface/50 opacity-80' : 'hover:bg-surface/50'
                                                             }`}
                                                         key={itemId}
                                                     >
-                                                        <div className="w-1/2">
-                                                            <div className="flex items-center gap-6">
-                                                                <div className="bg-img md:w-[100px] w-20 aspect-square relative group">
-                                                                    {productImageUrl ? (
-                                                                        <Image
-                                                                            src={productImageUrl}
-                                                                            width={1000}
-                                                                            height={1000}
-                                                                            alt={productName}
-                                                                            className='w-full h-full object-cover rounded-lg'
-                                                                        />
-                                                                    ) : (
-                                                                        <div className='w-full h-full bg-gray-200 rounded-lg flex items-center justify-center'>
-                                                                            <Icon.Image size={32} className="text-gray-400" />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex-1">
-                                                                    <div className="text-title font-semibold mb-2 flex items-center gap-2">
-                                                                        <span>{productName}</span>
-                                                                        {isUnavailable && (
-                                                                            <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">
-                                                                                {unavailableLabel}
-                                                                            </span>
+
+                                                        <div className="flex w-full">
+                                                            <div className="w-1/2">
+                                                                <div className="flex items-center gap-6">
+                                                                    <div className="bg-img md:w-[100px] w-20 aspect-square relative group">
+                                                                        {productImageUrl ? (
+                                                                            <Image
+                                                                                src={productImageUrl}
+                                                                                width={1000}
+                                                                                height={1000}
+                                                                                alt={productName}
+                                                                                className='w-full h-full object-cover rounded-lg'
+                                                                            />
+                                                                        ) : (
+                                                                            <div className='w-full h-full bg-gray-200 rounded-lg flex items-center justify-center'>
+                                                                                <Icon.Image size={32} className="text-gray-400" />
+                                                                            </div>
                                                                         )}
                                                                     </div>
-                                                                    {/* Attributes */}
-                                                                    {item.selectedAttributes.length > 0 && (
-                                                                        <div className="flex flex-wrap gap-2 mt-2">
-                                                                            {item.selectedAttributes.map((attr, idx) => (
-                                                                                <span key={idx} className="text-xs bg-surface px-2 py-1 rounded border border-line">
-                                                                                    <span className="text-secondary">{attr.name}:</span> <span className="font-medium">{attr.value}</span>
+                                                                    <div className="flex-1">
+                                                                        <div className="text-title font-semibold mb-2 flex items-center gap-2">
+                                                                            <span>{productName}</span>
+                                                                            {isUnavailable && (
+                                                                                <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">
+                                                                                    {unavailableLabel}
                                                                                 </span>
-                                                                            ))}
+                                                                            )}
                                                                         </div>
-                                                                    )}
-                                                                    {/* Sale/Discount Badge */}
-                                                                    <div className="mt-2 flex flex-wrap gap-2">
-                                                                        {hasSale && (
-                                                                            <span className="text-xs bg-red text-white px-2.5 py-1 rounded font-bold uppercase tracking-wide">
-                                                                                SALE {Math.round(pricing.saleDiscount)}% OFF
-                                                                            </span>
+                                                                        {/* Attributes */}
+                                                                        {item.selectedAttributes.length > 0 && (
+                                                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                                                {item.selectedAttributes.map((attr, idx) => (
+                                                                                    <span key={idx} className="text-xs bg-surface px-2 py-1 rounded border border-line">
+                                                                                        <span className="text-secondary">{attr.name}:</span> <span className="font-medium">{attr.value}</span>
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
                                                                         )}
-                                                                        {hasPricingTier && (
-                                                                            <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded font-medium">
-                                                                                Bulk Deals
-                                                                            </span>
+                                                                        {/* Sale/Discount Badge */}
+                                                                        <div className="mt-2 flex flex-wrap gap-2">
+                                                                            {hasSale && (
+                                                                                <span className="text-xs bg-red text-white px-2.5 py-1 rounded font-bold uppercase tracking-wide">
+                                                                                    SALE {Math.round(pricing.saleDiscount)}% OFF
+                                                                                </span>
+                                                                            )}
+                                                                            {hasPricingTier && (
+                                                                                <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded font-medium">
+                                                                                    Bulk
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        {isUnavailable && (
+                                                                            <div className="mt-2 text-xs text-red-600">
+                                                                                Please adjust or remove this item before checkout.
+                                                                            </div>
                                                                         )}
                                                                     </div>
-                                                                    {isUnavailable && (
-                                                                        <div className="mt-2 text-xs text-red-600">
-                                                                            Please adjust or remove this item before checkout.
-                                                                        </div>
-                                                                    )}
                                                                 </div>
+
                                                             </div>
-                                                            {/* Pricing Tier Upgrade Opportunity */}
-                                                            {!isUnavailable && item.pricingTiers && (
-                                                                <PricingTierUpgrade
-                                                                    item={item}
-                                                                    currentQty={currentQty}
-                                                                    onQuantityChange={(newQty) => {
-                                                                        setQuantityMap((prev) => ({
-                                                                            ...prev,
-                                                                            [itemId]: newQty,
-                                                                        }));
-                                                                    }}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                        <div className="w-1/12 price flex flex-col items-center justify-center">
-                                                            {hasDiscount ? (
-                                                                <>
-                                                                    <div className="text-xs text-secondary line-through">
-                                                                        {formatToNaira(pricing.basePrice)}
-                                                                    </div>
-                                                                    <div className="text-title text-center font-bold text-red mt-1">
-                                                                        {formatToNaira(pricing.unitPrice)}
-                                                                    </div>
-                                                                </>
-                                                            ) : (
-                                                                <div className="text-title text-center font-semibold">{formatToNaira(pricing.unitPrice)}</div>
-                                                            )}
-                                                            {/* {hasPricingTier && (
+                                                            <div className="w-1/12 price flex flex-col items-center justify-center">
+                                                                {hasDiscount ? (
+                                                                    <>
+                                                                        <div className="text-xs text-secondary line-through">
+                                                                            {formatToNaira(pricing.basePrice)}
+                                                                        </div>
+                                                                        <div className="text-title text-center font-bold text-red mt-1">
+                                                                            {formatToNaira(pricing.unitPrice)}
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="text-title text-center font-semibold">{formatToNaira(pricing.unitPrice)}</div>
+                                                                )}
+                                                                {/* {hasPricingTier && (
                                                                 <div className="text-[10px] text-blue-600 font-medium">
                                                                     Tier price
                                                                 </div>
                                                             )} */}
-                                                        </div>
-                                                        <div className="w-1/6 flex items-center justify-center">
-                                                            <div className="quantity-block bg-surface p-1.5 flex items-center justify-between rounded-lg border border-line md:w-[100px] flex-shrink-0 w-24 hover:border-black transition-colors">
-                                                                <Icon.Minus
-                                                                    onClick={() => {
-                                                                        if (isUnavailable) {
-                                                                            return;
-                                                                        }
-                                                                        setQuantityMap((prev) => {
-                                                                            const previousQty = prev[itemId] ?? item.qty;
-                                                                            const nextQty = Math.max(1, previousQty - 1);
-                                                                            if (nextQty === previousQty) {
-                                                                                return prev;
-                                                                            }
-                                                                            return { ...prev, [itemId]: nextQty };
-                                                                        });
-                                                                    }}
-                                                                    className={`text-base max-md:text-sm rounded p-1 transition-colors ${currentQty === 1 || isUnavailable
-                                                                        ? 'opacity-50 cursor-not-allowed'
-                                                                        : 'cursor-pointer hover:bg-black hover:text-white'
-                                                                        }`}
-                                                                />
-                                                                <div className="text-button quantity font-semibold">{currentQty}</div>
-                                                                <Icon.Plus
-                                                                    onClick={() => {
-                                                                        if (isUnavailable) {
-                                                                            return;
-                                                                        }
-                                                                        setQuantityMap((prev) => {
-                                                                            const previousQty = prev[itemId] ?? item.qty;
-                                                                            const nextQty = previousQty + 1;
-                                                                            if (nextQty === previousQty) {
-                                                                                return prev;
-                                                                            }
-                                                                            return { ...prev, [itemId]: nextQty };
-                                                                        });
-                                                                    }}
-                                                                    className={`text-base max-md:text-sm rounded p-1 transition-colors ${isUnavailable
-                                                                        ? 'opacity-50 cursor-not-allowed'
-                                                                        : 'cursor-pointer hover:bg-black hover:text-white'
-                                                                        }`}
-                                                                />
                                                             </div>
+                                                            <div className="w-1/6 flex items-center justify-center">
+                                                                <div className="quantity-block bg-surface p-1.5 flex items-center justify-between rounded-lg border border-line md:w-[100px] flex-shrink-0 w-fit hover:border-black transition-colors">
+                                                                    <Icon.Minus
+                                                                        onClick={() => {
+                                                                            if (isUnavailable) {
+                                                                                return;
+                                                                            }
+                                                                            setQuantityMap((prev) => {
+                                                                                const previousQty = prev[itemId] ?? item.qty;
+                                                                                const nextQty = Math.max(1, previousQty - 1);
+                                                                                if (nextQty === previousQty) {
+                                                                                    return prev;
+                                                                                }
+                                                                                return { ...prev, [itemId]: nextQty };
+                                                                            });
+                                                                        }}
+                                                                        className={`text-base max-md:text-sm rounded p-1 transition-colors ${currentQty === 1 || isUnavailable
+                                                                            ? 'opacity-50 cursor-not-allowed'
+                                                                            : 'cursor-pointer hover:bg-black hover:text-white'
+                                                                            }`}
+                                                                    />
+                                                                    <div className="text-button quantity font-semibold px-1">{currentQty}</div>
+                                                                    <Icon.Plus
+                                                                        onClick={() => {
+                                                                            if (isUnavailable) {
+                                                                                return;
+                                                                            }
+                                                                            setQuantityMap((prev) => {
+                                                                                const previousQty = prev[itemId] ?? item.qty;
+                                                                                const nextQty = previousQty + 1;
+                                                                                if (nextQty === previousQty) {
+                                                                                    return prev;
+                                                                                }
+                                                                                return { ...prev, [itemId]: nextQty };
+                                                                            });
+                                                                        }}
+                                                                        className={`text-base max-md:text-sm rounded p-1 transition-colors ${isUnavailable
+                                                                            ? 'opacity-50 cursor-not-allowed'
+                                                                            : 'cursor-pointer hover:bg-black hover:text-white'
+                                                                            }`}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <div className="w-1/6 flex flex-col items-center justify-center">
+                                                                <div className="text-title text-center font-bold">{formatToNaira(displayTotal)}</div>
+                                                            </div>
+                                                            <div className="w-1/12 flex items-center justify-center">
+                                                                <button
+                                                                    onClick={() => removeItem(item.cartItemId)}
+                                                                    className="p-2 hover:bg-red/10 rounded-full transition-colors group"
+                                                                    title="Remove item"
+                                                                >
+                                                                    <Icon.Trash
+                                                                        className='text-xl max-md:text-base text-red group-hover:scale-110 transition-transform'
+                                                                    />
+                                                                </button>
+                                                            </div>
+
                                                         </div>
-                                                        <div className="w-1/6 flex flex-col items-center justify-center">
-                                                            <div className="text-title text-center font-bold">{formatToNaira(displayTotal)}</div>
-                                                        </div>
-                                                        <div className="w-1/12 flex items-center justify-center">
-                                                            <button
-                                                                onClick={() => removeItem(item.cartItemId)}
-                                                                className="p-2 hover:bg-red/10 rounded-full transition-colors group"
-                                                                title="Remove item"
-                                                            >
-                                                                <Icon.Trash
-                                                                    className='text-xl max-md:text-base text-red group-hover:scale-110 transition-transform'
-                                                                />
-                                                            </button>
-                                                        </div>
+
+                                                        {/* Pricing Tier Upgrade Opportunity */}
+                                                        {!isUnavailable && item.pricingTiers && (
+                                                            <PricingTierUpgrade
+                                                                item={item}
+                                                                currentQty={currentQty}
+                                                                onQuantityChange={(newQty) => {
+                                                                    setQuantityMap((prev) => ({
+                                                                        ...prev,
+                                                                        [itemId]: newQty,
+                                                                    }));
+                                                                }}
+                                                            />
+                                                        )}
+
                                                     </div>
                                                 );
                                             })}
@@ -746,7 +756,7 @@ const Cart = () => {
                                                             <div className="font-medium">Pickup</div>
                                                         </div>
                                                     </div>
-                                                    <div className="font-semibold">&#8358;0.00</div>
+                                                    <div className="font-semibold text-sm text-green-500">FREE</div>
                                                 </label>
 
                                                 <label className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${shippingMethod === 'normal' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}>

@@ -6,6 +6,7 @@ import { useNewProducts, useWeekProducts, useTopSoldProducts, useDealsOfTheDay }
 import { ProductDetail } from '@/types/product';
 import CatB_Banner from '@/components/Banners/CatB_Banner';
 import ProductLoading from '@/components/Product/ProductLoading';
+import CatD_Banner from '@/components/Banners/CatD_Banner';
 
 /**
  * HomeClient - Client-side component for homepage product sections
@@ -28,12 +29,15 @@ export default function HomeClient() {
                     data={dealsOfTheDay.data}
                     showCountdown={true}
                     start={0}
-                    limit={15}
+                    limit={10}
                     isLoading={isLoadingDeals}
                     header="Deals of the Day"
                     viewAllLink="/campaign/deals-of-the-day"
                 />
             )}
+
+            <CatD_Banner />
+
 
             {/* New Products Section */}
             {newProducts && newProducts.data.length > 0 && (

@@ -93,9 +93,8 @@ const NavCategoriesComponent = ({ isOpen }: NavCategoriesComponentProps) => {
 
                         {!isCategoryExpanded && (
                             <div className="item block absolute bottom-0 left-0 w-full bg-transparent h-fit">
-                                <div className="whitespace-nowrap pr-4 pt-1.5 duration-300 flex items-center gap-2 text-lime-700">
-                                    <span>more...</span>
-                                    <CaretDownIcon size={20} className="" />
+                                <div className="whitespace-nowrap pr-4 pt-1.5 duration-300 flex items-center justify-center gap-2 text-black font-bold w-full ">
+                                    <span>view more...</span>
                                 </div>
                             </div>
                         )}

@@ -483,20 +483,28 @@ const Sale: React.FC<Props> = ({ slug }) => {
                                         key={index}
                                         className='!w-full max-h-[75vh] lg:max-h-[82vh]'
                                         onClick={() => {
-                                            swiperRef.current?.slideTo(index);
-                                            setOpenPopupImg(true);
+                                            if (item.mediaType !== 'video') {
+                                                swiperRef.current?.slideTo(index);
+                                                setOpenPopupImg(true);
+                                            }
                                         }}
                                     >
-                                        <Image
-                                            src={getCdnUrl(item.url)}
-                                            width={1000}
-                                            height={1000}
-                                            alt='prd-img'
-                                            className='w-full object-cover h-auto'
-                                        />
+                                        {item.mediaType === 'video' ? (
+                                            <VideoPlayer
+                                                src={getCdnUrl(item.url)}
+                                                className='w-full max-h-[75vh] lg:max-h-[82vh]'
+                                            />
+                                        ) : (
+                                            <Image
+                                                src={getCdnUrl(item.url)}
+                                                width={1000}
+                                                height={1000}
+                                                alt='prd-img'
+                                                className='w-full object-cover h-auto'
+                                            />
+                                        )}
                                     </SwiperSlide>
-                                )
-                                )}
+                                ))}
                             </Swiper>
                             <Swiper
                                 onSwiper={handleSwiper}
@@ -509,13 +517,26 @@ const Sale: React.FC<Props> = ({ slug }) => {
                             >
                                 {product.description_images?.map((item: any, index: number) => (
                                     <SwiperSlide key={index}>
-                                        <Image
-                                            src={getCdnUrl(item.url)}
-                                            width={1000}
-                                            height={1300}
-                                            alt='prd-img'
-                                            className='w-full aspect-[3/4] object-cover rounded-xl'
-                                        />
+                                        <div className="relative w-full aspect-[3/4]">
+                                            <Image
+                                                src={
+                                                    item.mediaType === 'video' && item.miniUrl
+                                                        ? getCdnUrl(item.miniUrl)
+                                                        : getCdnUrl(item.url)
+                                                }
+                                                width={1000}
+                                                height={1300}
+                                                alt='prd-img'
+                                                className='w-full h-full object-cover rounded-xl'
+                                            />
+                                            {item.mediaType === 'video' && (
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60">
+                                                        <svg viewBox="0 0 12 12" className="h-3 w-3 fill-white ml-0.5"><polygon points="2,1 11,6 2,11" /></svg>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </SwiperSlide>
                                 ))}
                             </Swiper>
@@ -539,7 +560,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
                                         swiperRef.current = swiper;
                                     }}
                                 >
-                                    {product.description_images?.map((item: any, index: number) => (
+                                    {product.description_images?.filter((item: any) => item.mediaType !== 'video').map((item: any, index: number) => (
                                         <SwiperSlide
                                             key={index}
                                             onClick={() => {
@@ -553,7 +574,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
                                                 alt='prd-img'
                                                 className='w-full aspect-[3/4] object-cover rounded-xl'
                                                 onClick={(e) => {
-                                                    e.stopPropagation(); // prevent
+                                                    e.stopPropagation();
                                                 }}
                                             />
                                         </SwiperSlide>
@@ -844,5 +865,85 @@ const Sale: React.FC<Props> = ({ slug }) => {
         </>
     );
 };
+
+function VideoPlayer({ src, className }: { src: string; className?: string }) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [showOverlay, setShowOverlay] = useState(true);
+    const isPlayingRef = useRef(false);
+    const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const scheduleHide = () => {
+        if (hideTimer.current) clearTimeout(hideTimer.current);
+        hideTimer.current = setTimeout(() => {
+            if (isPlayingRef.current) setShowOverlay(false);
+        }, 2500);
+    };
+
+    const handleMouseMove = () => {
+        setShowOverlay(true);
+        scheduleHide();
+    };
+
+    const togglePlay = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.paused) {
+            video.play();
+        } else {
+            video.pause();
+        }
+    };
+
+    useEffect(() => {
+        return () => { if (hideTimer.current) clearTimeout(hideTimer.current); };
+    }, []);
+
+    return (
+        <div
+            className={`relative select-none ${className ?? ''}`}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => { if (isPlayingRef.current) scheduleHide(); }}
+        >
+            <video
+                ref={videoRef}
+                src={src}
+                playsInline
+                className="w-full h-full object-cover"
+                onPlay={() => { setIsPlaying(true); isPlayingRef.current = true; scheduleHide(); }}
+                onPause={() => {
+                    setIsPlaying(false);
+                    isPlayingRef.current = false;
+                    setShowOverlay(true);
+                    if (hideTimer.current) clearTimeout(hideTimer.current);
+                }}
+                onEnded={() => {
+                    setIsPlaying(false);
+                    isPlayingRef.current = false;
+                    setShowOverlay(true);
+                    if (hideTimer.current) clearTimeout(hideTimer.current);
+                }}
+            />
+            <div
+                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 cursor-pointer ${showOverlay ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                onClick={togglePlay}
+            >
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+                    {isPlaying ? (
+                        <svg viewBox="0 0 24 24" className="h-8 w-8 fill-white">
+                            <rect x="5" y="4" width="4" height="16" rx="1" />
+                            <rect x="15" y="4" width="4" height="16" rx="1" />
+                        </svg>
+                    ) : (
+                        <svg viewBox="0 0 24 24" className="h-8 w-8 fill-white translate-x-0.5">
+                            <polygon points="5,3 20,12 5,21" />
+                        </svg>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default Sale;

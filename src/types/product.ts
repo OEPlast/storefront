@@ -27,6 +27,8 @@ export interface ProductDimension {
 export interface ProductDescriptionImage {
   url: string;
   cover_image: boolean;
+  mediaType?: 'image' | 'video';
+  miniUrl?: string; // video thumbnail path
 }
 
 export interface ProductPricingTier {

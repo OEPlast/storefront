@@ -16,6 +16,11 @@ import { getProductDisplayPrice } from '@/utils/cart-pricing';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { prefetchImages } from '@/config/siteConfig';
+import {
+    generateProductSchema,
+    generateBreadcrumbSchema,
+    injectStructuredData,
+} from '@/libs/structured-data';
 
 interface ProductPageProps {
     params: Promise<{ slug: string; }>;
@@ -165,6 +170,32 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
             <BreadcrumbProduct product={product} />
+            {/* Structured Data: Product + Breadcrumb (server-rendered JSON-LD) */}
+            {injectStructuredData(
+                generateProductSchema({
+                    name: product.name,
+                    description: product.description,
+                    price: product.price,
+                    stock: product.stock,
+                    images: (product.description_images || []).map((i) => getCdnUrl(i.url)),
+                    brand: product.brand,
+                    category: product.category?.name,
+                    slug: product.slug,
+                    sku: product.sku ? String(product.sku) : undefined,
+                })
+            )}
+            {injectStructuredData(
+                generateBreadcrumbSchema([
+                    { name: 'Homepage', url: '/' },
+                    ...(product.category
+                        ? [
+                            { name: product.category.name, url: `/shop/category/${product.category.slug}` },
+                        ]
+                        : []),
+                    { name: product.name, url: `/product/${product.slug}` },
+                ])
+            )}
+
             <MainProduct slug={slug} />
             {/* <Footer /> */}
         </HydrationBoundary>

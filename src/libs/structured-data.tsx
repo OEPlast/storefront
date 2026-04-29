@@ -1,5 +1,6 @@
 import type { Product, Organization, BreadcrumbList, WithContext } from "schema-dts";
 import { siteConfig } from "@/config/siteConfig";
+import Script from 'next/script';
 
 export function generateProductSchema(product: {
   name: string;
@@ -74,10 +75,13 @@ export function generateBreadcrumbSchema(items: Array<{
 }
 
 export function injectStructuredData(schema: WithContext<any>) {
+  // Use Next.js Script component for consistent handling
   return (
-    <script
+    <Script
+      id={`ld-json-${Math.random().toString(36).slice(2, 9)}`}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      strategy="beforeInteractive"
     />
   );
 }

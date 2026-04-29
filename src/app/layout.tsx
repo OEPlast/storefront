@@ -15,6 +15,7 @@ import MenuEight from "@/components/Header/Menu/MenuEight";
 import SliderNine from "@/components/Slider/SliderNine";
 import Footer from "@/components/Footer/Footer";
 import { getDefaultMetadata, PrefetchImages } from "@/libs/seo";
+import { generateOrganizationSchema, injectStructuredData } from '@/libs/structured-data';
 import 'react-quill-new/dist/quill.snow.css';
 import 'react-lazy-load-image-component/src/effects/blur.css';
 
@@ -30,6 +31,8 @@ export default function RootLayout({ children }: { children: React.ReactNode; })
       <html lang="en">
         <head>
           <PrefetchImages />
+          {/* Organization structured data for SEO */}
+          {injectStructuredData(generateOrganizationSchema())}
         </head>
         <body className={instrument.className}>
           <NextTopLoader

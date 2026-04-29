@@ -10,6 +10,7 @@ interface Props {
 }
 
 const BreadcrumbProduct: React.FC<Props> = ({ product }) => {
+    // Breadcrumbs for visual navigation. JSON-LD is injected from the product page
     return (
         <>
             <div className="breadcrumb-product">

@@ -126,12 +126,13 @@ const Checkout = () => {
     const { shippingMethod: storedShippingMethod, discountInfo, setShippingMethod: setCheckoutShippingMethod } = useCheckoutStore();
     const { add: addPaymentReference, verify: verifyPaymentReference, clear: clearPaymentReference } = usePaymentStore();
     const [currentShippingMethod, setCurrentShippingMethod] = React.useState<'pickup' | 'normal' | 'express' | 'gig'>(storedShippingMethod);
-    const [availableShippingMethods, setAvailableShippingMethods] = React.useState<Array<'pickup' | 'normal' | 'gig'>>(['pickup', 'normal', 'gig']);
+    const [availableShippingMethods, setAvailableShippingMethods] = React.useState<Array<'pickup' | 'normal' | 'gig'> | null>(null);
     const [shippingEtaLabel, setShippingEtaLabel] = React.useState<string>('2 - 5 days');
     const shippingMethod = currentShippingMethod; // pickup, normal, express, gig
 
     const isMethodAvailable = useCallback(
         (method: 'pickup' | 'normal' | 'express' | 'gig') => {
+            if (availableShippingMethods === null) return true;
             if (method === 'express' || method === 'normal') {
                 return availableShippingMethods.includes('normal');
             }
@@ -190,6 +191,8 @@ const Checkout = () => {
     }, []);
 
     React.useEffect(() => {
+        if (availableShippingMethods === null) return;
+
         if (shippingMethod === 'express' && availableShippingMethods.includes('normal')) {
             setCurrentShippingMethod('normal');
             setCheckoutShippingMethod('normal');
@@ -1214,14 +1217,21 @@ const Checkout = () => {
                             <div className="information mt-5">
                                 {/* <div className="heading5">Information</div> */}
 
-                                <ShippingMethodSelector
-                                    currentMethod={shippingMethod}
-                                    availableMethods={availableShippingMethods}
-                                    shippingEtaLabel={shippingEtaLabel}
-                                    isExpanded={isChangingShippingMethod}
-                                    onToggle={() => setIsChangingShippingMethod(!isChangingShippingMethod)}
-                                    onMethodChange={handleChangeShippingMethod}
-                                />
+                                {availableShippingMethods === null ? (
+                                    <div className="my-6 checkout-block">
+                                        <div className="heading5">Delivery</div>
+                                        <div className="mt-5 h-[60px] animate-pulse rounded-lg bg-gray-100" />
+                                    </div>
+                                ) : (
+                                    <ShippingMethodSelector
+                                        currentMethod={shippingMethod}
+                                        availableMethods={availableShippingMethods}
+                                        shippingEtaLabel={shippingEtaLabel}
+                                        isExpanded={isChangingShippingMethod}
+                                        onToggle={() => setIsChangingShippingMethod(!isChangingShippingMethod)}
+                                        onMethodChange={handleChangeShippingMethod}
+                                    />
+                                )}
 
                                 <div className="form-checkout">
                                     <form>

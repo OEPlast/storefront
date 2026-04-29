@@ -853,7 +853,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
                                     )}
                                 </div>
                             </div>
-                            <div className={`desc-item review-block ${activeTab === 'review' ? 'open' : ''}`}>
+                            <div className={`desc-item review-block max-w-[1200px] mt-4 mx-auto ${activeTab === 'review' ? 'open' : ''}`}>
                                 <ReviewsList productId={product._id} />
                             </div>
                         </div>
@@ -866,7 +866,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
     );
 };
 
-function VideoPlayer({ src, className }: { src: string; className?: string }) {
+function VideoPlayer({ src, className }: { src: string; className?: string; }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [showOverlay, setShowOverlay] = useState(true);

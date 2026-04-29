@@ -332,7 +332,7 @@
 // menu-department
 .menu-department-block {
   .sub-menu-department {
-    transition: all ease 0.5s;
+    transition: all ease 0.25s;
     padding: 0 20px;
     max-height: 0;
     overflow: hidden;
@@ -353,7 +353,7 @@
         width: 0;
         height: 1px;
         background-color: var(--black);
-        transition: all ease 0.3s;
+        transition: all ease 0.175s;
       }
 
       &:hover {
@@ -395,7 +395,7 @@
       width: 0;
       height: 1px;
       background-color: var(--black);
-      transition: all ease 0.3s;
+      transition: all ease 0.175s;
     }
 
     &:hover {

@@ -1,0 +1,9 @@
+.bg-black.style-watch .benefit-block .benefit-item i {
+  color: var(--green);
+}
+.bg-black.style-watch .benefit-block .benefit-item .heading6 {
+  color: var(--white);
+}
+.bg-black.style-watch .benefit-block .benefit-item .text-secondary {
+  color: var(--secondary2);
+}

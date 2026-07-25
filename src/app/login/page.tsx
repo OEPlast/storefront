@@ -9,12 +9,21 @@ export const metadata: Metadata = {
   description: "Login to your Rawura account",
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
   const session = await auth();
+  const { callbackUrl } = await searchParams;
 
-  // If user is already logged in, redirect to homepage
+  // If user is already logged in and verified, honor the callback URL
   if (session) {
-    redirect("/");
+    const isSafeCallbackUrl = !!callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//");
+    if (!session.user.emailVerified) {
+      redirect("/verify-otp");
+    }
+    redirect(isSafeCallbackUrl ? callbackUrl : "/");
   }
 
   return (

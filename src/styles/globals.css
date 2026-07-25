@@ -1,0 +1,402 @@
+/* Main color */
+:root {
+  --green: #d2ef9a;
+  --black: #1f1f1f;
+  --secondary: #696c70;
+  --secondary2: #a0a0a0;
+  --white: #ffffff;
+  --surface: #f7f7f7;
+  --red: #db4444;
+  --purple: #8684d4;
+  --success: #3dab25;
+  --yellow: #ecb018;
+  --pink: #f4407d;
+  --line: #e9e9e9;
+  --outline: rgba(0, 0, 0, 0.15);
+  --surface1: rgba(255, 255, 255, 0.1);
+  --surface2: rgba(255, 255, 255, 0.2);
+}
+
+/* Reset */
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-size: 16px;
+  line-height: 26px;
+  color: var(--black);
+  font-weight: 400;
+  scroll-behavior: smooth;
+}
+
+div,
+span,
+p {
+  font-size: 16px;
+  line-height: 26px;
+}
+
+select {
+  appearance: none;
+  outline: none;
+}
+
+.select-block {
+  position: relative;
+}
+.select-block > .arrow-down {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 16px;
+}
+
+input,
+textarea {
+  outline: none;
+  border: 1px solid transparent;
+  transition: border-color ease 0.3s;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--black);
+}
+
+input[type=file] {
+  outline: none;
+  border: none !important;
+}
+input[type=file]::-webkit-file-upload-button {
+  display: none;
+}
+
+/* Main class used in Rawura */
+.container {
+  width: 100%;
+  padding-right: 16px;
+  padding-left: 16px;
+  margin: 0 auto;
+  max-width: 100% !important;
+}
+
+.bg-red {
+  background-color: var(--red);
+}
+
+.bg-yellow {
+  background-color: var(--yellow);
+}
+
+.bg-purple {
+  background-color: var(--purple);
+}
+
+.bg-blue {
+  background-color: #4856da;
+}
+
+.bg-silver {
+  background-color: #a1a2af;
+}
+
+.bg-linear {
+  background: linear-gradient(238deg, #faf8f1 0%, #f6f3ef 99.66%);
+}
+
+.box-shadow-xs {
+  box-shadow: 0px 2px 2px 0px rgba(28, 36, 51, 0.1019607843);
+}
+
+.box-shadow-sm {
+  box-shadow: 0px 10px 25px 0px rgba(43, 52, 74, 0.12);
+}
+
+.text-sub-display {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.text-sub-display2 {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+
+.text-display {
+  font-size: 80px;
+  font-weight: 500;
+  line-height: 88px;
+  text-transform: capitalize;
+}
+
+.heading1 {
+  font-size: 56px;
+  line-height: 68px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.heading2 {
+  font-size: 44px;
+  line-height: 50px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.heading3 {
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.heading4 {
+  font-size: 30px;
+  line-height: 42px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.heading5 {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.heading6 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.heading7 {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.text-title {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.body1 {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+
+.text-button {
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.text-button-uppercase {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.caption1 {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.caption2 {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.button-main {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--white);
+  background-color: var(--black);
+  padding: 16px 40px;
+  border-radius: 12px;
+  display: inline-block;
+  cursor: pointer;
+  transition: all ease 0.4s;
+}
+.button-main:hover {
+  background-color: var(--green);
+  color: var(--black);
+}
+.button-main:hover svg path {
+  fill: var(--black);
+}
+.button-main.bg-white:hover {
+  background-color: var(--black);
+  color: var(--white);
+}
+
+@media (max-width: 1023.99px) {
+  .text-sub-display {
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 1.1px;
+  }
+  .text-sub-display2 {
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 1.1px;
+  }
+  .text-display {
+    font-size: 42px;
+    line-height: 50px;
+  }
+  .heading1 {
+    font-size: 36px;
+    line-height: 48px;
+  }
+  .heading2 {
+    font-size: 32px;
+    line-height: 40px;
+  }
+  .heading3 {
+    font-size: 30px;
+    line-height: 38px;
+  }
+  .heading4 {
+    font-size: 26px;
+    line-height: 32px;
+  }
+  .heading5 {
+    font-size: 22px;
+    line-height: 28px;
+  }
+  .heading6 {
+    font-size: 18px;
+    line-height: 26px;
+  }
+  .heading7 {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .button-main {
+    padding: 12px 24px;
+    border-radius: 10px;
+  }
+}
+@media (max-width: 767.98px) {
+  html,
+  body,
+  div,
+  span,
+  p {
+    font-size: 14px;
+    line-height: 24px;
+  }
+  .text-sub-display {
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 1.1px;
+  }
+  .text-sub-display2 {
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 1.1px;
+  }
+  .text-display {
+    font-size: 24px;
+    line-height: 30px;
+  }
+  .heading1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .heading2 {
+    font-size: 22px;
+    line-height: 30px;
+  }
+  .heading3 {
+    font-size: 20px;
+    line-height: 28px;
+  }
+  .heading4 {
+    font-size: 18px;
+    line-height: 28px;
+  }
+  .heading5 {
+    font-size: 16px;
+    line-height: 26px;
+  }
+  .heading6 {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .heading7 {
+    font-size: 14px;
+    line-height: 22px;
+  }
+  .text-title {
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .body1 {
+    font-size: 16px;
+    line-height: 26px;
+  }
+  .text-button {
+    font-size: 14px;
+    line-height: 24px;
+  }
+  .text-button-uppercase {
+    font-size: 12px;
+    line-height: 16px;
+  }
+  .caption1 {
+    font-size: 13px;
+    line-height: 20px;
+  }
+  .button-main {
+    font-size: 12px;
+    line-height: 16px;
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
+}
+.hover-underline-animation {
+  /* Inline so the element can break across lines */
+  display: inline;
+  position: relative;
+  /* Use a background gradient as the underline so it can clone per line */
+  background-image: linear-gradient(#181818, #181818);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 2px; /* start hidden */
+  transition: background-size 0.25s ease-out;
+  /* Ensure underline is drawn for each wrapped line */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.hover-underline-animation:hover {
+  background-size: 100% 2px; /* expand underline to full width */
+}
+
+.site_max_width {
+  max-width: 1370px !important;
+}

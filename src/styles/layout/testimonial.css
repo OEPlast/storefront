@@ -1,0 +1,137 @@
+.testimonial-block .list-avatar .bg-img {
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  transition: opacity ease 1s;
+}
+.testimonial-block .list-avatar .bg-img img {
+  position: absolute;
+  height: 0;
+}
+.testimonial-block .list-avatar .bg-img.active {
+  opacity: 1;
+  visibility: visible;
+}
+.testimonial-block .list-avatar .bg-img.active img {
+  position: relative;
+  height: auto;
+}
+
+.video-tutorial-block .list-video .bg-video {
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  transition: opacity ease 1s;
+  position: absolute;
+  top: 0;
+}
+.video-tutorial-block .list-video .bg-video .bg-img {
+  position: absolute;
+  height: 0;
+}
+.video-tutorial-block .list-video .bg-video.active {
+  opacity: 1;
+  visibility: visible;
+}
+.video-tutorial-block .list-video .bg-video.active .bg-img {
+  position: relative;
+  height: 100%;
+}
+@media (max-width: 640px) {
+  .video-tutorial-block .list-video .bg-video {
+    position: relative;
+  }
+}
+.video-tutorial-block .button-main.play-btn:hover svg path {
+  fill: var(--black);
+}
+
+.testimonial-block.style-six .list-avatar .bg-img {
+  height: 0;
+}
+.testimonial-block.style-six .list-avatar .bg-img img {
+  height: 0;
+}
+.testimonial-block.style-six .list-avatar .bg-img.active {
+  height: calc(100% - 40px);
+}
+.testimonial-block.style-six .list-avatar .bg-img.active img {
+  height: 100%;
+}
+
+.featured-product.toys-kid .left .bg-img {
+  height: 0;
+}
+.featured-product.toys-kid .left .bg-img img {
+  height: 0;
+}
+.featured-product.toys-kid .left .bg-img.active {
+  height: 100%;
+}
+.featured-product.toys-kid .left .bg-img.active img {
+  height: 100%;
+}
+
+.list-testimonial.dots-mt40 .slick-dots {
+  bottom: -60px;
+}
+@media (max-width: 767.98px) {
+  .list-testimonial.dots-mt40 .slick-dots {
+    bottom: -50px;
+  }
+}
+.list-testimonial.yoga .slick-list {
+  margin-left: -16px;
+  margin-right: -16px;
+}
+.list-testimonial.yoga .slick-list .slick-track {
+  display: flex !important;
+  cursor: grab;
+}
+.list-testimonial.yoga .slick-list .slick-track .slick-slide {
+  height: inherit !important;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.list-testimonial.yoga .slick-list .slick-track .slick-slide > div {
+  height: 100% !important;
+}
+.list-testimonial.yoga .slick-dots li {
+  transition: all ease 0.5s;
+}
+.list-testimonial.yoga .slick-dots li button {
+  border-radius: 50%;
+  border: 1px solid transparent;
+  padding: 4px;
+  transition: all ease 0.5s;
+  width: 16px;
+  height: 16px;
+  position: relative;
+}
+.list-testimonial.yoga .slick-dots li button::before {
+  font-size: 8px;
+  line-height: 16px;
+  width: 8px;
+  height: 8px;
+  opacity: 1;
+  color: transparent;
+  border: 1px solid var(--black);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all ease 0.5s;
+}
+.list-testimonial.yoga .slick-dots li.slick-active button {
+  border-color: var(--black);
+}
+.list-testimonial.yoga .slick-dots li.slick-active button::before {
+  background-color: var(--black);
+}
+
+.customer-feedbacks .testimonial-item .testimonial-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: var(--surface);
+}

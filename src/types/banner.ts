@@ -13,7 +13,9 @@ export interface ApiBanner {
   pageLink: string;
   headerText?: string;
   mainText?: string;
+  supportingText?: string | null;
   CTA?: string;
+  ctaColor?: string;
   fullImage: boolean;
   category: BannerCategory;
   position: number;

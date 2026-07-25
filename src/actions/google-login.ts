@@ -4,9 +4,18 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { signIn } from "../../auth";
 import { AuthError } from "next-auth";
 
-export async function googleAuthenticate() {
+export async function googleAuthenticate(
+  _prevState: string | undefined,
+  formData: FormData
+) {
+  const callbackUrl = formData.get("callbackUrl");
+  const redirectTo =
+    typeof callbackUrl === "string" && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+      ? callbackUrl
+      : "/";
+
   try {
-    await signIn("google");
+    await signIn("google", { redirectTo });
 } catch (error) {
     if(isRedirectError(error)) {
         throw error;

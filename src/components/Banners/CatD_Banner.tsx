@@ -31,7 +31,13 @@ const CatD_Banner = () => {
                         <div className="text-content xl:w-1/3 w-2/3 xl:pl-[120px] md:pl-20 pl-10 md:py-[85px] py-12">
                             <div className="text-sub-display">{CAT_D_Banners[0].headerText || ''}</div>
                             <div className="heading2 md:mt-4 mt-2">{CAT_D_Banners[0].mainText || ''}</div>
-                            <Link href='/shop/breadcrumb-img' className="button-main md:mt-7 mt-3">{CAT_D_Banners[0].CTA || 'Shop Now'}</Link>
+                            <Link
+                                href='/shop/breadcrumb-img'
+                                className="button-main md:mt-7 mt-3"
+                                style={{ backgroundColor: CAT_D_Banners[0].ctaColor || '#000000' }}
+                            >
+                                {CAT_D_Banners[0].CTA || 'Shop Now'}
+                            </Link>
                         </div>
                     </div>
                 </div>

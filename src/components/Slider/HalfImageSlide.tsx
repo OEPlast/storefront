@@ -12,6 +12,7 @@ interface Banner {
     headerText?: string;
     mainText?: string;
     CTA?: string;
+    ctaColor?: string;
     pageLink?: string;
 }
 
@@ -31,7 +32,11 @@ const HalfImageSlide: React.FC<HalfImageSlideProps> = ({ banner, priority = fals
                     <div className="heading3 md:mt-4 mt-2">{banner.mainText}</div>
                 )}
                 {banner.CTA && banner.pageLink && (
-                    <Link href={banner.pageLink} className="button-main text-white md:mt-4 mt-3">
+                    <Link
+                        href={banner.pageLink}
+                        className="button-main text-white md:mt-4 mt-3"
+                        style={{ backgroundColor: banner.ctaColor || '#000000' }}
+                    >
                         {banner.CTA}
                     </Link>
                 )}

@@ -56,7 +56,7 @@
       animation: scaleAnimate 0.5s ease;
     }
 
-    &.active {
+    .show {
       .compare-icon {
         display: none;
       }

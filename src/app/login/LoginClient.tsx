@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import LoginForm from "@/components/forms/LoginForm";
-import GoogleLogin from "@/components/Other/GoogleLogin";
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import LoginForm from '@/components/forms/LoginForm';
+import GoogleLogin from '@/components/Other/GoogleLogin';
+import { saveCallbackUrl } from '@/libs/utils/authRedirect';
 
 type LoginClientProps = {
   onLoginSuccess?: () => void;
@@ -12,9 +13,19 @@ type LoginClientProps = {
   pageHeader?: string;
 };
 
-export default function LoginClient({ onLoginSuccess, redirectPath, pageHeader = 'Welcome Back' }: LoginClientProps) {
+export default function LoginClient({
+  onLoginSuccess,
+  redirectPath,
+  pageHeader = 'Welcome Back',
+}: LoginClientProps) {
   const searchParams = useSearchParams();
   const [showResetSuccess, setShowResetSuccess] = useState(false);
+
+  // Persist the intended destination so it survives an OTP detour and page
+  // reloads (e.g. Google OAuth), and takes priority over the hardcoded default.
+  useEffect(() => {
+    saveCallbackUrl(redirectPath ?? searchParams.get('callbackUrl'));
+  }, [redirectPath, searchParams]);
 
   useEffect(() => {
     if (searchParams.get('reset') === 'success') {
@@ -26,10 +37,10 @@ export default function LoginClient({ onLoginSuccess, redirectPath, pageHeader =
   }, [searchParams]);
 
   return (
-    <div className="content-main flex gap-y-8 w-full ">
-      <div className="  w-full max-w-xl mx-auto border border-gray-50 p-6 shadow-sm rounded-2xl">
+    <div className="content-main flex w-full gap-y-8">
+      <div className="mx-auto w-full max-w-xl rounded-2xl border border-gray-200 p-6 shadow-sm">
         {showResetSuccess && (
-          <div className="p-4 mb-6 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+          <div className="mb-6 rounded-lg border border-green-400 bg-green-100 p-4 text-green-700">
             <p className="text-sm font-semibold">
               ✓ Password reset successful! You can now login with your new password.
             </p>
@@ -37,10 +48,10 @@ export default function LoginClient({ onLoginSuccess, redirectPath, pageHeader =
         )}
         <div className="heading4 text-center">{pageHeader}</div>
         <LoginForm onLoginSuccess={onLoginSuccess} redirectPath={redirectPath} />
-        <div className="flex items-center my-4">
-          <div className="flex-grow h-px bg-line" />
-          <span className="mx-4 text-secondary font-medium">OR</span>
-          <div className="flex-grow h-px bg-line" />
+        <div className="my-4 flex items-center">
+          <div className="h-px flex-grow bg-line" />
+          <span className="mx-4 font-medium text-secondary">OR</span>
+          <div className="h-px flex-grow bg-line" />
         </div>
         <div className="block-button mt-2">
           <GoogleLogin />

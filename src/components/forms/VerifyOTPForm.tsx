@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/input-otp";
 import { useSession } from "next-auth/react";
 import { CheckCircleIcon } from "@phosphor-icons/react";
+import { consumeCallbackUrl } from "@/libs/utils/authRedirect";
 
 export default function VerifyOTPForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -60,8 +61,8 @@ export default function VerifyOTPForm() {
               emailVerified: new Date(),
             },
           });
-          // Success - redirect to home
-          router.push("/");
+          // Success - redirect to the saved callback URL, falling back to home
+          router.push(consumeCallbackUrl("/"));
         }
       } catch (error) {
         // Handle errors

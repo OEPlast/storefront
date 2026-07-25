@@ -1,0 +1,19 @@
+.style-watch .footer .footer-main {
+  background: var(--surface1);
+  color: var(--white);
+}
+.style-watch .footer .has-line-before::before {
+  background-color: var(--white);
+}
+.style-watch .footer .input-block input {
+  background: rgba(255, 255, 255, 0.2);
+}
+.style-watch .footer .text-black {
+  color: var(--white);
+}
+.style-watch .footer .text-secondary {
+  color: var(--white);
+}
+.style-watch .footer svg {
+  fill: var(--white);
+}

@@ -9,6 +9,7 @@ import { credentialsLogin } from "@/actions/login";
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { FieldInfo } from "@/components/Form/FieldInfo";
 import { useSession } from "next-auth/react";
+import { consumeCallbackUrl } from "@/libs/utils/authRedirect";
 interface LoginFormProps {
   onLoginSuccess?: () => void;
   redirectPath?: string;
@@ -43,9 +44,11 @@ export default function LoginForm({ onLoginSuccess, redirectPath }: LoginFormPro
           await update();
 
           if (!result.emailVerified) {
+            // Leave the saved callback URL in place - VerifyOTPForm will
+            // consume it once the OTP step is complete.
             router.push("/verify-otp");
           } else {
-            router.replace(redirectPath ?? "/");
+            router.replace(consumeCallbackUrl(redirectPath ?? "/"));
             router.refresh();
           }
 

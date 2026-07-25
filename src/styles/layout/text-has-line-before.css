@@ -1,0 +1,32 @@
+.has-line-before {
+  position: relative;
+}
+.has-line-before::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0px;
+  width: 0;
+  height: 1px;
+  background-color: var(--black);
+  transition: all ease 0.3s;
+}
+.has-line-before.before-white::before {
+  background-color: var(--white);
+}
+.has-line-before.active::before, .has-line-before:hover::before {
+  width: 100%;
+}
+.has-line-before.line-2px {
+  padding-bottom: 1px;
+}
+.has-line-before.line-2px::before {
+  height: 2px;
+}
+
+.active > .has-line-before {
+  color: var(--black);
+}
+.active > .has-line-before::before {
+  width: 100%;
+}

@@ -1,21 +1,40 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import CampaignClient from './CampaignClient';
 import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query';
-import { serverGet } from '@/libs/query/server-api-client';
+import { serverGet, serverGetWithMeta } from '@/libs/query/server-api-client';
 import api from '@/libs/api/endpoints';
 import type { Campaign } from '@/types/campaign';
-import Link from 'next/link';
+import type { ProductListItem } from '@/types/product';
 import { getDefaultMetadata } from '@/libs/seo';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { prefetchImages } from '@/config/siteConfig';
+import { withIndexation } from '@/libs/indexation';
+import {
+    generateCollectionSchema,
+    generateItemListSchema,
+    generateBreadcrumbSchema,
+    injectStructuredData,
+    type ListItemProduct,
+} from '@/libs/structured-data';
+
+function coverImageOf(p: ProductListItem): string | undefined {
+    const imgs = p.description_images?.length ? p.description_images : p.images;
+    const cover = imgs?.find((i) => i.cover_image) || imgs?.[0];
+    return cover ? getCdnUrl(cover.url) : undefined;
+}
 
 // Generate dynamic metadata for campaign page
 export async function generateMetadata({
     params,
+    searchParams,
 }: {
     params: Promise<{ slug: string; }>;
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
     const { slug } = await params;
+    const sp = searchParams ? await searchParams : undefined;
+    const basePath = `/campaign/${slug}`;
 
     try {
         const campaign = await serverGet<Campaign>(`${api.campaigns.info(slug)}`);
@@ -24,25 +43,27 @@ export async function generateMetadata({
             return getDefaultMetadata({
                 title: 'Campaign Not Found',
                 description: 'The campaign you are looking for does not exist.',
+                robots: { index: false, follow: true },
             });
         }
 
         const description = campaign.description
             ? campaign.description.substring(0, 155) + '..'
-            : `Shop ${campaign.title} campaign at Rawura. Exclusive deals and offers.`;
+            : `Shop the ${campaign.title} campaign at Rawura. Exclusive deals and offers with free delivery across Nigeria.`;
 
         // Prefetch campaign image
         if (campaign.image) {
             await prefetchImages([getCdnUrl(campaign.image)]);
         }
 
-        return getDefaultMetadata({
+        const base = getDefaultMetadata({
             title: campaign.title,
             description,
-            keywords: [campaign.title, 'campaign', 'deals', 'offers', 'sale'],
+            keywords: [campaign.title, 'campaign', 'deals', 'offers', 'sale', 'Nigeria'],
             openGraph: {
                 title: campaign.title,
                 description,
+                url: basePath,
                 images: campaign.image ? [{ url: getCdnUrl(campaign.image), alt: campaign.title }] : undefined,
             },
             twitter: {
@@ -52,6 +73,8 @@ export async function generateMetadata({
                 images: campaign.image ? [getCdnUrl(campaign.image)] : undefined,
             },
         });
+
+        return withIndexation(basePath, sp, base);
     } catch (error) {
         console.error('Error generating campaign metadata:', error);
         return getDefaultMetadata({
@@ -71,53 +94,64 @@ export default async function CampaignPage({
     const { slug } = await params;
     const serverSearchParams = searchParams ? await searchParams : undefined;
 
-    // Try to fetch campaign data on server
-    let campaignNotFound = false;
+    // Fetch campaign on server; a missing campaign is a real 404 (proper status code).
+    const campaign = await serverGet<Campaign>(`${api.campaigns.info(slug)}`);
+    if (!campaign) {
+        notFound();
+    }
+
     const queryClient = new QueryClient();
+    queryClient.setQueryData(['campaigns', 'info', slug], campaign);
 
+    // Best-effort product set for ItemList (deal offers with campaign end date).
+    let listProducts: ListItemProduct[] = [];
     try {
-        await queryClient.prefetchQuery({
-            queryKey: ['campaigns', 'info', slug],
-            queryFn: async () => {
-                const response = await serverGet<Campaign>(
-                    `${api.campaigns.info(slug)}`
-                );
-                if (!response) throw new Error('Campaign not found');
-                return response;
-            },
-        });
-    } catch (error) {
-        // Campaign not found - show 404 page
-        campaignNotFound = true;
+        const { data } = await serverGetWithMeta<ProductListItem[]>(
+            `${api.products.byCampaignSlug(slug)}?page=1&limit=24`
+        );
+        const products = Array.isArray(data) ? data : [];
+        listProducts = products.map((p) => ({
+            name: p.name,
+            slug: p.slug,
+            image: coverImageOf(p),
+            price: p.price,
+            inStock: (p.stock ?? 0) > 0,
+        }));
+    } catch {
+        /* best-effort */
     }
 
-    // If campaign not found, show 404 page without dehydrating
-    if (campaignNotFound) {
-        return (
-            <>
-                <div className="campaign-not-found flex items-center justify-center" style={{ minHeight: '90vh' }}>
-                    <div className="container">
-                        <div className="text-center max-w-xl mx-auto px-4">
-                            <div className="heading2 mb-4">Campaign Not Found</div>
-                            <div className="body1 text-secondary2 mb-8">
-                                The campaign you&apos;re looking for doesn&apos;t exist or is no longer active.
-                            </div>
-                            <Link
-                                href="/"
-                                className="button-main bg-black text-white inline-block px-8 py-3 rounded-lg hover:bg-black/80 transition-colors"
-                            >
-                                Back to Homepage
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </>
-        );
-    }
+    const basePath = `/campaign/${slug}`;
 
     return (
-        <HydrationBoundary state={dehydrate(queryClient)}>
-            <CampaignClient slug={slug} searchParams={serverSearchParams} />
-        </HydrationBoundary>
+        <>
+            {/* Structured data rendered OUTSIDE HydrationBoundary → clean SSR JSON-LD. */}
+            {injectStructuredData(
+                generateCollectionSchema({
+                    name: campaign.title,
+                    description: campaign.description,
+                    url: basePath,
+                    image: campaign.image ? getCdnUrl(campaign.image) : undefined,
+                }),
+                'ld-collection'
+            )}
+            {injectStructuredData(
+                generateBreadcrumbSchema([
+                    { name: 'Homepage', url: '/' },
+                    { name: 'Deals', url: '/deals' },
+                    { name: campaign.title, url: basePath },
+                ]),
+                'ld-breadcrumb'
+            )}
+            {listProducts.length > 0 &&
+                injectStructuredData(
+                    generateItemListSchema(listProducts, campaign.title),
+                    'ld-itemlist'
+                )}
+
+            <HydrationBoundary state={dehydrate(queryClient)}>
+                <CampaignClient slug={slug} searchParams={serverSearchParams} />
+            </HydrationBoundary>
+        </>
     );
 }

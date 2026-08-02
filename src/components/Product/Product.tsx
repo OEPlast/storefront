@@ -75,7 +75,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
         type: '', // not used
         gender: '', // not used
         new: false, // calculated separately
-        rate: rawData.rating ?? 0,
+        rate: rawData.ratingAverage ?? 0,
         originPrice: rawData.price,
         brand: '', // not provided in ProductListItem
         sold: rawData.originStock - rawData.stock,

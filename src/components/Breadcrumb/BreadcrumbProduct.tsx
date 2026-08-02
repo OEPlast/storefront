@@ -16,7 +16,7 @@ const BreadcrumbProduct: React.FC<Props> = ({ product }) => {
             <div className="breadcrumb-product">
                 <div className="main bg-surface py-[14px]">
                     <div className="container flex items-center justify-between flex-wrap gap-3">
-                        <div className="left flex items-center gap-1">
+                        <nav aria-label="Breadcrumb" className="left flex items-center gap-1">
                             <Link href={'/'} className='caption1 text-secondary2 hover:underline'>
                                 Homepage
                             </Link>
@@ -24,7 +24,7 @@ const BreadcrumbProduct: React.FC<Props> = ({ product }) => {
                             {product.category && (
                                 <>
                                     <Link
-                                        href={`/shop/category/${product.category.slug}`}
+                                        href={`/category/${product.category.slug}`}
                                         className='caption1 text-secondary2 hover:underline'
                                     >
                                         {product.category.name}
@@ -32,8 +32,8 @@ const BreadcrumbProduct: React.FC<Props> = ({ product }) => {
                                     <Icon.CaretRight size={12} className='text-secondary2' />
                                 </>
                             )}
-                            <div className='caption1 capitalize text-black'>{product.name}</div>
-                        </div>
+                            <span aria-current="page" className='caption1 capitalize text-black'>{product.name}</span>
+                        </nav>
                     </div>
                 </div>
             </div>

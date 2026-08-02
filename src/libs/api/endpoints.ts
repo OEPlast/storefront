@@ -184,6 +184,13 @@ export const api = {
     products: '/sitemap/products',
     categories: '/sitemap/categories',
   },
+  // Intent shops — programmatic SEO landing pages at /shop/<slug>.
+  // Managed in the admin panel (Marketing → Intent Shops); only active ones are served.
+  intents: {
+    list: '/intents',
+    slugs: '/intents/slugs',
+    bySlug: (slug: string) => `/intents/${encodeURIComponent(slug)}`,
+  },
 } as const;
 
 export default api;

@@ -194,8 +194,8 @@ const CompareContent = () => {
                                                     <div className='h-full flex items-center justify-center'>
                                                         {isAvailable && product ? (
                                                             <>
-                                                                <Rate currentRate={product.rating || 0} size={12} />
-                                                                <p className='pl-1'>({product.rating?.toFixed(1) || '0.0'})</p>
+                                                                <Rate currentRate={product.reviewStats?.averageRating ?? product.ratingAverage ?? 0} size={12} />
+                                                                <p className='pl-1'>({(product.reviewStats?.averageRating ?? product.ratingAverage ?? 0).toFixed(1)})</p>
                                                             </>
                                                         ) : null}
                                                     </div>

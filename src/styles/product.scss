@@ -448,6 +448,7 @@
     width: 100vw;
     height: 100vh;
     background: rgba($color: #000000, $alpha: 0.7);
+    backdrop-filter: blur(10px);
     opacity: 0;
     visibility: hidden;
     z-index: 1000;
@@ -455,7 +456,7 @@
 
     img {
       width: auto;
-      height: 100vh;
+      height: 99vh;
       margin: 0 auto;
     }
 
@@ -493,7 +494,7 @@
       }
 
       img {
-        width: 80vw;
+        width: 90vw;
         height: auto;
       }
     }
@@ -511,7 +512,7 @@
       .tab-item {
         svg {
           transition: all ease 0.3s;
-        }
+        }z
 
         &.active {
           svg {

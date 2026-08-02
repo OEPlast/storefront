@@ -67,7 +67,7 @@ const Footer = () => {
                     </Link>
                     <Link
                       className="caption1 has-line-before w-fit pt-2 duration-300"
-                      href={'/faqs'}
+                      href={'/privacy-policy'}
                     >
                       Privacy Policy
                     </Link>
@@ -111,6 +111,29 @@ const Footer = () => {
                 </div>
               </div>
             </div>
+            {/* Internal-linking hubs: crawlable links that distribute authority to
+                shopping surfaces (SEO Phase 4). */}
+            <nav
+              aria-label="Shop"
+              className="footer-shop-links flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line py-4"
+            >
+              <span className="text-button-uppercase mr-2">Shop:</span>
+              <Link className="caption1 duration-300 hover:underline" href={'/deals'}>
+                Deals &amp; Offers
+              </Link>
+              <Link className="caption1 duration-300 hover:underline" href={'/new-products'}>
+                New Arrivals
+              </Link>
+              <Link className="caption1 duration-300 hover:underline" href={'/top-sold-products'}>
+                Best Sellers
+              </Link>
+              <Link className="caption1 duration-300 hover:underline" href={'/week-products'}>
+                Top This Week
+              </Link>
+              <Link className="caption1 duration-300 hover:underline" href={'/blog'}>
+                Blog
+              </Link>
+            </nav>
             <div className="footer-bottom flex items-center justify-between gap-5 border-t border-line py-3 max-lg:flex-col max-lg:justify-center">
               <div className="left flex items-center gap-8">
                 <div className="copyright caption1 text-secondary">

@@ -13,11 +13,17 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
     const params = await searchParams;
     const query = params.query || '';
 
+    // Internal search results are intentionally NOT indexed (thin/duplicate).
+    // High-demand queries get dedicated indexable landing pages instead.
+    const noIndex = { index: false, follow: true } as const;
+
     if (query) {
         return getDefaultMetadata({
             title: `Search Results for "${query}"`,
             description: `Search results for "${query}". Find products matching your search query.`,
             keywords: [query, 'search', 'products', 'shop'],
+            robots: noIndex,
+            alternates: { canonical: '/search-result' },
             openGraph: {
                 title: `Search Results for "${query}"`,
                 description: `Find products matching "${query}" at Rawura.`,
@@ -29,6 +35,8 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
         title: 'Search Products',
         description: 'Search for products at Rawura. Find what you\'re looking for.',
         keywords: ['search', 'products', 'find products'],
+        robots: noIndex,
+        alternates: { canonical: '/search-result' },
     });
 }
 

@@ -3,17 +3,20 @@ import { apiClient } from '@/libs/api/axios';
 import { api } from '@/libs/api/endpoints';
 import type { OrderType } from '@/types/order';
 
+// NOTE: the storefront cancel endpoint (`POST /myOrder/orders/:id/cancel`) responds with a
+// message only — stock/sales reversal happens server-side but is not reported back. The
+// reversal fields stay optional so callers can read them if the API ever starts sending them.
 interface CancelOrderResponse {
-  success: boolean;
+  success?: boolean;
   message: string;
-  order: OrderType;
-  stockReversals: Array<{
+  order?: OrderType;
+  stockReversals?: Array<{
     productId: string;
     productName: string;
     quantityReversed: number;
     newStock: number;
   }>;
-  salesReversals: Array<{
+  salesReversals?: Array<{
     productId: string;
     productName: string;
     salesDeducted: number;
@@ -38,7 +41,7 @@ export function useCancelOrder() {
       const response = await apiClient.post<CancelOrderResponse>(api.orders.cancel(orderId), {
         reason,
       });
-      return response.data!;
+      return response.data ?? { message: response.message || 'Order cancelled' };
     },
     onSuccess: (data, { orderId }) => {
       // Invalidate order queries to reflect updated status and stock
@@ -47,7 +50,7 @@ export function useCancelOrder() {
       queryClient.invalidateQueries({ queryKey: ['order-statistics'] });
 
       // Invalidate product queries to reflect stock reversal
-      data.stockReversals.forEach((reversal) => {
+      data.stockReversals?.forEach((reversal) => {
         queryClient.invalidateQueries({ queryKey: ['product', reversal.productId] });
       });
 
@@ -74,7 +77,7 @@ export function useHandlePaymentFailure() {
       const response = await apiClient.post<CancelOrderResponse>(
         `/myOrder/orders/${orderId}/payment-failed`
       );
-      return response.data!;
+      return response.data ?? { message: response.message || 'Payment failure handled' };
     },
     onSuccess: (data, orderId) => {
       // Invalidate order queries
@@ -83,7 +86,7 @@ export function useHandlePaymentFailure() {
       queryClient.invalidateQueries({ queryKey: ['order-statistics'] });
 
       // Invalidate product queries to reflect stock reversal
-      data.stockReversals.forEach((reversal) => {
+      data.stockReversals?.forEach((reversal) => {
         queryClient.invalidateQueries({ queryKey: ['product', reversal.productId] });
       });
 

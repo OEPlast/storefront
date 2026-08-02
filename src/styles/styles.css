@@ -2785,13 +2785,13 @@ input[type=file]::-webkit-file-upload-button {
   display: none;
   animation: scaleAnimate 0.5s ease;
 }
-.product-item .compare-btn.active .compare-icon {
+.product-item .compare-btn .show .compare-icon {
   display: none;
 }
-.product-item .compare-btn.active .checked-icon {
+.product-item .compare-btn .show .checked-icon {
   display: block;
 }
-.product-item .compare-btn.active svg {
+.product-item .compare-btn .show svg {
   color: #3dab25;
 }
 .product-item .product-thumb .banner-sale-auto {
@@ -2881,19 +2881,25 @@ input[type=file]::-webkit-file-upload-button {
 }
 .product-item.style-marketplace .add-wishlist-btn,
 .product-item.style-marketplace .quick-view-btn,
-.product-item.style-marketplace .add-cart-btn {
+.product-item.style-marketplace .add-cart-btn,
+.product-item.style-marketplace .compare-btn {
   transform: translateX(50px);
 }
 .product-item.style-marketplace .add-wishlist-btn:hover,
 .product-item.style-marketplace .quick-view-btn:hover,
-.product-item.style-marketplace .add-cart-btn:hover {
+.product-item.style-marketplace .add-cart-btn:hover,
+.product-item.style-marketplace .compare-btn:hover {
   background-color: var(--black);
   color: var(--white);
 }
 .product-item.style-marketplace:hover .list-action .add-wishlist-btn,
 .product-item.style-marketplace:hover .list-action .quick-view-btn,
-.product-item.style-marketplace:hover .list-action .add-cart-btn {
+.product-item.style-marketplace:hover .list-action .add-cart-btn,
+.product-item.style-marketplace:hover .list-action .compare-btn {
   transform: translateX(0);
+}
+.product-item.style-marketplace:hover .list-action .compare-btn {
+  transition: all 0.3s ease, transform 0.3s ease 0.06s;
 }
 .product-item.style-marketplace:hover .list-action .quick-view-btn {
   transition: all 0.3s ease, transform 0.3s ease 0.12s;
@@ -3060,8 +3066,8 @@ input[type=file]::-webkit-file-upload-button {
   transition: all ease 0.4s;
 }
 .product-detail .popup-img img {
-  width: auto;
-  height: 100vh;
+  width: 100%;
+  height: auto;
   margin: 0 auto;
 }
 .product-detail .popup-img.open {

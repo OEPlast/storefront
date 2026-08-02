@@ -167,37 +167,61 @@ export default async function ProductPage({ params }: ProductPageProps) {
         notFound();
     }
 
+    // Accurate current price (accounts for active sale / static discount).
+    const { price: displayPrice, originalPrice } = getProductDisplayPrice(product);
+
+    // Only real images (not videos) belong in Product.image.
+    const productImages = (product.description_images || [])
+        .filter((i) => i.mediaType !== 'video')
+        .map((i) => getCdnUrl(i.url));
+
+    // Variant price points → AggregateOffer when a range exists.
+    const variantPrices = (product.attributes || [])
+        .flatMap((attr) => (attr.children || []).map((c) => c.price ?? product.price))
+        .filter((p): p is number => typeof p === 'number' && p > 0);
+
     return (
-        <HydrationBoundary state={dehydrate(queryClient)}>
-            <BreadcrumbProduct product={product} />
-            {/* Structured Data: Product + Breadcrumb (server-rendered JSON-LD) */}
+        <>
+            {/* Structured Data — rendered OUTSIDE HydrationBoundary so it is emitted as
+                clean <script type="application/ld+json"> in the SSR HTML. Inside a client
+                boundary React would defer it into the RSC flight payload (client-only). */}
             {injectStructuredData(
                 generateProductSchema({
                     name: product.name,
                     description: product.description,
-                    price: product.price,
+                    price: displayPrice,
+                    originalPrice: originalPrice ?? undefined,
                     stock: product.stock,
-                    images: (product.description_images || []).map((i) => getCdnUrl(i.url)),
+                    images: productImages,
                     brand: product.brand,
                     category: product.category?.name,
                     slug: product.slug,
                     sku: product.sku ? String(product.sku) : undefined,
-                })
+                    condition: 'new',
+                    ratingValue: product.reviewStats?.averageRating,
+                    reviewCount: product.reviewStats?.totalReviews,
+                    variantPrices,
+                }),
+                'ld-product'
             )}
             {injectStructuredData(
                 generateBreadcrumbSchema([
                     { name: 'Homepage', url: '/' },
                     ...(product.category
                         ? [
-                            { name: product.category.name, url: `/shop/category/${product.category.slug}` },
+                            { name: product.category.name, url: `/category/${product.category.slug}` },
                         ]
                         : []),
                     { name: product.name, url: `/product/${product.slug}` },
-                ])
+                ]),
+                'ld-breadcrumb'
             )}
 
-            <MainProduct slug={slug} />
-            {/* <Footer /> */}
-        </HydrationBoundary>
+            <HydrationBoundary state={dehydrate(queryClient)}>
+                <BreadcrumbProduct product={product} />
+                <MainProduct slug={slug} />
+                {/* <Footer /> */}
+            </HydrationBoundary>
+        </>
     );
 }

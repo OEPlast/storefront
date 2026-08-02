@@ -127,8 +127,12 @@ export interface Product {
   width: number;
   length: number;
   isVolumetric: boolean;
-  rating?: number;
-  rate?: number; // Alias for rating
+  // Denormalized review stats maintained on the Product by the review write path.
+  // These are the real API fields — `rate` below is the storefront display alias
+  // consumed by <Rate />. There is no `rating` field on the backend Product.
+  ratingAverage?: number;
+  ratingCount?: number;
+  rate?: number; // Display alias for ratingAverage
   status?: 'active' | 'inactive' | 'archived';
   sale?: ProductSale; // NEW: Sale information
 
@@ -158,7 +162,8 @@ export interface ProductListItem {
   sku: string | number;
   stock: number;
   originStock: number; // Initial stock value, used to calculate sold quantity from sales
-  rating?: number;
+  ratingAverage?: number;
+  ratingCount?: number;
   sale: ProductSale | null;
   attributes?: ProductVariant[]; // Product variants/attributes
   packSizes?: ProductPackSize[]; // Pack sizes for bulk/wholesale products

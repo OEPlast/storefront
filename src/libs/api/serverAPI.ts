@@ -118,7 +118,7 @@ export const serverAPI: ServerApiClient = {
       console.log('[ServerAPI] Raw response:', {
         url,
         status: response.status,
-        data: response.data,
+        // data: response.data,
       });
     }
 

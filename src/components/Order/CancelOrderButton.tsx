@@ -2,12 +2,15 @@
 
 import React, { useState } from 'react';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
+import toast from 'react-hot-toast';
 import { useCancelOrder } from '@/hooks/mutations/useOrderMutations';
 import ConfirmModal from '@/components/Modal/ConfirmModal';
 
 interface CancelOrderButtonProps {
   orderId: string;
   orderNumber: string;
+  /** `solid` for the order details page, `subtle` for the compact order list card */
+  variant?: 'solid' | 'subtle';
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }
@@ -15,6 +18,7 @@ interface CancelOrderButtonProps {
 export default function CancelOrderButton({
   orderId,
   orderNumber,
+  variant = 'solid',
   onSuccess,
   onError,
 }: CancelOrderButtonProps) {
@@ -26,39 +30,32 @@ export default function CancelOrderButton({
     try {
       const result = await cancelOrder.mutateAsync({
         orderId,
-        reason: cancelReason || undefined,
+        reason: cancelReason.trim() || undefined,
       });
 
       setShowConfirm(false);
       setCancelReason('');
-
-      // Show success message with stock reversal details
-      if (result.stockReversals.length > 0) {
-        const reversalSummary = result.stockReversals
-          .map((r) => `${r.productName}: +${r.quantityReversed} stock`)
-          .join(', ');
-        console.log('Stock reversed:', reversalSummary);
-      }
-
-      if (result.salesReversals.length > 0) {
-        const salesSummary = result.salesReversals
-          .map((r) => `${r.productName}: -${r.salesDeducted} sales`)
-          .join(', ');
-        console.log('Sales deducted:', salesSummary);
-      }
-
+      toast.success(result.message || 'Order cancelled');
       onSuccess?.();
     } catch (error) {
-      onError?.(error as Error);
+      const err = error as Error;
+      toast.error(err.message || 'Could not cancel this order');
+      onError?.(err);
       setShowConfirm(false);
     }
   };
 
+  const buttonClass =
+    variant === 'subtle'
+      ? 'inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-secondary duration-300 hover:border-red hover:text-red disabled:cursor-not-allowed disabled:opacity-50'
+      : 'button-main bg-red text-white hover:bg-red/90';
+
   return (
     <>
       <button
+        type="button"
         onClick={() => setShowConfirm(true)}
-        className="button-main bg-red hover:bg-red/90 text-white"
+        className={buttonClass}
         disabled={cancelOrder.isPending}
       >
         {cancelOrder.isPending ? (
@@ -77,34 +74,27 @@ export default function CancelOrderButton({
       <ConfirmModal
         isOpen={showConfirm}
         title="Cancel Order"
+        isLoading={cancelOrder.isPending}
         message={
-          <div className="space-y-4">
-            <p>
-              Are you sure you want to cancel order <strong>#{orderNumber}</strong>?
-            </p>
-            <p className="text-sm text-secondary">
-              This action will:
-            </p>
-            <ul className="text-sm text-secondary list-disc list-inside space-y-1">
-              <li>Reverse product stock for all items in this order</li>
-              <li>Deduct sales count from product statistics</li>
-              <li>Update order status to &quot;Cancelled&quot;</li>
-              <li>Process any applicable refunds (if payment was made)</li>
-            </ul>
-            <div className="mt-4">
-              <label htmlFor="cancelReason" className="block text-sm font-medium mb-2">
-                Reason for cancellation (optional)
+          <span className="block space-y-4 text-left">
+            <span className="block text-center">
+              Cancel order <strong className="uppercase">{orderNumber}</strong>? Items go back to
+              stock and any payment made is refunded.
+            </span>
+            <span className="block">
+              <label htmlFor="cancelReason" className="mb-2 block text-sm font-medium text-title">
+                Reason (optional)
               </label>
               <textarea
                 id="cancelReason"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                className="w-full px-3 py-2 border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-red resize-none"
+                className="w-full resize-none rounded-lg border border-line px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red"
                 rows={3}
-                placeholder="e.g., Changed mind, found better price, delivery too slow..."
+                placeholder="e.g. Changed my mind, ordered the wrong size..."
               />
-            </div>
-          </div>
+            </span>
+          </span>
         }
         variant="danger"
         confirmText="Yes, Cancel Order"

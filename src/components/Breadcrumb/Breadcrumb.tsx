@@ -21,11 +21,11 @@ const Breadcrumb: React.FC<Pros> = ({ heading, subHeading }) => {
                         <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1]">
                             <div className="text-content">
                                 <div className="heading2 text-center">{heading}</div>
-                                {subHeading && (<div className="link flex items-center justify-center gap-1 caption1 mt-3">
+                                {subHeading && (<nav aria-label="Breadcrumb" className="link flex items-center justify-center gap-1 caption1 mt-3">
                                     <Link href={'/'}>Homepage</Link>
                                     <Icon.CaretRight size={14} className='text-secondary2' />
-                                    <div className='text-secondary2 capitalize'>{subHeading}</div>
-                                </div>)}
+                                    <span aria-current="page" className='text-secondary2 capitalize'>{subHeading}</span>
+                                </nav>)}
                             </div>
                         </div>
                     </div>

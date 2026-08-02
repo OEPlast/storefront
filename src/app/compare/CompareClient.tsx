@@ -177,8 +177,8 @@ const CompareClient = () => {
                                             {loadedProducts.map((item, index) => (
                                                 <td className="w-full border border-line h-[60px] border-t-0 border-r-0" key={index}>
                                                     <div className='h-full flex items-center justify-center'>
-                                                        <Rate currentRate={item.rating || 0} size={12} />
-                                                        <p className='pl-1'>({item.rating?.toFixed(1) || '0.0'})</p>
+                                                        <Rate currentRate={item.reviewStats?.averageRating ?? item.ratingAverage ?? 0} size={12} />
+                                                        <p className='pl-1'>({(item.reviewStats?.averageRating ?? item.ratingAverage ?? 0).toFixed(1)})</p>
                                                     </div>
                                                 </td>
                                             ))}

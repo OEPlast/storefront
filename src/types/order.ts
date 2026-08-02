@@ -90,7 +90,7 @@ export interface OrderType {
 export interface OrderQueryParams {
   page?: number;
   limit?: number;
-  status?: 'Pending' | 'Processing' | 'Cancelled' | 'Completed' | 'All';
+  status?: 'Pending' | 'Processing' | 'Cancelled' | 'Completed' | 'Failed' | 'All';
   deliveryStatus?: 'Pending' | 'Processing' | 'shipped' | 'delivered' | 'failed';
 }
 

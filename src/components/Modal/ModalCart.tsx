@@ -165,7 +165,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                     <>
                       Buy{' '}
                       <span className="text-button">{formatToNaira(freeShippingRemaining)}</span>{' '}
-                      more to get <span className="text-button">Free shipping</span>
+                      more to get <span className="text-button italic">free shipping</span>
                     </>
                   )}
                 </div>
@@ -192,7 +192,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                         className="item flex items-center justify-between gap-3 border-b border-line py-5"
                       >
                         <div className="infor flex w-full items-center gap-3">
-                          <div className="bg-img aspect-square w-[100px] flex-shrink-0 overflow-hidden rounded-lg">
+                          <div className="bg-img aspect-square w-[100px] flex-shrink-0 overflow-hidden rounded-lg border border-gray-100">
                             <Image
                               src={item.imageUrl}
                               width={120}
@@ -208,13 +208,13 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                             {(item.hasSale || item.hasPricingTier) && (
                               <div className="mb-1 flex items-center gap-1.5">
                                 {item.hasSale && (
-                                  <span className="flex rounded bg-red-600 px-1.5 text-[10px] font-semibold text-white">
+                                  <span className="flex rounded bg-red-600 px-1.5 text-[12px] font-medium text-white">
                                     <span className="hidden text-[10px] md:block">-</span>
                                     {item.salePercentage}%
                                   </span>
                                 )}
                                 {item.hasPricingTier && (
-                                  <span className="rounded bg-blue-600 px-1.5 text-[10px] font-semibold text-white">
+                                  <span className="rounded bg-black px-1.5 text-[10px] font-medium text-white">
                                     Bulk Deals
                                   </span>
                                 )}

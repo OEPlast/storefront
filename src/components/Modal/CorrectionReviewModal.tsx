@@ -311,7 +311,7 @@ export default function CorrectionReviewModal({
                                                                     </span>
                                                                 )}
                                                                 {hasPricingTier && (
-                                                                    <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded font-medium">
+                                                                    <span className="text-xs bg-black text-white px-2 py-1 rounded font-medium">
                                                                         Bulk Deals
                                                                     </span>
                                                                 )}

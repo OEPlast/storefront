@@ -40,7 +40,7 @@ export default function SearchLoading() {
                         </div>
 
                         {/* Product Grid Skeleton */}
-                        <div className="list-product grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 grid-cols-2 sm:gap-[30px] gap-[20px] mt-7">
+                        <div className="list-product grid 3xl:grid-cols-6 xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 grid-cols-2 sm:gap-[30px] gap-[20px] mt-7">
                             {Array.from({ length: 12 }).map((_, i) => (
                                 <div key={i} className="bg-gray-200 animate-pulse h-80 rounded-lg" />
                             ))}

@@ -6,11 +6,15 @@ import Footer from "@/components/Footer/Footer";
 import VerifyOTPForm from "@/components/forms/VerifyOTPForm";
 import { auth } from "../../../auth";
 import { redirect } from "next/navigation";
+import { getStoreName } from "@/libs/storeBranding";
 
-export const metadata: Metadata = {
-  title: "Verify OTP - Rawura",
-  description: "Verify your email address with OTP",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const storeName = await getStoreName();
+  return {
+    title: `Verify OTP - ${storeName}`,
+    description: "Verify your email address with OTP",
+  };
+}
 
 export default async function VerifyOTPPage() {
   const session = await auth();

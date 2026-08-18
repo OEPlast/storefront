@@ -18,6 +18,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
 import { useProductSearchAutocomplete } from '@/hooks/queries/useProducts';
 import AutocompleteDropdown from '@/components/Search/AutocompleteDropdown';
+import { useStoreConfig } from '@/context/StoreConfigContext';
 import UserIcon from './Usericon';
 import { WhatsappLogoIcon } from '@phosphor-icons/react';
 import Logo from '@/components/Logo';
@@ -43,6 +44,7 @@ const PAGES_LINKS = [
 ];
 
 const MenuEight = () => {
+  const { storeName, whatsappNumber } = useStoreConfig();
   const pathname = usePathname();
   const { openLoginPopup, handleLoginPopup } = useLoginPopup();
   const { openSubMenuDepartment, handleSubMenuDepartment } = useSubMenuDepartment();
@@ -149,7 +151,7 @@ const MenuEight = () => {
                 <i className="icon-category text-2xl"></i>
               </div>
               <Link href={'/'} className="flex items-center">
-                <Logo alwaysFull />
+                <Logo alwaysFull storeName={storeName} />
               </Link>
               {shouldShowTopNavigation && (
                 <div className="form-search flex h-[44px] w-2/3 items-center pl-8 max-lg:hidden">
@@ -236,10 +238,12 @@ const MenuEight = () => {
                     <ul className="flex h-full items-center gap-8"></ul>
                   </div>
                 </div>
-                <div className="right flex cursor-pointer items-center gap-1">
-                  <WhatsappLogoIcon weight="fill" className="h-7 w-7 text-green-500" />
-                  <div className="text-button-uppercase text-green-700">+234 802 829 9167</div>
-                </div>
+                {whatsappNumber && (
+                  <div className="right flex cursor-pointer items-center gap-1">
+                    <WhatsappLogoIcon weight="fill" className="h-7 w-7 text-green-500" />
+                    <div className="text-button-uppercase text-green-700">{whatsappNumber}</div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -259,7 +263,7 @@ const MenuEight = () => {
                   <Icon.X size={14} />
                 </div>
                 <Link href={'/'} className="logo text-center text-3xl font-semibold">
-                  Rawura
+                  {storeName}
                 </Link>
               </div>
               <div className="form-search relative mt-2" ref={mobileInputAnchorRef}>

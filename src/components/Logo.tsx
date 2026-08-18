@@ -1,17 +1,22 @@
-import React from 'react';
 import Image from 'next/image';
 
 interface LogoProps {
     alwaysFull?: boolean;
+    /**
+     * Passed by the caller rather than fetched here — this component is imported from both
+     * Server Components (Footer) and Client Components (MenuEight), and an async Server
+     * Component can't be rendered directly inside a 'use client' module.
+     */
+    storeName: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ alwaysFull = false }) => {
+const Logo = ({ alwaysFull = false, storeName }: LogoProps) => {
     if (alwaysFull) {
         return (
             <div className="max-w-[120px]">
                 <Image
                     src={'/images/brand/logoTransparent.png'}
-                    alt="Rawura Logo"
+                    alt={`${storeName} Logo`}
                     width={120}
                     height={60}
                     priority
@@ -27,7 +32,7 @@ const Logo: React.FC<LogoProps> = ({ alwaysFull = false }) => {
             <div className="hidden sm:block max-w-[120px]">
                 <Image
                     src={'/images/brand/logoTransparent.png'}
-                    alt="Rawura Logo"
+                    alt={`${storeName} Logo`}
                     width={120}
                     height={60}
                     priority
@@ -39,7 +44,7 @@ const Logo: React.FC<LogoProps> = ({ alwaysFull = false }) => {
             <div className="block sm:hidden max-w-[40px] xs:max-w-[50px] my-1">
                 <Image
                     src={'/images/brand/logoMiniLight.png'}
-                    alt="Rawura"
+                    alt={storeName}
                     width={50}
                     height={50}
                     priority

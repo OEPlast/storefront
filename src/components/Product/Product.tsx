@@ -514,13 +514,13 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
                 <Image
                   fetchPriority="high"
                   loading="eager"
-                  threshold={20}
+                  threshold={40}
                   effect={'blur'}
                   placeholderSrc={`${getProductImageCdnUrl(rawData)}`}
                   src={getProductImageCdnUrl(rawData)}
                   alt={data.name}
                   wrapperProps={{
-                    style: { transitionDelay: '0.15s' },
+                    style: { transitionDelay: '0.09s' },
                   }}
                   className="h-full w-full object-cover duration-700"
                   wrapperClassName="w-full h-full object-cover duration-700"

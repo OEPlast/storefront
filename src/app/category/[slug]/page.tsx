@@ -6,6 +6,7 @@ import api from '@/libs/api/endpoints';
 import type { CategoryDetail } from '@/hooks/queries/useCategoryBySlug';
 import type { ProductListItem } from '@/types/product';
 import { getDefaultMetadata } from '@/libs/seo';
+import { getStoreName } from '@/libs/storeBranding';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { prefetchImages } from '@/config/siteConfig';
 import { withIndexation } from '@/libs/indexation';
@@ -33,7 +34,10 @@ export async function generateMetadata({
     searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
     const { slug } = await params;
-    const sp = searchParams ? await searchParams : undefined;
+    const [sp, storeName] = await Promise.all([
+        searchParams ? searchParams : Promise.resolve(undefined),
+        getStoreName(),
+    ]);
     const basePath = `/category/${slug}`;
 
     try {
@@ -49,17 +53,17 @@ export async function generateMetadata({
 
         const description = category.description
             ? category.description.substring(0, 155) + '...'
-            : `Browse ${category.name} products at Rawura. Shop quality ${category.name.toLowerCase()} items with free delivery across Nigeria.`;
+            : `Browse ${category.name} products at ${storeName}. Shop quality ${category.name.toLowerCase()} items with free delivery across Nigeria.`;
 
         // Prefetch category image
         if (category.image) {
             await prefetchImages([getCdnUrl(category.image)]);
         }
 
-        const base = getDefaultMetadata({
+        const base = await getDefaultMetadata({
             title: category.name,
             description,
-            keywords: [category.name, 'products', 'shop', 'Rawura', 'Nigeria'],
+            keywords: [category.name, 'products', 'shop', storeName, 'Nigeria'],
             openGraph: {
                 title: category.name,
                 description,

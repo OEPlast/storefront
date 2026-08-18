@@ -29,7 +29,7 @@ export const ProductSkeleton = () => {
 
 export const ProductLoading = ({ amount = 10 }: { amount?: number; }) => {
     return (
-        <div className="list-product show-product-sold grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 grid-cols-2 sm:gap-[30px] gap-[20px] md:mt-10 mt-6">
+        <div className="list-product show-product-sold grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 3xl:grid-cols-6 grid-cols-2 sm:gap-[30px] gap-[20px] md:mt-10 mt-6">
             {Array(amount).fill(0).map((_, index) => (
                 <ProductSkeleton key={`productSkeleton__${index}`} />
             ))}

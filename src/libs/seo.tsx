@@ -1,29 +1,34 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/config/siteConfig";
+import { getStoreName } from "@/libs/storeBranding";
 
-export function getDefaultMetadata(overrides?: Partial<Metadata>): Metadata {
+export async function getDefaultMetadata(overrides?: Partial<Metadata>): Promise<Metadata> {
+  const storeName = await getStoreName();
+  const defaultTitle = `${storeName} - Affordable Quality Products`;
+  const description = `${storeName} Online Store - Your One-Stop Shop for Affordable Quality Products`;
+
   const metadata: Metadata = {
     title: {
-      default: siteConfig.defaultTitle,
-      template: siteConfig.titleTemplate,
+      default: defaultTitle,
+      template: `%s | ${storeName}`,
     },
-    description: siteConfig.description,
-    applicationName: siteConfig.name,
+    description,
+    applicationName: storeName,
     keywords: siteConfig.keywords,
-    authors: [{ name: siteConfig.author }],
-    creator: siteConfig.author,
-    publisher: siteConfig.name,
+    authors: [{ name: storeName }],
+    creator: storeName,
+    publisher: storeName,
     openGraph: {
-      title: siteConfig.defaultTitle,
-      description: siteConfig.description,
+      title: defaultTitle,
+      description,
       url: siteConfig.url,
-      siteName: siteConfig.name,
+      siteName: storeName,
       images: [
         {
           url: siteConfig.ogImage,
           width: 1200,
           height: 630,
-          alt: siteConfig.name,
+          alt: storeName,
         },
       ],
       locale: siteConfig.locale,
@@ -31,8 +36,8 @@ export function getDefaultMetadata(overrides?: Partial<Metadata>): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: siteConfig.defaultTitle,
-      description: siteConfig.description,
+      title: defaultTitle,
+      description,
       creator: siteConfig.twitter,
       images: [siteConfig.ogImage],
     },

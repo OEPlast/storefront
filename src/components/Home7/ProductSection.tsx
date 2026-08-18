@@ -30,7 +30,7 @@ const ProductSection: React.FC<Props> = ({ data, start, limit, header, viewAllLi
                         <Link href={viewAllLink} className='text-button pb-1 border-b-2 border-black'>View All</Link>
                     </div>
 
-                    <div className="list-product show-product-sold grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 grid-cols-2 sm:gap-[22px] gap-[20px] md:mt-10 mt-6">
+                    <div className="list-product show-product-sold grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 3xl:grid-cols-6 grid-cols-2 sm:gap-[22px] gap-[20px] md:mt-10 mt-6">
                         {isLoading ?
                             Array.from({ length: SKELETON_COUNT }, (_, i) => (
                                 <ProductSkeleton key={`mainpageProcuctSkeleton__${i}`} />

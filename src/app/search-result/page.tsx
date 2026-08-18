@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import SearchResultClient from './SearchResultClient';
 import SearchLoading from './loading';
 import { getDefaultMetadata } from '@/libs/seo';
+import { getStoreName } from '@/libs/storeBranding';
 
 interface SearchPageProps {
     searchParams: Promise<{ query?: string; }>;
@@ -10,7 +11,7 @@ interface SearchPageProps {
 
 // Generate dynamic metadata based on search query
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
-    const params = await searchParams;
+    const [params, storeName] = await Promise.all([searchParams, getStoreName()]);
     const query = params.query || '';
 
     // Internal search results are intentionally NOT indexed (thin/duplicate).
@@ -26,14 +27,14 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
             alternates: { canonical: '/search-result' },
             openGraph: {
                 title: `Search Results for "${query}"`,
-                description: `Find products matching "${query}" at Rawura.`,
+                description: `Find products matching "${query}" at ${storeName}.`,
             },
         });
     }
 
     return getDefaultMetadata({
         title: 'Search Products',
-        description: 'Search for products at Rawura. Find what you\'re looking for.',
+        description: `Search for products at ${storeName}. Find what you're looking for.`,
         keywords: ['search', 'products', 'find products'],
         robots: noIndex,
         alternates: { canonical: '/search-result' },

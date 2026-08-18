@@ -7,6 +7,7 @@ import api from '@/libs/api/endpoints';
 import type { Campaign } from '@/types/campaign';
 import type { ProductListItem } from '@/types/product';
 import { getDefaultMetadata } from '@/libs/seo';
+import { getStoreName } from '@/libs/storeBranding';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { prefetchImages } from '@/config/siteConfig';
 import { withIndexation } from '@/libs/indexation';
@@ -33,7 +34,10 @@ export async function generateMetadata({
     searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
     const { slug } = await params;
-    const sp = searchParams ? await searchParams : undefined;
+    const [sp, storeName] = await Promise.all([
+        searchParams ? searchParams : Promise.resolve(undefined),
+        getStoreName(),
+    ]);
     const basePath = `/campaign/${slug}`;
 
     try {
@@ -49,14 +53,14 @@ export async function generateMetadata({
 
         const description = campaign.description
             ? campaign.description.substring(0, 155) + '..'
-            : `Shop the ${campaign.title} campaign at Rawura. Exclusive deals and offers with free delivery across Nigeria.`;
+            : `Shop the ${campaign.title} campaign at ${storeName}. Exclusive deals and offers with free delivery across Nigeria.`;
 
         // Prefetch campaign image
         if (campaign.image) {
             await prefetchImages([getCdnUrl(campaign.image)]);
         }
 
-        const base = getDefaultMetadata({
+        const base = await getDefaultMetadata({
             title: campaign.title,
             description,
             keywords: [campaign.title, 'campaign', 'deals', 'offers', 'sale', 'Nigeria'],

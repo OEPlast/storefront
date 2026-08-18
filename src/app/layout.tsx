@@ -15,6 +15,8 @@ import MenuEight from '@/components/Header/Menu/MenuEight';
 import SliderNine from '@/components/Slider/SliderNine';
 import Footer from '@/components/Footer/Footer';
 import { getDefaultMetadata, PrefetchImages } from '@/libs/seo';
+import { getStoreBranding } from '@/libs/storeBranding';
+import { StoreConfigProvider } from '@/context/StoreConfigContext';
 import {
   generateOrganizationSchema,
   generateWebsiteSchema,
@@ -28,46 +30,52 @@ const serverTimeLeft: CountdownTimeType = countdownTime();
 
 const instrument = Instrument_Sans({ subsets: ['latin'] });
 
-export const metadata: Metadata = getDefaultMetadata();
+export async function generateMetadata(): Promise<Metadata> {
+  return getDefaultMetadata();
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const branding = await getStoreBranding();
+
   return (
     <GlobalProvider>
-      <html lang="en">
-        <head>
-          <PrefetchImages />
-          {/* Global structured data: Organization (brand entity) + WebSite (Sitelinks Search Box) */}
-          {injectStructuredData(generateOrganizationSchema(), 'ld-organization')}
-          {injectStructuredData(generateWebsiteSchema(), 'ld-website')}
-        </head>
-        <body className={instrument.className}>
-          <NextTopLoader
-            color="#81e62e"
-            initialPosition={0.08}
-            crawlSpeed={200}
-            height={3}
-            crawl={true}
-            showSpinner={false}
-            easing="ease"
-            speed={200}
-          />
-          <TopNavOne
-            props="style-one bg-black"
-            slogan="New customers save 10% with the code GET10"
-          />
-          <div id="header" className="style-nine relative w-full">
-            <MenuEight />
-            <SliderOrganic />
-          </div>
-          {children}
-          <Footer />
-          <ModalLogin />
-          <ModalCart serverTimeLeft={serverTimeLeft} />
-          <ModalWishlist />
-          <ModalQuickview />
-          <ModalCompare />
-        </body>
-      </html>
+      <StoreConfigProvider storeName={branding.storeName} whatsappNumber={branding.whatsappNumber}>
+        <html lang="en">
+          <head>
+            <PrefetchImages />
+            {/* Global structured data: Organization (brand entity) + WebSite (Sitelinks Search Box) */}
+            {injectStructuredData(generateOrganizationSchema(), 'ld-organization')}
+            {injectStructuredData(generateWebsiteSchema(), 'ld-website')}
+          </head>
+          <body className={instrument.className}>
+            <NextTopLoader
+              color="#81e62e"
+              initialPosition={0.08}
+              crawlSpeed={200}
+              height={3}
+              crawl={true}
+              showSpinner={false}
+              easing="ease"
+              speed={200}
+            />
+            <TopNavOne
+              props="style-one bg-black"
+              slogan="New customers save 10% with the code GET10"
+            />
+            <div id="header" className="style-nine relative w-full">
+              <MenuEight />
+              <SliderOrganic />
+            </div>
+            {children}
+            <Footer />
+            <ModalLogin />
+            <ModalCart serverTimeLeft={serverTimeLeft} />
+            <ModalWishlist />
+            <ModalQuickview />
+            <ModalCompare />
+          </body>
+        </html>
+      </StoreConfigProvider>
     </GlobalProvider>
   );
 }

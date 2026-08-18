@@ -4,15 +4,17 @@ import Breadcrumb from '@/components/Breadcrumb/Breadcrumb';
 import ShipmentClient from './ShipmentClient';
 import { getDefaultMetadata } from '@/libs/seo';
 
-export const metadata: Metadata = getDefaultMetadata({
-  title: 'Order Tracking',
-  description: 'Track your order status and delivery. Enter your tracking number to see real-time updates.',
-  keywords: ['order tracking', 'track order', 'delivery status', 'shipment tracking'],
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  return getDefaultMetadata({
     title: 'Order Tracking',
     description: 'Track your order status and delivery. Enter your tracking number to see real-time updates.',
-  },
-});
+    keywords: ['order tracking', 'track order', 'delivery status', 'shipment tracking'],
+    openGraph: {
+      title: 'Order Tracking',
+      description: 'Track your order status and delivery. Enter your tracking number to see real-time updates.',
+    },
+  });
+}
 
 export default async function OrderTrackingPage() {
   return (

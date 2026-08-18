@@ -3,8 +3,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
 import Logo from '../Logo';
+import { getStoreBranding } from '@/libs/storeBranding';
 
-const Footer = () => {
+const Footer = async () => {
+  const { storeName, whatsappNumber } = await getStoreBranding();
+
   return (
     <>
       <div id="footer" className="footer">
@@ -13,7 +16,7 @@ const Footer = () => {
             <div className="content-footer flex flex-wrap justify-between gap-y-8 py-[60px]">
               <div className="company-infor basis-2/4 pr-7 max-lg:basis-full">
                 <Link href={'/'} className="logo">
-                  <Logo alwaysFull />
+                  <Logo alwaysFull storeName={storeName} />
                 </Link>
                 <div className="mt-3 flex gap-3">
                   <div className="flex flex-col">
@@ -23,7 +26,7 @@ const Footer = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="">Rawura@gmail.com</span>
-                    <span className="mt-3">+2348028299167</span>
+                    <span className="mt-3">{whatsappNumber}</span>
                     <span className="mt-3 pt-px">No 1, Abule Ojo Busstop. Lagos</span>
                   </div>
                 </div>
@@ -137,7 +140,7 @@ const Footer = () => {
             <div className="footer-bottom flex items-center justify-between gap-5 border-t border-line py-3 max-lg:flex-col max-lg:justify-center">
               <div className="left flex items-center gap-8">
                 <div className="copyright caption1 text-secondary">
-                  ©{new Date().getFullYear()} Rawura. All Rights Reserved.
+                  ©{new Date().getFullYear()} {storeName}. All Rights Reserved.
                 </div>
                 <div className="select-block flex items-center gap-5 max-md:hidden">
                   <div className="choose-language flex items-center gap-1.5">

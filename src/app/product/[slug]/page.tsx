@@ -16,6 +16,7 @@ import { getProductDisplayPrice } from '@/utils/cart-pricing';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { prefetchImages } from '@/config/siteConfig';
+import { getStoreName } from '@/libs/storeBranding';
 import {
     generateProductSchema,
     generateBreadcrumbSchema,
@@ -57,11 +58,11 @@ async function prefetchProduct(slug: string) {
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ProductPageProps) {
     const { slug } = await params;
-    const { product } = await prefetchProduct(slug);
+    const [{ product }, storeName] = await Promise.all([prefetchProduct(slug), getStoreName()]);
 
     if (!product) {
         return {
-            title: 'Product Not Found | Rawura',
+            title: `Product Not Found | ${storeName}`,
             description: 'The product you are looking for does not exist.',
         };
     }
@@ -90,7 +91,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
     const description = product.description
         ? `${removeMarkdown(product.description).substring(0, 155)}...`
-        : `Buy ${product.name} at Rawura. ${priceText}. ${product.category?.name || 'Quality products'}.`;
+        : `Buy ${product.name} at ${storeName}. ${priceText}. ${product.category?.name || 'Quality products'}.`;
 
     const imageUrls = product.description_images?.map(img => getCdnUrl(img.url)) || [];
     await prefetchImages(imageUrls);
@@ -136,7 +137,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
                     height: 630,
                 },
             ],
-            siteName: 'Rawura',
+            siteName: storeName,
         },
         twitter: {
             card: 'summary_large_image',

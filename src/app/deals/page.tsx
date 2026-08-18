@@ -5,6 +5,7 @@ import { serverGetWithMeta } from '@/libs/query/server-api-client';
 import api from '@/libs/api/endpoints';
 import type { ProductListItem } from '@/types/product';
 import { getDefaultMetadata } from '@/libs/seo';
+import { getStoreName } from '@/libs/storeBranding';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import {
@@ -19,21 +20,28 @@ import {
 export const revalidate = 3600;
 
 const PAGE_TITLE = 'Deals & Offers';
-const PAGE_DESC =
-    'Shop the best deals, discounts and daily offers at Rawura. Save on quality products with free delivery across Nigeria and 7-day returns.';
 
-export const metadata: Metadata = getDefaultMetadata({
-    title: PAGE_TITLE,
-    description: PAGE_DESC,
-    keywords: ['deals', 'offers', 'discounts', 'sale', 'daily deals', 'Rawura', 'Nigeria'],
-    alternates: { canonical: '/deals' },
-    openGraph: {
+function pageDescFor(storeName: string): string {
+    return `Shop the best deals, discounts and daily offers at ${storeName}. Save on quality products with free delivery across Nigeria and 7-day returns.`;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+    const storeName = await getStoreName();
+    const description = pageDescFor(storeName);
+
+    return getDefaultMetadata({
         title: PAGE_TITLE,
-        description: PAGE_DESC,
-        url: '/deals',
-        type: 'website',
-    },
-});
+        description,
+        keywords: ['deals', 'offers', 'discounts', 'sale', 'daily deals', storeName, 'Nigeria'],
+        alternates: { canonical: '/deals' },
+        openGraph: {
+            title: PAGE_TITLE,
+            description,
+            url: '/deals',
+            type: 'website',
+        },
+    });
+}
 
 function coverImageOf(p: ProductListItem): string | undefined {
     const imgs = p.description_images?.length ? p.description_images : p.images;
@@ -63,7 +71,8 @@ async function fetchDeals(): Promise<ProductListItem[]> {
 }
 
 export default async function DealsPage() {
-    const products = await fetchDeals();
+    const [products, storeName] = await Promise.all([fetchDeals(), getStoreName()]);
+    const description = pageDescFor(storeName);
 
     const listProducts: ListItemProduct[] = products.map((p) => ({
         name: p.name,
@@ -76,7 +85,7 @@ export default async function DealsPage() {
     return (
         <>
             {injectStructuredData(
-                generateCollectionSchema({ name: PAGE_TITLE, description: PAGE_DESC, url: '/deals' }),
+                generateCollectionSchema({ name: PAGE_TITLE, description, url: '/deals' }),
                 'ld-collection'
             )}
             {injectStructuredData(

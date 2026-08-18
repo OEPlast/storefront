@@ -3,11 +3,15 @@ import Footer from "@/components/Footer/Footer";
 import LoginClient from "./LoginClient";
 import { auth } from "../../../auth";
 import { redirect } from "next/navigation";
+import { getStoreName } from "@/libs/storeBranding";
 
-export const metadata: Metadata = {
-  title: "Login - Rawura",
-  description: "Login to your Rawura account",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const storeName = await getStoreName();
+  return {
+    title: `Login - ${storeName}`,
+    description: `Login to your ${storeName} account`,
+  };
+}
 
 export default async function LoginPage({
   searchParams,

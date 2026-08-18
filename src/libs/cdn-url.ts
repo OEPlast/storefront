@@ -1,9 +1,20 @@
 /**
  * CDN URL utilities
  * Constructs full CDN URLs from relative paths
+ *
+ * Base URL is read from `NEXT_PUBLIC_CDN_BASE_URL` (client-visible, since this is called from
+ * both Server and Client Components) with the historical value as the fallback — mirrors
+ * `shared/emails/src/cdn-url.ts`, whose header explains why: a CDN move used to silently break
+ * every image on whichever copy of this file still hardcoded the host.
  */
 
-const CDN_BASE_URL = 'https://oeptest.b-cdn.net/';
+function resolveCdnBaseUrl(): string {
+  const configured = (process.env.NEXT_PUBLIC_CDN_BASE_URL ?? '').trim();
+  const base = configured.length > 0 ? configured : 'https://oeptest.b-cdn.net/';
+  return base.endsWith('/') ? base : `${base}/`;
+}
+
+const CDN_BASE_URL = resolveCdnBaseUrl();
 
 /**
  * Image variant type

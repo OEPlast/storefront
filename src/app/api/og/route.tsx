@@ -3,7 +3,9 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
-const CDN_BASE_URL = 'https://oeptest.b-cdn.net/';
+// Kept self-contained (not imported from libs/cdn-url.ts) since this route runs on the Edge
+// Runtime — env var read directly rather than pulling in that module's dependency surface.
+const CDN_BASE_URL = process.env.NEXT_PUBLIC_CDN_BASE_URL || 'https://oeptest.b-cdn.net/';
 
 function buildCdnUrl(path: string): string {
   if (!path) return '';

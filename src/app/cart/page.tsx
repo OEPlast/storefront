@@ -14,9 +14,6 @@ import { useLoginModalStore } from '@/store/useLoginModalStore';
 import { CartIcon } from '@/components/Icons';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import PricingTierUpgrade from '@/components/Cart/PricingTierUpgrade';
-import { useCartCoupons } from '@/hooks/useCoupons';
-import { useValidateCoupon } from '@/hooks/useValidateCoupon';
-import type { Coupon } from '@/types/coupon';
 import { useCheckoutStore } from '@/store/useCheckoutStore';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import { useFreeShippingThreshold } from '@/hooks/useFreeShippingThreshold';
@@ -27,7 +24,7 @@ const Cart = () => {
     const { status } = useSession();
     const { freeShippingThreshold } = useFreeShippingThreshold();
     const { openLoginModal } = useLoginModalStore();
-    const { setShippingMethod: setCheckoutShippingMethod, setDiscountInfo } = useCheckoutStore();
+    const { setShippingMethod: setCheckoutShippingMethod } = useCheckoutStore();
     useEffect(() => {
         const timer = setInterval(() => {
             setTimeLeft(countdownTime());
@@ -119,13 +116,7 @@ const Cart = () => {
     }, [debouncedQuantities, cartItems, updateItem]);
 
     const [totalCart, setTotalCart] = useState<number>(0);
-    const [discountCart, setDiscountCart] = useState<number>(0);
     const [shippingMethod, setShippingMethod] = useState<'pickup' | 'normal' | 'express'>('normal');
-    const [applyCode, setApplyCode] = useState<number>(0);
-    const [savingsAmount, setSavingsAmount] = useState<number>(0);
-    const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-    const [couponError, setCouponError] = useState<string | null>(null);
-    const [manualCouponCode, setManualCouponCode] = useState<string>('');
 
     const freeShippingEnabled =
         Number.isFinite(freeShippingThreshold) && freeShippingThreshold !== null;
@@ -140,115 +131,10 @@ const Cart = () => {
             : 100
         : 0;
 
-    // Fetch cart coupons
-    const { data: cartCoupons = [], isLoading: couponsLoading } = useCartCoupons();
-    const validateCouponMutation = useValidateCoupon();
-
     // Calculate total from cart items
     useEffect(() => {
         setTotalCart(optimisticSubtotal);
     }, [optimisticSubtotal]);
-
-    // Reset discount if cart total drops below minimum
-    useEffect(() => {
-        if (totalCart < applyCode && applyCode > 0) {
-            setApplyCode(0);
-            setDiscountCart(0);
-        }
-    }, [totalCart, applyCode]);
-
-    const handleApplyCode = (minValue: number, discount: number) => {
-        if (totalCart >= minValue) {
-            setApplyCode(minValue);
-            setDiscountCart(discount);
-        } else {
-            alert(`Minimum order must be $${minValue}`);
-        }
-    };
-
-    const handleApplyCoupon = (coupon: Coupon) => {
-        setCouponError(null);
-
-        // Collect product IDs and category IDs from cart
-        const productIds = cartItems.map(item => item._id || item.id);
-        // Convert categories to string array, filtering out undefined/null
-        const categoryIds = cartItems
-            .map(item => item.category ? String(item.category) : null)
-            .filter((cat): cat is string => cat !== null);
-
-        validateCouponMutation.mutate({
-            code: coupon.coupon, // Use 'coupon' field from Coupon object
-            orderTotal: totalCart,
-            productIds,
-            categoryIds,
-        }, {
-            onSuccess: (data) => {
-                if (data.success && data.valid && data.data) {
-                    setAppliedCoupon(coupon);
-                    setDiscountCart(data.data.discount);
-                    setApplyCode(0); // Clear old discount code
-                } else {
-                    setCouponError(data.message || 'Coupon cannot be applied');
-                }
-            },
-            onError: (error) => {
-                setCouponError(error.message || 'Failed to validate coupon');
-            },
-        });
-    };
-
-    const handleRemoveCoupon = () => {
-        setAppliedCoupon(null);
-        setDiscountCart(0);
-        setCouponError(null);
-    };
-
-    const handleApplyManualCoupon = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!manualCouponCode.trim()) return;
-
-        setCouponError(null);
-
-        // Collect product IDs and category IDs from cart
-        const productIds = cartItems.map(item => item._id || item.id);
-        const categoryIds = cartItems
-            .map(item => item.category ? String(item.category) : null)
-            .filter((cat): cat is string => cat !== null);
-
-        validateCouponMutation.mutate({
-            code: manualCouponCode.trim().toUpperCase(),
-            orderTotal: totalCart,
-            productIds,
-            categoryIds,
-        }, {
-            onSuccess: (data) => {
-                if (data.success && data.valid && data.data) {
-                    // Create a temporary coupon object for display
-                    const tempCoupon: Coupon = {
-                        _id: data.data.coupon._id,
-                        coupon: data.data.coupon.code,
-                        discount: data.data.coupon.discount,
-                        discountType: data.data.coupon.discountType,
-                        minOrderValue: data.data.coupon.minOrderValue,
-                        endDate: '',
-                        couponType: 'normal',
-                        appliesTo: data.data.coupon.appliesTo,
-                        stackable: data.data.coupon.stackable,
-                    };
-                    setAppliedCoupon(tempCoupon);
-                    setDiscountCart(data.data.discount);
-                    setApplyCode(0); // Clear old discount code
-                    setManualCouponCode(''); // Clear input
-                } else {
-                    // Show specific error message from backend (e.g., "Coupon expired", "Not stackable", etc.)
-                    setCouponError(data.message || 'Coupon cannot be applied');
-                }
-            },
-            onError: (error) => {
-                setCouponError(error.message || 'Invalid coupon code');
-            },
-        });
-    };
 
     const redirectToCheckout = () => {
         if (status === 'unauthenticated') {
@@ -256,23 +142,8 @@ const Cart = () => {
             return;
         }
 
-        // Save shipping method and discount info to checkout store
+        // Save shipping method to checkout store
         setCheckoutShippingMethod(shippingMethod as 'pickup' | 'normal' | 'express');
-
-        if (discountCart > 0 && appliedCoupon) {
-            setDiscountInfo({
-                amount: discountCart,
-                couponCode: appliedCoupon.coupon,
-                couponDetails: {
-                    code: appliedCoupon.coupon,
-                    discount: appliedCoupon.discount,
-                    discountType: appliedCoupon.discountType,
-                    minOrderValue: appliedCoupon.minOrderValue || 0,
-                },
-            });
-        } else {
-            setDiscountInfo(null);
-        }
 
         router.push('/checkout');
     };
@@ -577,138 +448,6 @@ const Cart = () => {
                                         </div>
                                     </div>
                                 </div>
-                                {/* Discount Code Section */}
-                                <div className="discount-section mt-5">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Icon.Tag className="text-xl" />
-                                        <h3 className="text-title font-semibold">Promo code</h3>
-                                    </div>
-                                    <div className="input-block discount-code w-full h-12">
-                                        <form className='w-full h-full relative' onSubmit={handleApplyManualCoupon}>
-                                            <input
-                                                type="text"
-                                                value={manualCouponCode}
-                                                onChange={(e) => setManualCouponCode(e.target.value)}
-                                                placeholder='Enter code'
-                                                className='w-full h-full bg-surface pl-4 pr-32 rounded-lg border border-line focus:border-black focus:outline-none transition-colors'
-                                                disabled={validateCouponMutation.isPending}
-                                            />
-                                            <button
-                                                type="submit"
-                                                disabled={!manualCouponCode.trim() || validateCouponMutation.isPending}
-                                                className='button-main absolute top-1 bottom-1 right-1 px-5 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                                            >
-                                                {validateCouponMutation.isPending ? 'Applying...' : 'Apply Code'}
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-
-                                {/* Available Coupons */}
-                                {cartCoupons.length > 0 && (
-                                    <div className="voucher-section mt-6">
-                                        <h3 className="text-title font-semibold mb-4">Available Coupons</h3>
-
-                                        {/* Show error if coupon validation failed */}
-                                        {couponError && (
-                                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                                                {couponError}
-                                            </div>
-                                        )}
-
-                                        {/* Show applied coupon banner */}
-                                        {appliedCoupon && (
-                                            <div className="mb-4 p-4 bg-lime-50 border border-lime-200 rounded-lg flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <Icon.CheckCircle className="text-lime-600" size={20} />
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-lime-800">Coupon Applied!</p>
-                                                        <p className="text-xs text-lime-600">
-                                                            {appliedCoupon.coupon} - Save {formatToNaira(discountCart)}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={handleRemoveCoupon}
-                                                    className="text-red-600 hover:text-red-800 text-sm font-semibold"
-                                                >
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        <div className="list-voucher grid md:grid-cols-3 gap-4">
-                                            {couponsLoading ? (
-                                                <div className="col-span-3 text-center py-8 text-secondary">
-                                                    Loading coupons...
-                                                </div>
-                                            ) : (
-                                                cartCoupons.map((coupon) => {
-                                                    const isApplied = appliedCoupon?.coupon === coupon.coupon;
-                                                    const meetsMinOrder = totalCart >= coupon.minOrderValue;
-                                                    const discountText = coupon.discountType === 'percentage'
-                                                        ? `${coupon.discount}% OFF`
-                                                        : `$${coupon.discount} OFF`; return (
-                                                            <div
-                                                                key={coupon._id}
-                                                                className={`item ${isApplied ? 'bg-lime-50 border-lime-600' : 'bg-surface'
-                                                                    } border border-line rounded-xl p-4 transition-all hover:shadow-md ${isApplied ? 'ring-2 ring-lime-500' : ''
-                                                                    }`}
-                                                            >
-                                                                <div className="flex items-start justify-between mb-3">
-                                                                    <div>
-                                                                        <div className="text-xs text-secondary mb-1">Discount</div>
-                                                                        <div className="text-2xl font-bold text-red">{discountText}</div>
-                                                                    </div>
-                                                                    {coupon.minOrderValue > 0 && (
-                                                                        <div className="text-right">
-                                                                            <div className="text-xs text-secondary">Min. Order</div>
-                                                                            <div className="font-semibold">&#8358;{coupon.minOrderValue}</div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="border-t border-dashed border-line pt-3 mb-3">
-                                                                    <div className="text-xs font-mono bg-black/5 px-2 py-1 rounded inline-block mb-2">
-                                                                        CODE: {coupon.coupon}
-                                                                    </div>
-                                                                    <div className="text-xs text-secondary">
-                                                                        {coupon.minOrderValue > 0 ? `For orders from $${coupon.minOrderValue}` : 'No minimum order'}
-                                                                    </div>
-                                                                    {coupon.endDate && (
-                                                                        <div className="text-xs text-secondary mt-1">
-                                                                            Valid until {new Date(coupon.endDate).toLocaleDateString()}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <button
-                                                                    className={`w-full py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${isApplied
-                                                                        ? 'bg-lime-600 text-white'
-                                                                        : meetsMinOrder
-                                                                            ? 'bg-black text-white hover:bg-black/90'
-                                                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                                        }`}
-                                                                    onClick={() => !isApplied && meetsMinOrder && handleApplyCoupon(coupon)}
-                                                                    disabled={!meetsMinOrder || validateCouponMutation.isPending || isApplied}
-                                                                >
-                                                                    {isApplied ? (
-                                                                        <span className="flex items-center justify-center gap-1">
-                                                                            <Icon.CheckCircle size={16} /> Applied
-                                                                        </span>
-                                                                    ) : validateCouponMutation.isPending ? (
-                                                                        'Validating...'
-                                                                    ) : meetsMinOrder ? (
-                                                                        'Apply Coupon'
-                                                                    ) : (
-                                                                        `Min $${coupon.minOrderValue} required`
-                                                                    )}
-                                                                </button>
-                                                            </div>
-                                                        );
-                                                })
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                             {/* Order Summary Sidebar */}
                             <div className="xl:w-1/3 xl:pl-12 w-full">
@@ -724,16 +463,6 @@ const Cart = () => {
                                             <div className="text-secondary">Subtotal</div>
                                             <div className="text-title font-semibold">{formatToNaira(totalCart)}</div>
                                         </div>
-
-                                        {discountCart > 0 && (
-                                            <div className="discount-block flex justify-between items-center text-lime-500">
-                                                <div className="flex items-center gap-1">
-                                                    <Icon.Tag size={16} />
-                                                    <span>Discount Applied</span>
-                                                </div>
-                                                <div className="font-semibold">-{formatToNaira(discountCart)}</div>
-                                            </div>
-                                        )}
 
                                         <div className="border-t border-line pt-4">
                                             <div className="flex items-center justify-between mb-3">
@@ -804,7 +533,7 @@ const Cart = () => {
                                         <div className="border-t border-line pt-4">
                                             <div className="flex justify-between items-center">
                                                 <div className="text-lg font-semibold">Total</div>
-                                                <div className="text-4xl font-extrabold text-black">{formatToNaira(totalCart - discountCart)}</div>
+                                                <div className="text-4xl font-extrabold text-black">{formatToNaira(totalCart)}</div>
                                             </div>
                                             {(shippingMethod === 'normal' || shippingMethod === 'express') && (
                                                 <div className="text-xs text-secondary mt-2">

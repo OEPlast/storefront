@@ -2,344 +2,192 @@
 
 import React from 'react';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
+import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import AddressSelector from '@/components/Checkout/AddressSelector';
-import { Address } from '@/types/user';
-import { LogisticsConfigRecord, LogisticsStateConfig, LogisticsLocationConfig } from '@/hooks/useLogisticsLocations';
+import AddressFieldset from '@/components/Checkout/AddressFieldset';
+import type { Address } from '@/types/user';
+import type { CheckoutAddress, AddressFieldErrors } from '@/libs/schemas/checkout.schema';
+import type { CheckoutLocationOptions } from '@/hooks/useCheckoutController';
 
-type ShippingFormState = {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-    country: string;
-    state: string;
-    lga: string;
-    city: string;
-    streetAddress: string;
-    postalCode: string;
-    latitude?: number;
-    longitude?: number;
-};
+export interface ShippingInformationFormProps {
+    /**
+     * Controlled shipping address. The controller owns the state; this section renders it.
+     *
+     * Deliberately a `CheckoutAddress` and NOT the old `ShippingFormState`: there is no
+     * `email` here (ContactSection owns contact email), and the street/postcode fields are
+     * `address1`/`address2`/`zipCode`, matching the wire payload and the billing form.
+     */
+    value: CheckoutAddress;
+    onFieldChange: <K extends keyof CheckoutAddress>(field: K, value: CheckoutAddress[K]) => void;
+    /** Whole-object setter. AddressFieldset needs it for the cascading country/state resets. */
+    setValue: React.Dispatch<React.SetStateAction<CheckoutAddress>>;
 
-interface ShippingInformationFormProps {
-    isExpanded: boolean;
-    onToggle: () => void;
-    formState: ShippingFormState;
-    onFormChange: <K extends keyof ShippingFormState>(field: K, value: ShippingFormState[K]) => void;
-    setFormState: React.Dispatch<React.SetStateAction<ShippingFormState>>;
-
-    // Address management (for authenticated users)
+    /** Saved-address picker. Hidden when isGuest or the list is empty. */
     addresses?: Address[];
     selectedAddressId: string | null;
-    onAddressSelect: (addr: Address | null) => void;
     setSelectedAddressId: (id: string | null) => void;
+    /** Controller-owned: normalises a saved address against the logistics configs into `value`. */
+    populateFormFromAddress: (address: Address) => void;
     isGuest: boolean;
 
-    // Shipping configs
-    shippingConfigs: LogisticsConfigRecord[] | undefined;
+    /** Country/state/city/LGA option lists for the SHIPPING address (not the billing one). */
+    location: CheckoutLocationOptions;
     isLoadingConfigs: boolean;
     configError: Error | null;
-    selectedCountryConfig: LogisticsConfigRecord | undefined;
-    selectedStateConfig: LogisticsStateConfig | undefined;
-    availableStates: LogisticsStateConfig[];
-    availableCities: LogisticsLocationConfig[];
-    availableLGAs: LogisticsLocationConfig[];
 
-    // Address validation
+    /** Per-field messages, i.e. `fieldErrors.shippingAddress`. Passed straight to the fieldset. */
+    errors?: AddressFieldErrors;
+
+    /**
+     * Whole-address geocoding failure ("Address not found…"). Not attributable to one field,
+     * so it renders above the form rather than inside the fieldset.
+     */
     addressValidationError: string | null;
     setAddressValidationError: (error: string | null) => void;
 
-    // Save address checkbox
+    /** "Save this address to my account". Only offered while entering manually. */
     saveToAccount: boolean;
     onSaveToAccountChange: (save: boolean) => void;
 
-    // Form completion status
+    /** Drives the header's completeness line. */
     isShippingFormComplete: boolean;
 
-    // Address population function
-    populateFormFromAddress: (address: Address) => void;
+    /** Collapsible card state; feeds CollapsibleSection. */
+    isExpanded: boolean;
+    onToggle: () => void;
+    disabled?: boolean;
+    className?: string;
 }
 
+/**
+ * The shipping address card.
+ *
+ * All field rendering is delegated to AddressFieldset, the same body BillingAddressSection
+ * uses — so the two forms cannot drift, and the cascading-reset fix (country change clears
+ * state/lga/city) applies to shipping for free. This component owns only the card shell,
+ * the saved-address picker and the save-to-account checkbox.
+ */
 const ShippingInformationForm: React.FC<ShippingInformationFormProps> = ({
-    isExpanded,
-    onToggle,
-    formState,
-    onFormChange,
-    setFormState,
+    value,
+    onFieldChange,
+    setValue,
     addresses,
     selectedAddressId,
-    onAddressSelect,
     setSelectedAddressId,
+    populateFormFromAddress,
     isGuest,
-    shippingConfigs,
+    location,
     isLoadingConfigs,
     configError,
-    availableStates,
-    availableCities,
-    availableLGAs,
+    errors,
     addressValidationError,
     setAddressValidationError,
     saveToAccount,
     onSaveToAccountChange,
     isShippingFormComplete,
-    populateFormFromAddress,
+    isExpanded,
+    onToggle,
+    disabled = false,
+    className,
 }) => {
+    const savedAddresses = !isGuest && addresses && addresses.length > 0 ? addresses : null;
+    const hasErrors = !!errors && Object.keys(errors).length > 0;
+
+    // Always-visible sub-line: keeps the old header's completeness indicator, which the
+    // shopper needs while the card is open too (it gates the delivery-cost quote).
+    const description = hasErrors ? (
+        <span className="text-red">Please complete the highlighted fields</span>
+    ) : isShippingFormComplete ? (
+        <span className="text-green-600 inline-flex items-center gap-1">
+            <Icon.CheckCircle size={14} weight="bold" />
+            Complete
+        </span>
+    ) : (
+        'Required for delivery cost calculation'
+    );
+
+    // Collapsed-only recap, so a closed card still shows where the order is going.
+    const enteredSummary = [value.address1, value.city, value.state]
+        .filter((part) => part.trim().length > 0)
+        .join(', ');
+
+    /** null == "Enter new address manually". */
+    const handleSelectSavedAddress = (address: Address | null) => {
+        setAddressValidationError(null);
+
+        if (address) {
+            populateFormFromAddress(address);
+            setSelectedAddressId(address._id);
+            return;
+        }
+
+        setSelectedAddressId(null);
+    };
+
     return (
-        <div className="shipping-section border border-line rounded-lg mb-5 overflow-hidden">
-            <div
-                className="flex items-center justify-between p-5 cursor-pointer bg-surface hover:bg-surface-variant1 transition-all"
-                onClick={onToggle}
-            >
-                <div className="flex items-center gap-3">
-                    <Icon.Package size={24} weight="duotone" className="text-blue" />
-                    <div>
-                        <div className="heading6">Shipping Information *</div>
-                        <div className="text-secondary caption1 mt-1">
-                            {isShippingFormComplete ? (
-                                <span className="text-green-600 flex items-center gap-1">
-                                    <Icon.CheckCircle size={14} weight="bold" />
-                                    Complete
-                                </span>
-                            ) : (
-                                'Required for delivery cost calculation'
-                            )}
-                        </div>
-                    </div>
-                </div>
-                {isExpanded ? (
-                    <Icon.CaretUp size={20} weight="bold" />
-                ) : (
-                    <Icon.CaretDown size={20} weight="bold" />
-                )}
-            </div>
-
-            {isExpanded && (
-                <div className="p-5 pt-0">
-                    {/* Address Selector for Authenticated Users */}
-                    {!isGuest && addresses && addresses.length > 0 && (
-                        <div className="mb-6">
-                            <AddressSelector
-                                addresses={addresses}
-                                selectedId={selectedAddressId}
-                                onSelect={(addr) => {
-                                    setAddressValidationError(null);
-                                    if (addr) {
-                                        populateFormFromAddress(addr);
-                                        setSelectedAddressId(addr._id);
-                                    } else {
-                                        setSelectedAddressId(null);
-                                    }
-                                }}
-                            />
-
-                            {addressValidationError && (
-                                <div className="mt-2 text-red text-sm flex items-start gap-2">
-                                    <Icon.WarningCircle size={16} weight="bold" className="flex-shrink-0 mt-0.5" />
-                                    <span>{addressValidationError}</span>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Save manual address checkbox - only show when entering manually */}
-                    {!isGuest && !selectedAddressId && (
-                        <div className="mb-4">
-                            <label className="flex items-center gap-2 cursor-pointer text-sm">
-                                <input
-                                    type="checkbox"
-                                    checked={saveToAccount}
-                                    onChange={(e) => onSaveToAccountChange(e.target.checked)}
-                                    className="w-4 h-4 cursor-pointer"
-                                />
-                                <span className="text-secondary">Save this address to my account</span>
-                            </label>
-                        </div>
-                    )}
-
-                    {/* Shipping Form Fields */}
-                    <div className="grid sm:grid-cols-2 gap-4 gap-y-5">
-                        <div className="">
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="firstName">First Name *</label>
-                            <input
-                                className="border-line px-4 py-3 w-full rounded-lg"
-                                id="firstName"
-                                type="text"
-                                placeholder="First Name"
-                                value={formState.firstName}
-                                onChange={(e) => onFormChange('firstName', e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="">
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="lastName">Last Name *</label>
-                            <input
-                                className="border-line px-4 py-3 w-full rounded-lg"
-                                id="lastName"
-                                type="text"
-                                placeholder="Last Name"
-                                value={formState.lastName}
-                                onChange={(e) => onFormChange('lastName', e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="">
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="email">Email Address *</label>
-                            <input
-                                className="border-line px-4 py-3 w-full rounded-lg"
-                                id="email"
-                                type="email"
-                                placeholder="Email Address"
-                                value={formState.email}
-                                onChange={(e) => onFormChange('email', e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="">
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="phoneNumber">Phone Number *</label>
-                            <input
-                                className="border-line px-4 py-3 w-full rounded-lg"
-                                id="phoneNumber"
-                                type="tel"
-                                placeholder="Phone Number"
-                                value={formState.phoneNumber}
-                                onChange={(e) => onFormChange('phoneNumber', e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className='col-span-full'>
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="country">Country *</label>
-                            <div className="select-block">
-                                <select
-                                    className="border border-line px-4 py-3 w-full rounded-lg"
-                                    id="country"
-                                    name="country"
-                                    value={formState.country}
-                                    onChange={(e) => {
-                                        const nextCountry = e.target.value;
-                                        setFormState((prev) => ({
-                                            ...prev,
-                                            country: nextCountry,
-                                            state: '',
-                                            lga: '',
-                                        }));
-                                    }}
-                                >
-                                    {(shippingConfigs ?? []).map((config) => (
-                                        <option key={config.countryCode} value={config.countryName}>
-                                            {config.countryName}
-                                        </option>
-                                    ))}
-                                </select>
-                                <Icon.CaretDown className='arrow-down' />
-                                {configError && (
-                                    <p className="text-xs text-red-600 mt-1">{configError.message}</p>
-                                )}
-                            </div>
-                        </div>
-                        <div className="">
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="state">State *</label>
-                            <div className="select-block">
-                                <select
-                                    className="border border-line px-4 py-3 w-full rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                    id="state"
-                                    name="state"
-                                    value={formState.state}
-                                    onChange={(e) => {
-                                        const nextState = e.target.value;
-                                        setFormState((prev) => ({
-                                            ...prev,
-                                            state: nextState,
-                                            lga: '',
-                                        }));
-                                    }}
-                                    disabled={isLoadingConfigs || !availableStates?.length}
-                                >
-                                    <option value="">
-                                        {isLoadingConfigs ? 'Loading states...' : 'Choose State'}
-                                    </option>
-                                    {availableStates?.map((state) => (
-                                        <option key={state.name} value={state.name}>
-                                            {state.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <Icon.CaretDown className='arrow-down' />
-                            </div>
-                        </div>
-                        <div className=''>
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="lga">Local Government Area *</label>
-                            <div className="select-block">
-                                <select
-                                    className="border border-line px-4 py-3 w-full rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                    id="lga"
-                                    name="lga"
-                                    value={formState.lga}
-                                    onChange={(e) => onFormChange('lga', e.target.value)}
-                                    disabled={!formState.state || (!availableCities.length && !availableLGAs.length)}
-                                >
-                                    <option value="">Choose LGA</option>
-                                    {availableCities.length > 0 && (
-                                        <optgroup label="Cities">
-                                            {availableCities.map((city) => (
-                                                <option key={city.name} value={city.name}>
-                                                    {city.name}
-                                                </option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                    {availableLGAs.length > 0 && (
-                                        <optgroup label="LGAs">
-                                            {availableLGAs.map((lga) => (
-                                                <option key={lga.name} value={lga.name}>
-                                                    {lga.name}
-                                                </option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                </select>
-                                <Icon.CaretDown className='arrow-down' />
-                            </div>
-                        </div>
-                        <div className="col-span-full">
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="apartment">Street Address *</label>
-                            <input
-                                className="border-line px-4 py-3 w-full rounded-lg"
-                                id="apartment"
-                                type="text"
-                                placeholder="Street Address"
-                                value={formState.streetAddress}
-                                onChange={(e) => onFormChange('streetAddress', e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="">
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="city">City *</label>
-                            <input
-                                className="border-line px-4 py-3 w-full rounded-lg"
-                                id="city"
-                                type="text"
-                                placeholder="City"
-                                value={formState.city}
-                                onChange={(e) => onFormChange('city', e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="">
-                            <label className="text-secondary text-sm mb-2 block" htmlFor="postal">Postal Code *</label>
-                            <input
-                                className="border-line px-4 py-3 w-full rounded-lg"
-                                id="postal"
-                                type="number"
-                                placeholder="Postal Code"
-                                value={formState.postalCode}
-                                onChange={(e) => onFormChange('postalCode', e.target.value)}
-                                required
-                            />
-                        </div>
-                    </div>
+        <CollapsibleSection
+            id="checkout-shipping"
+            title="Shipping Information *"
+            description={description}
+            summary={enteredSummary || undefined}
+            icon={<Icon.Package size={24} weight="duotone" className="text-blue-600" />}
+            isExpanded={isExpanded}
+            onToggle={onToggle}
+            disabled={disabled}
+            className={className}
+        >
+            {savedAddresses && (
+                <div className="mb-6">
+                    {/* groupName must differ from the billing selector's: both are mounted at
+                        once, and a shared native radio-group name would make picking a billing
+                        address clear the shipping selection. */}
+                    <AddressSelector
+                        addresses={savedAddresses}
+                        selectedId={selectedAddressId}
+                        onSelect={handleSelectSavedAddress}
+                        heading="Select Shipping Address"
+                        groupName="shipping-address"
+                    />
                 </div>
             )}
-        </div>
+
+            {/* Outside the savedAddresses block on purpose: this is a geocoding failure, which
+                happens to guests and manual entries too. Nested inside, it was invisible to
+                anyone without a saved address. */}
+            {addressValidationError && (
+                <div className="mb-4 flex items-start gap-2 text-sm text-red">
+                    <Icon.WarningCircle size={16} weight="bold" className="mt-0.5 flex-shrink-0" />
+                    <span>{addressValidationError}</span>
+                </div>
+            )}
+
+            {!isGuest && !selectedAddressId && (
+                <div className="mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                            type="checkbox"
+                            checked={saveToAccount}
+                            onChange={(e) => onSaveToAccountChange(e.target.checked)}
+                            disabled={disabled}
+                            className="h-4 w-4 cursor-pointer"
+                        />
+                        <span className="text-secondary">Save this address to my account</span>
+                    </label>
+                </div>
+            )}
+
+            <AddressFieldset
+                idPrefix="shipping"
+                value={value}
+                onFieldChange={onFieldChange}
+                setValue={setValue}
+                location={location}
+                isLoadingConfigs={isLoadingConfigs}
+                configError={configError}
+                errors={errors}
+                disabled={disabled}
+            />
+        </CollapsibleSection>
     );
 };
 

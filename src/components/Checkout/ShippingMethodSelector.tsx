@@ -7,8 +7,6 @@ interface ShippingMethodSelectorProps {
     currentMethod: 'pickup' | 'normal' | 'express' | 'gig';
     availableMethods: Array<'pickup' | 'normal' | 'gig'>;
     shippingEtaLabel: string;
-    isExpanded: boolean;
-    onToggle: () => void;
     onMethodChange: (method: 'pickup' | 'normal' | 'express' | 'gig') => void;
 }
 
@@ -16,17 +14,8 @@ const ShippingMethodSelector: React.FC<ShippingMethodSelectorProps> = ({
     currentMethod,
     availableMethods,
     shippingEtaLabel,
-    isExpanded,
-    onToggle,
     onMethodChange,
 }) => {
-    const getMethodDisplayName = (method: 'pickup' | 'normal' | 'express' | 'gig'): string => {
-        if (method === 'pickup') return 'Pickup';
-        if (method === 'normal') return 'Normal Delivery';
-        if (method === 'gig') return 'GIG Logistics';
-        return 'Express Delivery';
-    };
-
     return (
 
         <div className="my-6 checkout-block ">

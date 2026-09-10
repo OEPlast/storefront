@@ -1,14 +1,19 @@
 import { useUserProfile } from '@/hooks/queries/useUserProfile';
-import useLoginPopup from '@/store/useLoginPopup';
+import { useLoginModalStore } from '@/store/useLoginModalStore';
 import { UserIcon as UI_UserICon, CircleNotch } from '@phosphor-icons/react';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
 import Image from 'next/image';
 import { getCdnUrl } from '@/libs/cdn-url';
 
+// Page-based auth flow routes: the login popup must never stack on top of these.
+const AUTH_PAGE_PATHS = ['/login', '/register', '/forgot-password', '/verify-otp'];
+
 const UserIcon = () => {
-    const { openLoginPopup, handleLoginPopup } = useLoginPopup();
+    const { openLoginModal } = useLoginModalStore();
+    const pathname = usePathname();
     const { status, data } = useSession();
     const { data: userProfile, isLoading, isFetching, isError } = useUserProfile({ userId: data?.user.id });
     const isUserDataLoading = isLoading || isFetching;
@@ -54,22 +59,35 @@ const UserIcon = () => {
         );
     }
 
-    return (
+    const isOnAuthPage = AUTH_PAGE_PATHS.includes(pathname ?? '');
 
-        <div className="user-icon flex items-center justify-center cursor-pointer">
-            <UI_UserICon size={24} color='black' onClick={handleLoginPopup} />
-            <div
-                className={`login-popup absolute top-[74px] w-[320px] p-7 rounded-xl bg-white box-shadow-sm 
-                                            ${openLoginPopup ? 'open' : ''}`}
+    // On the page-based auth flow (other than /login itself), route to the login page instead of opening the popup
+    if (isOnAuthPage && pathname !== '/login') {
+        return (
+            <Link
+                href="/login"
+                aria-label="Log in or create an account"
+                className="user-icon flex items-center justify-center cursor-pointer"
             >
-                <Link href={'/login'} className="button-main w-full text-center">Login</Link>
-                <div className="text-secondary text-center mt-3 pb-4">{`Don't have an account?`}
-                    <Link href={'/register'} className='text-black pl-1 hover:underline'>Register</Link>
-                </div>
-                <div className="bottom pt-4 border-t border-line"></div>
-                <Link href={'#!'} className='body1 hover:underline'>Support</Link>
-            </div>
-        </div>
+                <UI_UserICon size={24} color='black' />
+            </Link>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            aria-label="Log in or create an account"
+            className="user-icon flex items-center justify-center cursor-pointer"
+            onClick={() => {
+                // Already on the login page: never stack the popup on the page-based flow
+                if (isOnAuthPage) return;
+                // Quick login: stay on the current page after signing in
+                openLoginModal();
+            }}
+        >
+            <UI_UserICon size={24} color='black' />
+        </button>
     );
 };
 

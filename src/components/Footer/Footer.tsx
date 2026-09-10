@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
 import Logo from '../Logo';
+import FooterAccountLink from './FooterAccountLink';
 import { getStoreBranding } from '@/libs/storeBranding';
 
 const Footer = async () => {
@@ -41,12 +42,9 @@ const Footer = async () => {
                     >
                       Contact us
                     </Link>
-                    <Link
-                      className="caption1 has-line-before w-fit pt-2 duration-300"
-                      href={'/my-account'}
-                    >
+                    <FooterAccountLink className="caption1 has-line-before w-fit pt-2 duration-300">
                       My Account
-                    </Link>
+                    </FooterAccountLink>
                     <Link
                       className="caption1 has-line-before w-fit pt-2 duration-300"
                       href={'/order-tracking'}

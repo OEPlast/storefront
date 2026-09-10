@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useWishlistItems } from '@/hooks/queries/useWishlist';
 import { useRemoveFromWishlist } from '@/hooks/mutations/useWishlistMutations';
 import { useWishlistStore } from '@/store/useWishlistStore';
+import { useLoginModalStore } from '@/store/useLoginModalStore';
 import Product from '@/components/Product/Product';
 import HandlePagination from '@/components/Other/HandlePagination';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
@@ -14,6 +14,7 @@ import { WishlistItem } from '@/types/wishlist';
 
 const WishlistClient = () => {
     const { data: session, status } = useSession();
+    const { openLoginModal } = useLoginModalStore();
     const [sortOption, setSortOption] = useState('');
     const [layoutCol, setLayoutCol] = useState<number | null>(4);
     const [currentPage, setCurrentPage] = useState(1); // 1-indexed for API
@@ -149,12 +150,13 @@ const WishlistClient = () => {
                                 </div>
                                 <h3 className="heading5 mb-2">Please login to view your wishlist</h3>
                                 <p className="text-secondary mb-6">Save your favorite items and access them from any device</p>
-                                <Link
-                                    href="/login?redirect=/wishlist"
+                                <button
+                                    type="button"
+                                    onClick={() => openLoginModal()}
                                     className="button-main inline-block px-8 py-3 rounded-full"
                                 >
                                     Login to Continue
-                                </Link>
+                                </button>
                             </div>
                         </div>
                     ) : isLoading ? (

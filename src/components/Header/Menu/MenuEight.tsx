@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
 import { usePathname } from 'next/navigation';
-import useLoginPopup from '@/store/useLoginPopup';
 import useSubMenuDepartment from '@/store/useSubMenuDepartment';
 import useMenuMobile from '@/store/useMenuMobile';
 import { useModalCartContext } from '@/context/ModalCartContext';
@@ -46,7 +45,6 @@ const PAGES_LINKS = [
 const MenuEight = () => {
   const { storeName, whatsappNumber } = useStoreConfig();
   const pathname = usePathname();
-  const { openLoginPopup, handleLoginPopup } = useLoginPopup();
   const { openSubMenuDepartment, handleSubMenuDepartment } = useSubMenuDepartment();
   const { openMenuMobile, handleMenuMobile } = useMenuMobile();
   const [openSubNavMobile, setOpenSubNavMobile] = useState<number | null>(null);

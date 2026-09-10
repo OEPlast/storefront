@@ -137,13 +137,14 @@ const Cart = () => {
     }, [optimisticSubtotal]);
 
     const redirectToCheckout = () => {
-        if (status === 'unauthenticated') {
-            openLoginModal();
-            return;
-        }
-
         // Save shipping method to checkout store
         setCheckoutShippingMethod(shippingMethod as 'pickup' | 'normal' | 'express');
+
+        if (status === 'unauthenticated') {
+            // Log in through the popup, then continue to checkout
+            openLoginModal('/checkout');
+            return;
+        }
 
         router.push('/checkout');
     };
@@ -161,9 +162,13 @@ const Cart = () => {
                                 <p className="text-sm font-semibold text-yellow-800">Guest Cart</p>
                                 <p className="text-xs text-yellow-700">Sign in to save your cart and get personalized deals!</p>
                             </div>
-                            <Link href="/login" className="ml-auto button-main py-2 px-4 text-sm whitespace-nowrap">
+                            <button
+                                type="button"
+                                onClick={() => openLoginModal()}
+                                className="ml-auto button-main py-2 px-4 text-sm whitespace-nowrap"
+                            >
                                 Sign In
-                            </Link>
+                            </button>
                         </div>
                     )}
 

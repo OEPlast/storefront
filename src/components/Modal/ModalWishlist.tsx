@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { useModalWishlistContext } from '@/context/ModalWishlistContext';
 import { useWishlistStore } from '@/store/useWishlistStore';
+import { useLoginModalStore } from '@/store/useLoginModalStore';
 import { useRemoveFromWishlist } from '@/hooks/mutations/useWishlistMutations';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { ProductDescriptionImage } from '@/types/product';
@@ -23,6 +24,7 @@ const selectWishlistImage = (images?: ProductDescriptionImage[]): string => {
 const ModalWishlist = () => {
     const { data: session } = useSession();
     const { isModalOpen, closeModalWishlist } = useModalWishlistContext();
+    const { openLoginModal } = useLoginModalStore();
 
     // Read from Zustand store (client-side state)
     const wishlistItems = useWishlistStore(state => state.items);
@@ -68,13 +70,16 @@ const ModalWishlist = () => {
                             </div>
                             <p className="heading6 mb-2">Login to save your favorite items</p>
                             <p className="text-secondary text-sm mb-6">Access your wishlist from any device</p>
-                            <Link
-                                href="/login?redirect=/wishlist"
-                                onClick={closeModalWishlist}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    closeModalWishlist();
+                                    openLoginModal();
+                                }}
                                 className="button-main inline-block px-6 py-2.5 rounded-full text-sm"
                             >
                                 Login Now
-                            </Link>
+                            </button>
                         </div>
                     ) : (
                         <>

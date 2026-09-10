@@ -37,8 +37,8 @@ type MutationContext = {
  *   },
  *   onError: (error) => {
  *     if (error.message === 'AUTHENTICATION_REQUIRED') {
- *       // Redirect to login
- *       router.push('/login');
+ *       // Open the login popup (quick login: stays on the current page)
+ *       useLoginModalStore.getState().openLoginModal();
  *     }
  *   }
  * });

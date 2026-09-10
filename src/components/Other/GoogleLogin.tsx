@@ -4,15 +4,27 @@ import { googleAuthenticate } from "@/actions/google-login";
 import React, { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
-import { peekCallbackUrl } from "@/libs/utils/authRedirect";
+import { clearCallbackUrl, peekCallbackUrl } from "@/libs/utils/authRedirect";
 
-const GoogleLogin = () => {
+interface GoogleLoginProps {
+  /**
+   * Explicit post-login destination (e.g. from the login popup). When given it
+   * overrides the ?callbackUrl / saved-callback derivation and no search params
+   * are read. Omit it to keep the page behaviour.
+   */
+  callbackUrl?: string;
+}
+
+interface GoogleLoginButtonProps {
+  callbackUrl: string;
+  onSubmit?: () => void;
+}
+
+const GoogleLoginButton = ({ callbackUrl, onSubmit }: GoogleLoginButtonProps) => {
   const [errorMsgGoogle, dispatchGoogle] = useActionState(googleAuthenticate, undefined);
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? peekCallbackUrl("/");
 
   return (
-    <form action={dispatchGoogle}>
+    <form action={dispatchGoogle} onSubmit={onSubmit}>
       <input type="hidden" name="callbackUrl" value={callbackUrl} />
       <button
         aria-label="Sign in with Google"
@@ -27,6 +39,23 @@ const GoogleLogin = () => {
       )}
     </form>
   );
+};
+
+const GoogleLoginFromSearchParams = () => {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") ?? peekCallbackUrl("/");
+
+  return <GoogleLoginButton callbackUrl={callbackUrl} />;
+};
+
+const GoogleLogin = ({ callbackUrl }: GoogleLoginProps) => {
+  if (callbackUrl !== undefined) {
+    // The explicit destination is authoritative: drop any saved callback from an
+    // earlier, abandoned flow so it can't leak into a later, unrelated login.
+    return <GoogleLoginButton callbackUrl={callbackUrl} onSubmit={() => clearCallbackUrl()} />;
+  }
+
+  return <GoogleLoginFromSearchParams />;
 };
 
 export default GoogleLogin;

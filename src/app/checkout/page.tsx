@@ -143,7 +143,7 @@ const Checkout = () => {
                                     isAuthenticated={c.isAuthenticated}
                                     isSessionLoading={c.isSessionLoading}
                                     userName={c.userName}
-                                    onSignInClick={() => c.openLoginModal('/checkout')}
+                                    onSignInClick={() => c.openLoginModal()}
                                     error={c.fieldErrors.email}
                                 />
 

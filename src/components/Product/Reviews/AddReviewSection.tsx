@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { useCanReviewProduct } from '@/hooks/queries/useCanReviewProduct';
 import { useReviewFormStore } from '@/store/useReviewFormStore';
+import { useLoginModalStore } from '@/store/useLoginModalStore';
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import Rate from '@/components/Other/Rate';
 import ReviewForm from './ReviewForm';
@@ -14,7 +14,7 @@ interface AddReviewSectionProps {
 }
 
 export default function AddReviewSection({ productId }: AddReviewSectionProps) {
-    const router = useRouter();
+    const { openLoginModal } = useLoginModalStore();
     const { data: session } = useSession();
     const { showReviewForm, showEligibilityWarning, openReviewForm, closeReviewForm } = useReviewFormStore();
 
@@ -40,7 +40,7 @@ export default function AddReviewSection({ productId }: AddReviewSectionProps) {
                     <h4 className="heading5 mb-2">Want to review this product?</h4>
                     <p className="text-secondary mb-4">Please log in to share your experience</p>
                     <button
-                        onClick={() => router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))}
+                        onClick={() => openLoginModal()}
                         className="button-main bg-black text-white"
                     >
                         Log In to Review

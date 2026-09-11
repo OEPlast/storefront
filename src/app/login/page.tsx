@@ -4,6 +4,7 @@ import LoginClient from "./LoginClient";
 import { auth } from "../../../auth";
 import { redirect } from "next/navigation";
 import { getStoreName } from "@/libs/storeBranding";
+import { isSafeCallbackUrl } from "@/libs/utils/authRedirect";
 
 export async function generateMetadata(): Promise<Metadata> {
   const storeName = await getStoreName();
@@ -23,11 +24,10 @@ export default async function LoginPage({
 
   // If user is already logged in and verified, honor the callback URL
   if (session) {
-    const isSafeCallbackUrl = !!callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//");
     if (!session.user.emailVerified) {
       redirect("/verify-otp");
     }
-    redirect(isSafeCallbackUrl ? callbackUrl : "/");
+    redirect(isSafeCallbackUrl(callbackUrl) ? callbackUrl : "/");
   }
 
   return (

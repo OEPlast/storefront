@@ -16,6 +16,8 @@ import { useAddToWishlist, useRemoveFromWishlist } from '@/hooks/mutations/useWi
 import { useModalWishlistContext } from '@/context/ModalWishlistContext';
 import { useCompare } from '@/context/CompareContext';
 import { useModalCompareContext } from '@/context/ModalCompareContext';
+import { useSession } from 'next-auth/react';
+import { useLoginModalStore } from '@/store/useLoginModalStore';
 import { convert as htmlToText } from 'html-to-text';
 import PricingTiersHorizontal from './PricingTiersHorizontal';
 import { useProduct } from '@/hooks/queries/useProduct';
@@ -88,8 +90,16 @@ const Sale: React.FC<Props> = ({ slug }) => {
 
   // Debounce state for wishlist toggle (must be declared before any early returns)
   const [wishlistPending, setWishlistPending] = useState(false);
+  const { status: sessionStatus } = useSession();
+  const { openLoginModal } = useLoginModalStore();
 
   const handleAddToWishlist = useCallback(() => {
+    // Guests: quick login through the popup instead of a failing wishlist request
+    if (sessionStatus === 'unauthenticated') {
+      openLoginModal();
+      return;
+    }
+
     // Prevent rapid-fire clicks
     if (wishlistPending || !productMain) return;
 
@@ -189,6 +199,8 @@ const Sale: React.FC<Props> = ({ slug }) => {
     addToWishlistMutation,
     removeFromWishlistMutation,
     openModalWishlist,
+    sessionStatus,
+    openLoginModal,
   ]);
 
   useEffect(() => {

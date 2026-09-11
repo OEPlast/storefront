@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useForm } from '@tanstack/react-form';
-import { loginSchema, LoginInput } from '@/libs/schemas/auth.schema';
-import { credentialsLogin } from '@/actions/login';
-import * as Icon from '@phosphor-icons/react/dist/ssr';
-import { FieldInfo } from '@/components/Form/FieldInfo';
-import { useSession } from 'next-auth/react';
+import React, { useId, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
+import { loginSchema, LoginInput } from "@/libs/schemas/auth.schema";
+import { credentialsLogin } from "@/actions/login";
+import * as Icon from "@phosphor-icons/react/dist/ssr";
+import { FieldInfo } from "@/components/Form/FieldInfo";
+import { useSession } from "next-auth/react";
 import {
   clearCallbackUrl,
   consumeCallbackUrl,
@@ -37,7 +38,12 @@ export default function LoginForm({
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { update } = useSession();
-  const isModal = variant === 'modal';
+  const queryClient = useQueryClient();
+  const isModal = variant === "modal";
+  // The popup can render over pages with their own "email"/"password" fields,
+  // so its ids are scoped. The page form keeps the plain field names.
+  const fieldIdPrefix = useId();
+  const fieldId = (name: string) => (isModal ? `${fieldIdPrefix}-${name}` : name);
 
   const form = useForm({
     defaultValues: {
@@ -71,6 +77,9 @@ export default function LoginForm({
               router.push('/verify-otp');
             } else {
               clearCallbackUrl();
+              // router.refresh() only re-renders server components; refetch
+              // client-cached data fetched while logged out (e.g. review likes).
+              void queryClient.invalidateQueries();
               onLoginSuccess?.();
               if (modalRedirectPath) {
                 router.push(modalRedirectPath);
@@ -120,10 +129,9 @@ export default function LoginForm({
           return (
             <div>
               <input
-                className={`w-full rounded-lg border-line px-3 py-2.5 ${
-                  hasError ? 'border-red-600' : ''
-                }`}
-                id={field.name}
+                className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? "border-red-600" : ""
+                  }`}
+                id={fieldId(field.name)}
                 name={field.name}
                 type="email"
                 placeholder="Email address *"
@@ -146,10 +154,9 @@ export default function LoginForm({
           return (
             <div className="mt-5">
               <input
-                className={`w-full rounded-lg border-line px-3 py-2.5 ${
-                  hasError ? 'border-red-600' : ''
-                }`}
-                id={field.name}
+                className={`border-line px-4 pt-3 pb-3 w-full rounded-lg ${hasError ? "border-red-600" : ""
+                  }`}
+                id={fieldId(field.name)}
                 name={field.name}
                 type="password"
                 placeholder="Password *"
@@ -172,7 +179,7 @@ export default function LoginForm({
               <div className="block-input">
                 <input
                   type="checkbox"
-                  id={field.name}
+                  id={fieldId(field.name)}
                   name={field.name}
                   checked={field.state.value}
                   onBlur={field.handleBlur}
@@ -180,7 +187,7 @@ export default function LoginForm({
                 />
                 <Icon.CheckSquare size={16} weight="fill" className="icon-checkbox" />
               </div>
-              <label htmlFor={field.name} className="text-md cursor-pointer pl-2">
+              <label htmlFor={fieldId(field.name)} className="pl-2 cursor-pointer">
                 Remember me
               </label>
             </div>

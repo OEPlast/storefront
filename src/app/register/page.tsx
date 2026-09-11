@@ -2,6 +2,7 @@ import Footer from '@/components/Footer/Footer';
 import RegisterClient from './RegisterClient';
 import { auth } from '../../../auth';
 import { redirect } from 'next/navigation';
+import { isSafeCallbackUrl } from '@/libs/utils/authRedirect';
 
 const Register = async ({
   searchParams,
@@ -12,11 +13,10 @@ const Register = async ({
   const { callbackUrl } = await searchParams;
 
   if (session?.user) {
-    const isSafeCallbackUrl = !!callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//");
     if (!session.user.emailVerified) {
       redirect("/verify-otp");
     }
-    redirect(isSafeCallbackUrl ? callbackUrl : "/");
+    redirect(isSafeCallbackUrl(callbackUrl) ? callbackUrl : "/");
   }
 
   return (

@@ -15,6 +15,7 @@ import { useModalCompareContext } from '@/context/ModalCompareContext';
 import Rate from '../Other/Rate';
 import { useProductById } from '@/hooks/queries/useProducts';
 import { useSession } from 'next-auth/react';
+import { useLoginModalStore } from '@/store/useLoginModalStore';
 import { getCdnUrl } from '@/libs/cdn-url';
 import Color from 'color';
 import {
@@ -200,8 +201,16 @@ const ModalQuickview = () => {
 
     // Debounce state for wishlist toggle
     const [wishlistPending, setWishlistPending] = useState(false);
+    const { status: sessionStatus } = useSession();
+    const { openLoginModal } = useLoginModalStore();
 
     const handleAddToWishlist = useCallback(() => {
+        // Guests: quick login through the popup instead of a failing wishlist request
+        if (sessionStatus === 'unauthenticated') {
+            openLoginModal();
+            return;
+        }
+
         // Prevent rapid-fire clicks
         if (wishlistPending || !product) return;
 
@@ -286,7 +295,7 @@ const ModalQuickview = () => {
         openModalWishlist();
     }, [product, isInWishlist, wishlistItemId, wishlistItem, wishlistPending,
         removeFromWishlistStore, removeFromWishlistMutation, addToWishlistStore,
-        addToWishlistMutation, openModalWishlist]);
+        addToWishlistMutation, openModalWishlist, sessionStatus, openLoginModal]);
 
     const handleAddToCompare = () => {
         if (product) {

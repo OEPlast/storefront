@@ -1,17 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAccountStore } from '@/store/accountStore';
 import { useOrders } from '@/hooks/queries/useOrders';
 import { WithPagination } from '@/components/common/WithPaginationIndependent';
-import {
-  EnrichedOrderProduct,
-  OrderHistoryType,
-  OrderQueryParams,
-  OrderStatus,
-} from '@/types/order';
+import { OrderHistoryType, OrderQueryParams, OrderStatus } from '@/types/order';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { formatToNaira } from '@/utils/currencyFormatter';
@@ -28,6 +23,12 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
 // The API rejects cancellation once an order is Completed or already closed,
 // so only these statuses get the button.
 const CANCELLABLE_STATUSES: OrderStatus[] = ['Pending', 'Processing'];
+
+// Matches ORDER_HISTORY_PREVIEW_PRODUCTS in Main-server's getOrderHistory: the list endpoint
+// enriches at most this many products per order.
+const MAX_THUMBNAILS = 10;
+// Ten overlapping thumbnails don't fit a phone-width card, so small screens show fewer.
+const MAX_THUMBNAILS_MOBILE = 5;
 
 // Order ids are 24-char ObjectIds - the tail is enough to identify an order at a glance.
 const shortOrderNumber = (id: string) => `#${id.slice(-8).toUpperCase()}`;
@@ -47,13 +48,13 @@ const OrderSkeleton = () => (
       <div className="h-6 w-20 rounded-full bg-surface"></div>
     </div>
     <div className="list_prd border-t border-line px-5">
-      <div className="prd_item flex items-center gap-4 py-4">
-        <div className="aspect-square w-14 flex-shrink-0 rounded-lg bg-surface"></div>
-        <div className="flex-1 space-y-2">
-          <div className="h-5 w-1/2 rounded bg-surface"></div>
-          <div className="h-4 w-1/3 rounded bg-surface"></div>
+      <div className="flex items-center justify-between gap-4 py-4">
+        <div className="flex -space-x-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="aspect-square w-12 rounded-lg border-2 border-white bg-surface"></div>
+          ))}
         </div>
-        <div className="h-5 w-20 rounded bg-surface"></div>
+        <div className="h-5 w-16 rounded bg-surface"></div>
       </div>
     </div>
     <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-4">
@@ -63,53 +64,70 @@ const OrderSkeleton = () => (
   </div>
 );
 
-// A single product line: image, name, and one meta line holding quantity, variant and discount
-const OrderProductRow = ({ item }: { item: EnrichedOrderProduct }) => {
+// Every product in the order as overlapping thumbnails, capped so a large order stays on one
+// line; the rest are reachable from the "+N more" link to the order details page.
+const OrderProductStack = ({ order }: { order: OrderHistoryType }) => {
+  const thumbnails = order.products.slice(0, MAX_THUMBNAILS);
+
+  if (thumbnails.length === 0) {
+    return <span className="caption1 text-secondary">No items</span>;
+  }
+
+  const hiddenCount = Math.max(order.totalProducts - thumbnails.length, 0);
+  const hiddenCountMobile = Math.max(
+    order.totalProducts - Math.min(thumbnails.length, MAX_THUMBNAILS_MOBILE),
+    0
+  );
+  const detailsHref = `/my-account/orders/${order._id}`;
+
   return (
-    <div className="prd_item flex items-center gap-4 py-4">
-      <Link
-        href={`/product/${item.slug}`}
-        className="flex min-w-0 flex-1 items-center gap-4 duration-300 hover:opacity-75"
-      >
-        <div className="bg-img aspect-square w-14 flex-shrink-0 overflow-hidden rounded-lg border border-line">
-          <Image
-            src={getCdnUrl(item.image) || '/images/product/1000x1000.png'}
-            width={80}
-            height={80}
-            alt={item.name || 'Product'}
-            className="h-full w-full object-cover"
-          />
-        </div>
-        <div className="min-w-0">
-          <div className="prd_name text-title truncate">{item.name}</div>
-          <div className="caption1 truncate text-[13px] text-secondary">
-            Qty {item.quantity}
-            {(item.attributes ?? []).map((attr, idx) => (
-              <span key={idx}>
-                {' · '}
-                <span className="capitalize">{attr.name}</span>:{' '}
-                <span className="uppercase">{attr.value}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </Link>
-      <div className="prd_price text-title flex-shrink-0 text-secondary">
-        {formatToNaira(item.price * item.quantity)}
+    <div className="flex min-w-0 items-center">
+      <div className="flex -space-x-3">
+        {thumbnails.map((item, index) => (
+          <Link
+            // The same product can appear twice with different attributes, so the id alone
+            // is not a unique key.
+            key={`${item._id}-${index}`}
+            href={`/product/${item.slug}`}
+            title={`${item.name} × ${item.quantity}`}
+            aria-label={`${item.name}, quantity ${item.quantity}`}
+            className={`relative block aspect-square w-12 flex-shrink-0 overflow-hidden rounded-lg border-2 border-white bg-white shadow-sm duration-300 hover:z-10 hover:-translate-y-0.5 ${
+              index >= MAX_THUMBNAILS_MOBILE ? 'max-sm:hidden' : ''
+            }`}
+          >
+            <Image
+              src={getCdnUrl(item.image) || '/images/product/1000x1000.png'}
+              width={80}
+              height={80}
+              alt={item.name || 'Product'}
+              className="h-full w-full object-cover"
+            />
+          </Link>
+        ))}
       </div>
+
+      {hiddenCountMobile > 0 && (
+        <Link
+          href={detailsHref}
+          className="caption1 ml-3 whitespace-nowrap text-secondary duration-300 hover:text-black sm:hidden"
+        >
+          +{hiddenCountMobile} more
+        </Link>
+      )}
+      {hiddenCount > 0 && (
+        <Link
+          href={detailsHref}
+          className="caption1 ml-3 hidden whitespace-nowrap text-secondary duration-300 hover:text-black sm:inline"
+        >
+          +{hiddenCount} more
+        </Link>
+      )}
     </div>
   );
 };
 
 // Order item component
 const OrderItem = ({ order }: { order: OrderHistoryType }) => {
-  const [expanded, setExpanded] = useState(false);
-
-  // The list endpoint only enriches the first 2 products of an order, so anything
-  // past what we received here lives on the order details page.
-  const hiddenCount = Math.max(order.totalProducts - 1, 0);
-  const notLoadedCount = Math.max(order.totalProducts - order.products.length, 0);
-  const visibleProducts = expanded ? order.products : order.products.slice(0, 1);
   const canCancel = CANCELLABLE_STATUSES.includes(order.status);
 
   return (
@@ -131,31 +149,17 @@ const OrderItem = ({ order }: { order: OrderHistoryType }) => {
         </span>
       </div>
 
-      {/* Products: first one only until expanded */}
-      <div className="list_prd divide-y divide-line border-t border-line px-5">
-        {visibleProducts.map((item) => (
-          <OrderProductRow key={item._id} item={item} />
-        ))}
-
-        {hiddenCount > 0 && (
-          <button
-            type="button"
-            onClick={() => setExpanded((prev) => !prev)}
-            className="caption1 flex w-full items-center justify-center gap-1 py-2.5 text-secondary duration-300 hover:text-black"
+      {/* Products: stacked thumbnails on the left, total quantity across all of them on the right */}
+      <div className="list_prd border-t border-line px-5">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-4">
+          <OrderProductStack order={order} />
+          <div
+            className="text-title flex-shrink-0 text-secondary"
+            title="Total quantity across all products"
           >
-            {expanded ? 'Show less' : `${hiddenCount} more item${hiddenCount > 1 ? 's' : ''}`}
-            <Icon.CaretDown className={`duration-300 ${expanded ? 'rotate-180' : ''}`} />
-          </button>
-        )}
-
-        {expanded && notLoadedCount > 0 && (
-          <Link
-            href={`/my-account/orders/${order._id}`}
-            className="caption1 block py-2.5 text-center text-secondary underline duration-300 hover:text-black"
-          >
-            View the remaining {notLoadedCount} item{notLoadedCount > 1 ? 's' : ''}
-          </Link>
-        )}
+            Qty {order.totalItems}
+          </div>
+        </div>
       </div>
 
       {/* Footer: totals on the left, actions on the right */}

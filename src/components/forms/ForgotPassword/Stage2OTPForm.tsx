@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useForm } from "@tanstack/react-form";
-import { useForgotPasswordStore } from "@/store/useForgotPasswordStore";
+import {
+  RESEND_COOLDOWN_SECONDS,
+  useForgotPasswordStore,
+} from "@/store/useForgotPasswordStore";
 import { apiClient, handleApiError } from "@/libs/api/axios";
 import { api } from "@/libs/api/endpoints";
 import { FieldInfo } from "@/components/Form/FieldInfo";
@@ -14,6 +17,7 @@ import {
 import { CheckCircleIcon, ArrowLeft } from "@phosphor-icons/react";
 
 export default function Stage2OTPForm() {
+  // The resend countdown itself runs in ForgotPasswordForm, so it survives a trip to Stage 3.
   const {
     email,
     code,
@@ -23,24 +27,11 @@ export default function Stage2OTPForm() {
     setCurrentStage,
     resendTimer,
     setResendTimer,
-    decrementTimer,
     resendSuccess,
     setResendSuccess,
     resendLoading,
     setResendLoading,
   } = useForgotPasswordStore();
-
-  // Timer countdown effect
-  useEffect(() => {
-    if (resendTimer > 0) {
-      const interval = setInterval(() => {
-        decrementTimer();
-      }, 1000);
-      return () => clearInterval(interval);
-    } else {
-      setResendSuccess(false);
-    }
-  }, [resendTimer, decrementTimer, setResendSuccess]);
 
   const form = useForm({
     defaultValues: {
@@ -72,7 +63,7 @@ export default function Stage2OTPForm() {
       });
 
       setResendSuccess(true);
-      setResendTimer(60);
+      setResendTimer(RESEND_COOLDOWN_SECONDS);
     } catch (error) {
       const errorMessage = handleApiError(error);
       setSubmitError(errorMessage);

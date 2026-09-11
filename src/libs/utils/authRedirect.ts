@@ -11,6 +11,21 @@ export function isSafeCallbackUrl(url: string | null | undefined): url is string
   if (url.startsWith("//")) return false;
   if (url.startsWith("/\\")) return false;
   if (url.includes("://")) return false;
+  // Browsers strip tabs/newlines while parsing, so "/\t/evil.com" would become
+  // protocol-relative. Reject control characters outright...
+  for (let i = 0; i < url.length; i++) {
+    const code = url.charCodeAt(i);
+    if (code < 0x20 || code === 0x7f) return false;
+  }
+  // ...and require the path to resolve to the same origin. A dot segment ("/.//evil.com")
+  // normalizes to a "//" pathname that the client router chokes on, so reject that too.
+  try {
+    const base = "http://localhost";
+    const resolved = new URL(url, base);
+    if (resolved.origin !== base || resolved.pathname.startsWith("//")) return false;
+  } catch {
+    return false;
+  }
   return true;
 }
 

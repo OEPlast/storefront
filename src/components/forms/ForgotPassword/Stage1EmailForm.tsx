@@ -3,7 +3,10 @@
 import React from "react";
 import Link from "next/link";
 import { useForm } from "@tanstack/react-form";
-import { useForgotPasswordStore } from "@/store/useForgotPasswordStore";
+import {
+  RESEND_COOLDOWN_SECONDS,
+  useForgotPasswordStore,
+} from "@/store/useForgotPasswordStore";
 import { apiClient, handleApiError } from "@/libs/api/axios";
 import { api } from "@/libs/api/endpoints";
 import { FieldInfo } from "@/components/Form/FieldInfo";
@@ -52,7 +55,7 @@ export default function Stage1EmailForm() {
         // Wait 2 seconds before transitioning
         setTimeout(() => {
           setCurrentStage(2);
-          setResendTimer(60);
+          setResendTimer(RESEND_COOLDOWN_SECONDS);
           setIsTransitioning(false);
           setSuccessMessage(null);
         }, 2000);
@@ -69,7 +72,7 @@ export default function Stage1EmailForm() {
 
           setTimeout(() => {
             setCurrentStage(2);
-            setResendTimer(60);
+            setResendTimer(RESEND_COOLDOWN_SECONDS);
             setIsTransitioning(false);
             setSuccessMessage(null);
           }, 2000);

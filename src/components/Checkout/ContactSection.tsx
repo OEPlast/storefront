@@ -83,22 +83,13 @@ const ContactSection: React.FC<ContactSectionProps> = ({
 
                     <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
                         {onSignInClick ? (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={onSignInClick}
-                                    className="button-main bg-black text-white"
-                                >
-                                    Sign In
-                                </button>
-                                {/* Hard-nav fallback: keeps the flow usable if the modal never opens. */}
-                                <Link
-                                    href={signInHref}
-                                    className="caption1 text-secondary underline underline-offset-4 hover:text-black duration-300"
-                                >
-                                    Open the sign-in page instead
-                                </Link>
-                            </>
+                            <button
+                                type="button"
+                                onClick={onSignInClick}
+                                className="button-main bg-black text-white"
+                            >
+                                Sign In
+                            </button>
                         ) : (
                             <Link href={signInHref} className="button-main bg-black text-white">
                                 Sign In

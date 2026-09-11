@@ -28,7 +28,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import Paystack from '@paystack/inline-js';
 import toast from 'react-hot-toast';
 
@@ -1509,6 +1509,16 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
       }
 
       if (errorM === 'No token provided') {
+        if (isAuthenticated) {
+          // A session without a backend token (e.g. a failed provider login): the
+          // popup never shows while authenticated, so drop the broken session first.
+          toast.error('Your session has expired. Please sign in again.');
+          try {
+            await signOut({ redirect: false });
+          } catch (signOutError) {
+            console.error('Failed to clear the expired session', signOutError);
+          }
+        }
         openLoginModal();
       } else {
         const isHandledAsCorrection = handleCheckoutCorrectionError(submitError);
@@ -1538,6 +1548,7 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
     shippingAddress,
     createAddressMutation,
     openLoginModal,
+    isAuthenticated,
   ]);
 
   // ---- geocoding (MUST stay declared before the quote effect) ----------------

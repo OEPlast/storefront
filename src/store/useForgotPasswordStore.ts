@@ -1,5 +1,12 @@
 import { create } from 'zustand';
 
+/**
+ * Seconds before another code can be requested. Mirrors Main-server's OTP_Limiter (one
+ * request per 1.5 minutes): the old 60-second countdown re-enabled "Resend" while the
+ * server was still rejecting it with 429.
+ */
+export const RESEND_COOLDOWN_SECONDS = 90;
+
 type Stage = 1 | 2 | 3;
 
 interface ForgotPasswordState {

@@ -3,6 +3,7 @@
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { signIn } from "../../auth";
 import { AuthError } from "next-auth";
+import { isSafeCallbackUrl } from "@/libs/utils/authRedirect";
 
 export async function googleAuthenticate(
   _prevState: string | undefined,
@@ -10,7 +11,7 @@ export async function googleAuthenticate(
 ) {
   const callbackUrl = formData.get("callbackUrl");
   const redirectTo =
-    typeof callbackUrl === "string" && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+    typeof callbackUrl === "string" && isSafeCallbackUrl(callbackUrl)
       ? callbackUrl
       : "/";
 

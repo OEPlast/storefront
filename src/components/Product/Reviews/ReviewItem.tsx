@@ -38,6 +38,15 @@ export default function ReviewItem({ review, productId }: ReviewItemProps) {
   const [optimisticLikesCount, setOptimisticLikesCount] = useState(review.likesCount || 0);
   const [optimisticIsLiked, setOptimisticIsLiked] = useState(review.isLikedByUser || false);
 
+  // Re-sync when the server's like state changes (e.g. refetched after a popup login).
+  // The optimistic cache update only touches likes/likesCount, so this never undoes a pending click.
+  const [syncedIsLikedByUser, setSyncedIsLikedByUser] = useState(review.isLikedByUser);
+  if (review.isLikedByUser !== syncedIsLikedByUser) {
+    setSyncedIsLikedByUser(review.isLikedByUser);
+    setOptimisticIsLiked(review.isLikedByUser || false);
+    setOptimisticLikesCount(review.likesCount || 0);
+  }
+
 
   const toggleLike = useReviewLike({
     onSuccess: () => {

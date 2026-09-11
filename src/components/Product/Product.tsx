@@ -30,6 +30,7 @@ import {
 } from '@/utils/calculateSale';
 import { ProductVariant, ProductVariantChild } from '@/types/product';
 import { useSession } from 'next-auth/react';
+import { useLoginModalStore } from '@/store/useLoginModalStore';
 import { LazyLoadImage as Image } from 'react-lazy-load-image-component';
 import ProductSalesLeft from './ProductSalesLeft';
 import ProductNameColors from './ProductNameColors';
@@ -147,7 +148,8 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
   const { openModalCompare } = useModalCompareContext();
   const { openQuickview } = useModalQuickviewContext();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
+  const { openLoginModal } = useLoginModalStore();
 
   // Narrow types for optional new fields without changing global ProductDetail
   type AttrChild = { name: string; colorCode?: string };
@@ -260,6 +262,12 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
   const [wishlistPending, setWishlistPending] = useState(false);
 
   const handleAddToWishlist = useCallback(() => {
+    // Guests: quick login through the popup instead of a failing wishlist request
+    if (sessionStatus === 'unauthenticated') {
+      openLoginModal();
+      return;
+    }
+
     // Prevent rapid-fire clicks
     if (wishlistPending) return;
 
@@ -370,6 +378,8 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
     addToWishlistMutation,
     openModalWishlist,
     pathname,
+    sessionStatus,
+    openLoginModal,
   ]);
 
   const handleAddToCompare = () => {

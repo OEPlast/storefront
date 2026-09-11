@@ -1,5 +1,12 @@
 import { isSafeCallbackUrl } from "@/libs/utils/authRedirect";
 
+/** Page-based auth flow routes: the login popup never stacks on top of these. */
+export const AUTH_PAGE_PATHS = ["/login", "/register", "/forgot-password", "/verify-otp"];
+
+export function isAuthPagePath(pathname: string | null | undefined): boolean {
+  return AUTH_PAGE_PATHS.includes(pathname ?? "");
+}
+
 /**
  * The page the user is on right now (pathname + search), read from
  * window.location so callers in the root layout don't need useSearchParams.

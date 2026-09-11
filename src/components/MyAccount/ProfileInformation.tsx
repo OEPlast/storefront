@@ -116,7 +116,8 @@ export default function ProfileInformation() {
               // Optional: Show toast notification for warning
             }
           } catch (uploadError) {
-            const message = uploadError instanceof Error ? uploadError.message : 'Failed to upload image';
+            const message =
+              uploadError instanceof Error ? uploadError.message : 'Failed to upload image';
             setErrorMessage(message);
             return; // Stop form submission if upload fails
           }
@@ -153,7 +154,7 @@ export default function ProfileInformation() {
 
   if (isLoading) {
     return (
-      <div className="tab text-content w-full p-7 border border-line rounded-xl">
+      <div className="tab text-content w-full rounded-xl border border-line p-7">
         <div className="heading5 pb-4">Information</div>
         <p className="text-secondary">Loading profile...</p>
       </div>
@@ -161,7 +162,7 @@ export default function ProfileInformation() {
   }
 
   return (
-    <div className="tab text-content w-full p-7 border border-line rounded-xl">
+    <div className="tab text-content w-full rounded-xl border border-line p-7">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -176,24 +177,26 @@ export default function ProfileInformation() {
           <label htmlFor="uploadImage">
             Upload Avatar: <span className="text-red">*</span>
           </label>
-          <div className="flex flex-wrap items-center gap-5 mt-3">
-            <div className="bg_img flex-shrink-0 relative w-[7.5rem] h-[7.5rem] rounded-lg overflow-hidden bg-surface">
-              <span className="ph ph-image text-5xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-secondary"></span>
+          <div className="mt-3 flex flex-wrap items-center gap-5">
+            <div className="bg_img relative h-[7.5rem] w-[7.5rem] flex-shrink-0 overflow-hidden rounded-lg bg-surface">
+              <span className="ph ph-image absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl text-secondary"></span>
               <Image
-                src={imagePreview || getCdnUrl(userProfile?.image, 'mini') || '/images/avatar/1.png'}
+                src={
+                  imagePreview || getCdnUrl(userProfile?.image, 'mini') || '/images/avatar/1.png'
+                }
                 width={300}
                 height={300}
                 alt="avatar"
-                className="upload_img relative z-[1] w-full h-full object-cover rounded-full"
+                className="upload_img relative z-[1] h-full w-full rounded-full object-cover"
               />
             </div>
             <div>
               <strong className="text-button">Upload File:</strong>
-              <p className="caption1 text-secondary mt-1">JPG 120x120px (Max 10MB)</p>
-              <div className="upload_file flex items-center gap-3 w-[220px] mt-3 px-3 py-2 border border-line rounded">
+              <p className="caption1 mt-1 text-secondary">JPG 120x120px (Max 10MB)</p>
+              <div className="upload_file mt-3 flex w-[220px] items-center gap-3 rounded border border-line px-3 py-2">
                 <label
                   htmlFor="uploadImage"
-                  className="caption2 py-1 px-3 rounded bg-line whitespace-nowrap cursor-pointer"
+                  className="caption2 cursor-pointer whitespace-nowrap rounded bg-line px-3 py-1"
                 >
                   Choose File
                 </label>
@@ -207,16 +210,14 @@ export default function ProfileInformation() {
                 />
               </div>
               {selectedFile && (
-                <p className="caption2 text-secondary mt-2">
-                  Selected: {selectedFile.name}
-                </p>
+                <p className="caption2 mt-2 text-secondary">Selected: {selectedFile.name}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Form Fields */}
-        <div className="grid sm:grid-cols-2 gap-4 gap-y-5 mt-5">
+        <div className="mt-5 grid gap-4 gap-y-5 sm:grid-cols-2">
           {/* First Name */}
           <form.Field name="firstName">
             {(field) => {
@@ -228,8 +229,9 @@ export default function ProfileInformation() {
                     First Name <span className="text-red">*</span>
                   </label>
                   <input
-                    className={`border-line mt-2 px-4 py-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
-                      }`}
+                    className={`mt-2 w-full rounded-lg border-line px-4 py-3 ${
+                      hasError ? 'border-red-600' : ''
+                    }`}
                     id="firstName"
                     type="text"
                     placeholder="First name"
@@ -254,8 +256,9 @@ export default function ProfileInformation() {
                     Last Name <span className="text-red">*</span>
                   </label>
                   <input
-                    className={`border-line mt-2 px-4 py-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
-                      }`}
+                    className={`mt-2 w-full rounded-lg border-line px-4 py-3 ${
+                      hasError ? 'border-red-600' : ''
+                    }`}
                     id="lastName"
                     type="text"
                     placeholder="Last name"
@@ -281,8 +284,9 @@ export default function ProfileInformation() {
                   </label>
                   <div className="select-block mt-2">
                     <select
-                      className={`border border-line px-4 py-3 w-full rounded-lg ${hasError ? 'border-red-600' : ''
-                        }`}
+                      className={`w-full rounded-lg border border-line px-4 py-3 ${
+                        hasError ? 'border-red-600' : ''
+                      }`}
                       id="country"
                       name="country"
                       value={field.state.value}
@@ -313,10 +317,10 @@ export default function ProfileInformation() {
                     Day of Birth <span className="text-red">*</span>
                   </label>
                   <input
-                    className="border-line mt-2 px-4 py-3 w-full rounded-lg"
+                    className="mt-2 w-full rounded-lg border-line px-4 py-3"
                     id="birth"
                     type="date"
-                    placeholder="Day of Birth"
+                    placeholder="DOB"
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
@@ -330,13 +334,13 @@ export default function ProfileInformation() {
 
         {/* Success/Error Messages */}
         {successMessage && (
-          <div className="mt-5 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+          <div className="mt-5 rounded-lg border border-green-400 bg-green-100 p-4 text-green-700">
             {successMessage}
           </div>
         )}
 
         {errorMessage && (
-          <div className="mt-5 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <div className="mt-5 rounded-lg border border-red-400 bg-red-100 p-4 text-red-700">
             {errorMessage}
           </div>
         )}
@@ -348,11 +352,11 @@ export default function ProfileInformation() {
               <button
                 type="submit"
                 disabled={!canSubmit || isSubmitting}
-                className="button-main disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button-main disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
                     {selectedFile ? 'Uploading & Saving...' : 'Saving...'}
                   </span>
                 ) : (

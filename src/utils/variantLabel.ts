@@ -74,7 +74,7 @@ export function formatSaleTagLabel(pricing: CartItemPricing): string | null {
 
   // A real-but-sub-1% discount must not render as "SALE 0% OFF".
   const percentage = Math.max(1, Math.round(saleDiscount));
-  return `SALE ${percentage}% OFF`;
+  return `-${percentage}%`;
 }
 
 /**

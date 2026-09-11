@@ -323,7 +323,10 @@ function useCheckoutLocationOptions(
     return shippingConfigs.find((config) => config.countryName === address.country);
   }, [shippingConfigs, address.country]);
 
-  const states = useMemo<LogisticsStateConfig[]>(() => countryConfig?.states ?? [], [countryConfig]);
+  const states = useMemo<LogisticsStateConfig[]>(
+    () => countryConfig?.states ?? [],
+    [countryConfig]
+  );
 
   const stateConfig = useMemo<LogisticsStateConfig | undefined>(() => {
     if (!countryConfig) {
@@ -632,7 +635,7 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
   const lineSavings = useMemo(() => sumLineSavings(itemPricings), [itemPricings]);
 
   // ---- payment method + section state ---------------------------------------
-  const [activePayment, setActivePayment] = useState<string>('credit-card');
+  const [activePayment, setActivePayment] = useState<string>('paystack');
 
   const [sections, setSections] = useState<Record<CheckoutSectionKey, boolean>>(() => ({
     delivery: false,
@@ -1030,9 +1033,7 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
       lastCouponValidationKeyRef.current = key;
 
       try {
-        const data = await validateCouponRef.current(
-          buildCouponRequestRef.current(code, subtotal)
-        );
+        const data = await validateCouponRef.current(buildCouponRequestRef.current(code, subtotal));
         if (cancelled) return;
 
         if (data.success && data.valid && data.data) {
@@ -1075,14 +1076,14 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
 
   const resolvedDiscount = corrections.payload
     ? corrections.payload.summary.couponDiscount
-    : appliedCoupon?.amount ?? 0;
+    : (appliedCoupon?.amount ?? 0);
 
   const resolvedSubtotal = corrections.payload?.summary.newSubtotal ?? subtotal;
 
   const resolvedShippingCost =
     shippingMethod === 'pickup'
       ? 0
-      : calculatedShippingCost ?? corrections.payload?.summary.shippingCost ?? null;
+      : (calculatedShippingCost ?? corrections.payload?.summary.shippingCost ?? null);
 
   const totalBeforeShipping = corrections.payload
     ? corrections.payload.summary.newTotal - corrections.payload.summary.shippingCost
@@ -1107,9 +1108,8 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
       const payloadDeliveryType: 'shipping' | 'pickup' | 'gig' =
         shippingMethod === 'pickup' ? 'pickup' : shippingMethod === 'gig' ? 'gig' : 'shipping';
       const shippingCostValue =
-        payloadDeliveryType === 'pickup' ? 0 : calculatedShippingCost ?? 0;
-      const etaDays =
-        payloadDeliveryType === 'pickup' ? 0 : selectedLocationMeta?.etaDays ?? 0;
+        payloadDeliveryType === 'pickup' ? 0 : (calculatedShippingCost ?? 0);
+      const etaDays = payloadDeliveryType === 'pickup' ? 0 : (selectedLocationMeta?.etaDays ?? 0);
       const billingSame = payloadDeliveryType === 'pickup' ? true : billingSameAsShipping;
 
       const payload: SecureCheckoutPayload = {
@@ -1560,8 +1560,7 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
 
     const addressParts = composeGeocodeAddress(shippingAddress);
     const hasCoordinates =
-      typeof shippingAddress.latitude === 'number' &&
-      typeof shippingAddress.longitude === 'number';
+      typeof shippingAddress.latitude === 'number' && typeof shippingAddress.longitude === 'number';
 
     // Already resolved for exactly this address — do not wipe and re-fetch.
     if (lastGeocodedKeyRef.current === addressParts && hasCoordinates) return;

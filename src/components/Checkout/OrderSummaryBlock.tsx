@@ -283,12 +283,14 @@ const OrderSummaryBlock: React.FC<OrderSummaryBlockProps> = ({
 
         {/* Total savings — line-level savings plus the coupon, in one line. */}
         {totalSavings > 0 && (
-          <div className="flex items-center justify-between text-green-600">
-            <span className="flex items-center gap-1 text-sm md:text-base">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1 text-sm text-secondary md:text-base">
               <Icon.Tag size={16} weight="duotone" className="h-4 w-4 flex-shrink-0" />
               You saved
             </span>
-            <span className="font-semibold">-{formatToNaira(totalSavings)}</span>
+            <span className="font-medium italic text-green-600">
+              -{formatToNaira(totalSavings)}
+            </span>
           </div>
         )}
 

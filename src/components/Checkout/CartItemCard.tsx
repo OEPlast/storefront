@@ -124,11 +124,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({
             {discountTags.map((tag) => (
               <span
                 key={tag.key}
-                className={
-                  tag.key === 'sale'
-                    ? 'price-tag text-[11px]'
-                    : `h-fit rounded px-2 text-[11px] font-semibold uppercase leading-none tracking-wide ${LINE_DISCOUNT_TAG_CLASS[tag.tone]}`
-                }
+                className={tag.key === 'sale' ? 'price-tag text-[11px]' : `bulk-tag text-[11px]`}
               >
                 {tag.label}
               </span>

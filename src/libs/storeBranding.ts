@@ -16,6 +16,7 @@ const FALLBACK_STORE_NAME = process.env.NEXT_PUBLIC_STORE_NAME || 'Rawura';
 export interface StoreBranding {
   storeName: string;
   whatsappNumber: string;
+  socialLinks?: Partial<Record<'instagram' | 'facebook' | 'whatsapp' | 'x' | 'threads', string>>;
 }
 
 export async function getStoreBranding(): Promise<StoreBranding> {
@@ -24,18 +25,20 @@ export async function getStoreBranding(): Promise<StoreBranding> {
       next: { tags: ['branding'] },
     });
 
-    if (!response.ok) return { storeName: FALLBACK_STORE_NAME, whatsappNumber: '' };
+    if (!response.ok) return { storeName: FALLBACK_STORE_NAME, whatsappNumber: '', socialLinks: {} };
 
     const json = await response.json();
     const storeName = json?.data?.storeName;
     const whatsappNumber = json?.data?.whatsappNumber;
+    const socialLinks = json?.data?.socialLinks;
 
     return {
       storeName: typeof storeName === 'string' && storeName.trim() ? storeName : FALLBACK_STORE_NAME,
       whatsappNumber: typeof whatsappNumber === 'string' ? whatsappNumber : '',
+      socialLinks: socialLinks && typeof socialLinks === 'object' ? socialLinks : {},
     };
   } catch {
-    return { storeName: FALLBACK_STORE_NAME, whatsappNumber: '' };
+    return { storeName: FALLBACK_STORE_NAME, whatsappNumber: '', socialLinks: {} };
   }
 }
 

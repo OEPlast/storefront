@@ -113,8 +113,12 @@ export function calculateCartItemPricing(item: CartItem): CartItemPricing {
         const boughtCount = matchingVariant.boughtCount || 0;
         const remainingStock = maxBuys - boughtCount;
 
-        // Only apply sale if quantity doesn't exceed remaining stock
-        if (maxBuys === 0 || item.qty <= remainingStock) {
+        // Only limited sales are capped by maxBuys. Bulk tiers should not
+        // disable normal or flash sale pricing when the cart quantity grows.
+        const exceedsSaleLimit =
+          sale.type === 'Limited' && maxBuys > 0 && item.qty > remainingStock;
+
+        if (!exceedsSaleLimit) {
           appliedDiscount = matchingVariant.discount || 0;
           saleDiscount = appliedDiscount; // Track sale discount separately
           const amountOff = matchingVariant.amountOff || 0;

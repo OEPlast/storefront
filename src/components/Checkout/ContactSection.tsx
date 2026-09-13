@@ -57,7 +57,7 @@ const ContactSection: React.FC<ContactSectionProps> = ({
             className="flex-shrink-0 text-secondary"
           />
           <div className="min-w-0">
-            <div className="text-title truncate">{email}</div>
+            <div className="text-title truncate lowercase">{email}</div>
             {userName ? (
               <div className="caption1 mt-0.5 truncate text-secondary">{userName}</div>
             ) : null}

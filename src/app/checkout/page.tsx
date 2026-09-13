@@ -21,9 +21,7 @@
 import React from 'react';
 import Link from 'next/link';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
-
 import { useCheckoutController } from '@/hooks/useCheckoutController';
-
 import ContactSection from '@/components/Checkout/ContactSection';
 import ShippingMethodSelector from '@/components/Checkout/ShippingMethodSelector';
 import ShippingInformationForm from '@/components/Checkout/ShippingInformationForm';
@@ -34,257 +32,251 @@ import CheckoutAlerts from '@/components/Checkout/CheckoutAlerts';
 import CheckoutButton from '@/components/Checkout/CheckoutButton';
 import CheckoutSuccess from '@/components/Checkout/CheckoutSuccess';
 import OrderSummaryBlock, {
-    type OrderSummaryBlockProps,
+  type OrderSummaryBlockProps,
 } from '@/components/Checkout/OrderSummaryBlock';
 import CorrectionReviewModal from '@/components/Modal/CorrectionReviewModal';
 
-
 /** Everything both OrderSummaryBlock instances share, so they cannot drift. */
 type SharedSummaryProps = Omit<
-    OrderSummaryBlockProps,
-    'isExpanded' | 'onToggle' | 'showDiscountField' | 'idPrefix'
+  OrderSummaryBlockProps,
+  'isExpanded' | 'onToggle' | 'showDiscountField' | 'idPrefix'
 >;
 
 const Checkout = () => {
-    const c = useCheckoutController();
+  const c = useCheckoutController();
 
-    // Guarded on checkoutSuccess as well as paymentSuccess. `paymentSuccess` is
-    // flipped inside the Paystack onSuccess callback, so reading
-    // `checkoutSuccess!.orderId` off a non-null assertion was a render-time crash
-    // waiting for the wrong ordering.
-    if (c.paymentSuccess && c.checkoutSuccess) {
-        return <CheckoutSuccess orderId={c.checkoutSuccess.orderId} />;
+  // Guarded on checkoutSuccess as well as paymentSuccess. `paymentSuccess` is
+  // flipped inside the Paystack onSuccess callback, so reading
+  // `checkoutSuccess!.orderId` off a non-null assertion was a render-time crash
+  // waiting for the wrong ordering.
+  if (c.paymentSuccess && c.checkoutSuccess) {
+    return <CheckoutSuccess orderId={c.checkoutSuccess.orderId} />;
+  }
+
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    // Mirrors CheckoutButton's own branch so Enter and the button always do
+    // the same thing.
+    if (c.corrections.payload) {
+      if (!c.isAcceptingCorrections) {
+        void c.handleAcceptCorrections();
+      }
+      return;
     }
 
-    const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    if (c.isSubmittingCheckout) {
+      return;
+    }
 
-        // Mirrors CheckoutButton's own branch so Enter and the button always do
-        // the same thing.
-        if (c.corrections.payload) {
-            if (!c.isAcceptingCorrections) {
-                void c.handleAcceptCorrections();
-            }
-            return;
-        }
+    void c.handleSubmitCheckout();
+  };
 
-        if (c.isSubmittingCheckout) {
-            return;
-        }
+  const summaryProps: SharedSummaryProps = {
+    items: c.items,
+    isLoading: c.isCartLoading,
+    cartStats: c.cartStats,
+    resolvedSubtotal: c.resolvedSubtotal,
+    resolvedDiscount: c.resolvedDiscount,
+    resolvedShippingCost: c.resolvedShippingCost,
+    resolvedTotal: c.resolvedTotal,
+    totalSavings: c.totalSavings,
+    shippingMethod: c.shippingMethod,
+    shippingEtaLabel: c.shippingEtaLabel,
+    isCalculatingShipping: c.isCalculatingShipping,
+    shippingCalculationError: c.shippingCalculationError,
+    pendingCorrections: c.corrections.payload,
+    parsedCheckoutErrors: c.corrections.errors,
+    outOfStockCartItemIds: c.outOfStockCartItemIds,
+    couponCodeInput: c.couponCodeInput,
+    onCouponCodeInputChange: c.setCouponCodeInput,
+    onApplyCoupon: c.applyCoupon,
+    onRemoveCoupon: c.removeCoupon,
+    appliedCoupon: c.appliedCoupon,
+    couponError: c.couponError,
+    isValidatingCoupon: c.isValidatingCoupon,
+  };
 
-        void c.handleSubmitCheckout();
-    };
+  return (
+    <>
+      <div className="main-content relative z-[1] flex h-full w-full flex-col items-center justify-center">
+        <div className="text-content">
+          <div className="heading2 mt-2 text-center">Checkout</div>
+        </div>
+      </div>
 
-    const summaryProps: SharedSummaryProps = {
-        items: c.items,
-        isLoading: c.isCartLoading,
-        cartStats: c.cartStats,
-        resolvedSubtotal: c.resolvedSubtotal,
-        resolvedDiscount: c.resolvedDiscount,
-        resolvedShippingCost: c.resolvedShippingCost,
-        resolvedTotal: c.resolvedTotal,
-        totalSavings: c.totalSavings,
-        shippingMethod: c.shippingMethod,
-        shippingEtaLabel: c.shippingEtaLabel,
-        isCalculatingShipping: c.isCalculatingShipping,
-        shippingCalculationError: c.shippingCalculationError,
-        pendingCorrections: c.corrections.payload,
-        parsedCheckoutErrors: c.corrections.errors,
-        outOfStockCartItemIds: c.outOfStockCartItemIds,
-        couponCodeInput: c.couponCodeInput,
-        onCouponCodeInputChange: c.setCouponCodeInput,
-        onApplyCoupon: c.applyCoupon,
-        onRemoveCoupon: c.removeCoupon,
-        appliedCoupon: c.appliedCoupon,
-        couponError: c.couponError,
-        isValidatingCoupon: c.isValidatingCoupon,
-    };
+      <div className="cart-block py-10 md:py-20">
+        <div className="container">
+          <div className="mb-4 md:mb-6">
+            <Link
+              href="/cart"
+              className="text-button inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm transition-all hover:bg-surface md:px-4 md:py-2 md:text-base"
+            >
+              <Icon.ArrowLeft size={18} weight="bold" className="h-4 w-4 md:h-5 md:w-5" />
+              <span className="hidden xs:inline">Back to Cart</span>
+              <span className="xs:hidden">Back</span>
+            </Link>
+          </div>
 
-    return (
-        <>
-            <div className="main-content w-full h-full flex flex-col items-center justify-center relative z-[1]">
-                <div className="text-content">
-                    <div className="heading2 text-center m4-2">Checkout</div>
-                </div>
-            </div>
-
-            <div className="cart-block md:py-20 py-10">
-                <div className="container">
-                    <div className="mb-4 md:mb-6">
-                        <Link
-                            href="/cart"
-                            className="inline-flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 border border-line rounded-lg hover:bg-surface transition-all text-button text-sm md:text-base"
-                        >
-                            <Icon.ArrowLeft size={18} weight="bold" className="w-4 h-4 md:w-5 md:h-5" />
-                            <span className="hidden xs:inline">Back to Cart</span>
-                            <span className="xs:hidden">Back</span>
-                        </Link>
-                    </div>
-
-                    {/* MOBILE summary bar. Collapsed by default (the controller seeds
+          {/* MOBILE summary bar. Collapsed by default (the controller seeds
                         mobileSummary:false) so the flow, not the cart, is above the fold.
                         Each instance gets its own `idPrefix`, so both can render the discount
                         field without colliding on element ids — which matters because the cart
                         page no longer collects promo codes at all. */}
-                    <div className="order-summary-bar lg:hidden mb-5 border border-line rounded-xl bg-surface p-4">
-                        <OrderSummaryBlock
-                            {...summaryProps}
-                            idPrefix="checkout-mobile"
-                            isExpanded={c.sections.mobileSummary}
-                            onToggle={() => c.toggleSection('mobileSummary')}
-                        />
-                    </div>
+          <div className="order-summary-bar mb-5 rounded-xl border border-line bg-surface p-4 lg:hidden">
+            <OrderSummaryBlock
+              {...summaryProps}
+              idPrefix="checkout-mobile"
+              isExpanded={c.sections.mobileSummary}
+              onToggle={() => c.toggleSection('mobileSummary')}
+            />
+          </div>
 
-                    <div className="content-main flex flex-col lg:flex-row justify-between gap-6 lg:gap-8">
-                        <div className="left w-full lg:w-1/2">
-                            <form className="form-checkout" onSubmit={handleFormSubmit} noValidate>
-                                <ContactSection
-                                    email={c.contactEmail}
-                                    isAuthenticated={c.isAuthenticated}
-                                    isSessionLoading={c.isSessionLoading}
-                                    userName={c.userName}
-                                    onSignInClick={() => c.openLoginModal()}
-                                    error={c.fieldErrors.email}
-                                />
+          <div className="content-main flex flex-col justify-between gap-6 lg:flex-row lg:gap-8">
+            <div className="left w-full lg:w-1/2">
+              <form className="form-checkout" onSubmit={handleFormSubmit} noValidate>
+                <ContactSection
+                  email={c.contactEmail}
+                  isAuthenticated={c.isAuthenticated}
+                  isSessionLoading={c.isSessionLoading}
+                  userName={c.userName}
+                  onSignInClick={() => c.openLoginModal()}
+                  error={c.fieldErrors.email}
+                />
 
-                                {c.availableShippingMethods === null ? (
-                                    <div className="my-6 checkout-block">
-                                        <div className="heading5">Delivery</div>
-                                        <div className="mt-5 h-[60px] animate-pulse rounded-lg bg-gray-100" />
-                                    </div>
-                                ) : (
-                                    <ShippingMethodSelector
-                                        currentMethod={c.shippingMethod}
-                                        availableMethods={c.availableShippingMethods}
-                                        shippingEtaLabel={c.shippingEtaLabel}
-                                        onMethodChange={c.handleChangeShippingMethod}
-                                    />
-                                )}
+                {c.availableShippingMethods === null ? (
+                  <div className="checkout-block my-6">
+                    <div className="heading5">Delivery</div>
+                    <div className="mt-5 h-[60px] animate-pulse rounded-lg bg-gray-100" />
+                  </div>
+                ) : (
+                  <ShippingMethodSelector
+                    currentMethod={c.shippingMethod}
+                    availableMethods={c.availableShippingMethods}
+                    shippingEtaLabel={c.shippingEtaLabel}
+                    onMethodChange={c.handleChangeShippingMethod}
+                  />
+                )}
 
-                                {/* Pickup carries no shipping address. */}
-                                {c.shippingMethod !== 'pickup' && (
-                                    <ShippingInformationForm
-                                        isExpanded={c.sections.shipping}
-                                        onToggle={() => c.toggleSection('shipping')}
-                                        value={c.shippingAddress}
-                                        onFieldChange={c.handleShippingAddressChange}
-                                        setValue={c.setShippingAddress}
-                                        addresses={c.addresses}
-                                        selectedAddressId={c.selectedAddressId}
-                                        setSelectedAddressId={c.setSelectedAddressId}
-                                        isGuest={c.isGuest}
-                                        location={c.shippingLocation}
-                                        isLoadingConfigs={c.isLoadingShippingConfigs}
-                                        configError={c.shippingConfigError}
-                                        errors={c.fieldErrors.shippingAddress}
-                                        addressValidationError={c.addressValidationError}
-                                        setAddressValidationError={c.setAddressValidationError}
-                                        saveToAccount={c.saveShippingAddressToAccount}
-                                        onSaveToAccountChange={c.setSaveShippingAddressToAccount}
-                                        isShippingFormComplete={c.isShippingFormComplete}
-                                        populateFormFromAddress={c.populateFormFromAddress}
-                                        disabled={c.isSubmittingCheckout}
-                                    />
-                                )}
+                {/* Pickup carries no shipping address. */}
+                {c.shippingMethod !== 'pickup' && (
+                  <ShippingInformationForm
+                    isExpanded={c.sections.shipping}
+                    onToggle={() => c.toggleSection('shipping')}
+                    value={c.shippingAddress}
+                    onFieldChange={c.handleShippingAddressChange}
+                    setValue={c.setShippingAddress}
+                    addresses={c.addresses}
+                    selectedAddressId={c.selectedAddressId}
+                    setSelectedAddressId={c.setSelectedAddressId}
+                    isGuest={c.isGuest}
+                    location={c.shippingLocation}
+                    isLoadingConfigs={c.isLoadingShippingConfigs}
+                    configError={c.shippingConfigError}
+                    errors={c.fieldErrors.shippingAddress}
+                    addressValidationError={c.addressValidationError}
+                    setAddressValidationError={c.setAddressValidationError}
+                    saveToAccount={c.saveShippingAddressToAccount}
+                    onSaveToAccountChange={c.setSaveShippingAddressToAccount}
+                    isShippingFormComplete={c.isShippingFormComplete}
+                    populateFormFromAddress={c.populateFormFromAddress}
+                    disabled={c.isSubmittingCheckout}
+                  />
+                )}
 
-                                <PaymentSection
-                                    selectedMethod={c.activePayment}
-                                    onMethodChange={c.setActivePayment}
-                                    disabled={c.isSubmittingCheckout}
-                                />
+                <PaymentSection
+                  selectedMethod={c.activePayment}
+                  onMethodChange={c.setActivePayment}
+                  disabled={c.isSubmittingCheckout}
+                />
 
-                                <BillingAddressSection
-                                    deliveryType={c.deliveryType}
-                                    billingSameAsShipping={c.billingSameAsShipping}
-                                    onBillingSameAsShippingChange={c.setBillingSameAsShipping}
-                                    billingAddress={c.billingAddress}
-                                    onBillingAddressChange={c.handleBillingAddressChange}
-                                    setBillingAddress={c.setBillingAddress}
-                                    addresses={c.addresses}
-                                    selectedBillingAddressId={c.selectedBillingAddressId}
-                                    onSelectSavedAddress={c.populateBillingFromAddress}
-                                    isGuest={c.isGuest}
-                                    location={c.billingLocation}
-                                    isLoadingConfigs={c.isLoadingShippingConfigs}
-                                    configError={c.shippingConfigError}
-                                    errors={c.fieldErrors.billingAddress}
-                                    isExpanded={c.sections.billing}
-                                    onToggle={() => c.toggleSection('billing')}
-                                    disabled={c.isSubmittingCheckout}
-                                />
+                <BillingAddressSection
+                  deliveryType={c.deliveryType}
+                  billingSameAsShipping={c.billingSameAsShipping}
+                  onBillingSameAsShippingChange={c.setBillingSameAsShipping}
+                  billingAddress={c.billingAddress}
+                  onBillingAddressChange={c.handleBillingAddressChange}
+                  setBillingAddress={c.setBillingAddress}
+                  addresses={c.addresses}
+                  selectedBillingAddressId={c.selectedBillingAddressId}
+                  onSelectSavedAddress={c.populateBillingFromAddress}
+                  isGuest={c.isGuest}
+                  location={c.billingLocation}
+                  isLoadingConfigs={c.isLoadingShippingConfigs}
+                  configError={c.shippingConfigError}
+                  errors={c.fieldErrors.billingAddress}
+                  isExpanded={c.sections.billing}
+                  onToggle={() => c.toggleSection('billing')}
+                  disabled={c.isSubmittingCheckout}
+                />
 
-                                <OrderNotesSection
-                                    isExpanded={c.sections.notes}
-                                    onToggle={() => c.toggleSection('notes')}
-                                    notes={c.notes}
-                                    setNotes={c.setNotes}
-                                />
+                <OrderNotesSection
+                  isExpanded={c.sections.notes}
+                  onToggle={() => c.toggleSection('notes')}
+                  notes={c.notes}
+                  setNotes={c.setNotes}
+                />
 
-                                <CheckoutAlerts
-                                    pendingCorrections={c.corrections.payload}
-                                    checkoutError={c.checkoutError}
-                                    checkoutSuccess={c.checkoutSuccess}
-                                />
+                <CheckoutAlerts
+                  pendingCorrections={c.corrections.payload}
+                  checkoutError={c.checkoutError}
+                  checkoutSuccess={c.checkoutSuccess}
+                />
 
-                                {/* Implicit submission needs a submit button in the form:
+                {/* Implicit submission needs a submit button in the form:
                                     CheckoutButton is a type="button" onClick, and a form with
                                     more than one text field will not submit on Enter without
                                     one. Hidden, unfocusable and invisible to AT. */}
-                                <button
-                                    type="submit"
-                                    className="hidden"
-                                    aria-hidden="true"
-                                    tabIndex={-1}
-                                >
-                                    Place order
-                                </button>
+                <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1}>
+                  Place order
+                </button>
 
-                                {/* Mobile: pinned to the bottom of the viewport. Desktop:
+                {/* Mobile: pinned to the bottom of the viewport. Desktop:
                                     back into the left column's flow. Sticky-footer classes
                                     match the repo's one precedent,
                                     CorrectionReviewModal.tsx:423. */}
-                                <div className="checkout-actions sticky bottom-0 z-10 bg-white border-t border-line px-6 py-4 lg:static lg:z-auto lg:bg-transparent lg:border-0 lg:px-0 lg:py-0">
-                                    <CheckoutButton
-                                        pendingCorrections={!!c.corrections.payload}
-                                        isAcceptingCorrections={c.isAcceptingCorrections}
-                                        canProceedToPayment={c.canProceedToPayment}
-                                        isCalculatingShipping={c.isCalculatingShipping}
-                                        isSubmittingCheckout={c.isSubmittingCheckout}
-                                        shippingMethod={c.shippingMethod}
-                                        isShippingFormComplete={c.isShippingFormComplete}
-                                        handleAcceptCorrections={c.handleAcceptCorrections}
-                                        handleSubmitCheckout={c.handleSubmitCheckout}
-                                    />
-                                </div>
-                            </form>
-                        </div>
-
-                        {/* DESKTOP summary. Outside the <form> on purpose — the discount
-                            code field is itself a <form>. */}
-                        <aside className="right hidden lg:block lg:w-5/12">
-                            <div className="checkout-block sticky top-[120px] border border-line rounded-xl md:rounded-2xl p-4 md:p-6 bg-surface shadow-sm">
-                                <OrderSummaryBlock
-                                    {...summaryProps}
-                                    idPrefix="checkout-desktop"
-                                    isExpanded={c.sections.summary}
-                                    onToggle={() => c.toggleSection('summary')}
-                                />
-                            </div>
-                        </aside>
-                    </div>
+                <div className="checkout-actions sticky bottom-0 z-10 border-t border-line bg-white px-6 py-4 lg:static lg:z-auto lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
+                  <CheckoutButton
+                    pendingCorrections={!!c.corrections.payload}
+                    isAcceptingCorrections={c.isAcceptingCorrections}
+                    canProceedToPayment={c.canProceedToPayment}
+                    isCalculatingShipping={c.isCalculatingShipping}
+                    isSubmittingCheckout={c.isSubmittingCheckout}
+                    shippingMethod={c.shippingMethod}
+                    isShippingFormComplete={c.isShippingFormComplete}
+                    handleAcceptCorrections={c.handleAcceptCorrections}
+                    handleSubmitCheckout={c.handleSubmitCheckout}
+                  />
                 </div>
+              </form>
             </div>
 
-            {c.corrections.errors && c.corrections.isModalOpen && (
-                <CorrectionReviewModal
-                    isOpen
-                    checkoutErrors={c.corrections.errors}
-                    onAcceptAll={c.handleAcceptCorrections}
-                    onClose={() => c.setCorrectionModalOpen(false)}
+            {/* DESKTOP summary. Outside the <form> on purpose — the discount
+                            code field is itself a <form>. */}
+            <aside className="right hidden lg:block lg:w-5/12">
+              <div className="checkout-block sticky top-[120px] rounded-xl border border-line bg-surface p-4 shadow-sm md:rounded-2xl md:p-6">
+                <OrderSummaryBlock
+                  {...summaryProps}
+                  idPrefix="checkout-desktop"
+                  isExpanded={c.sections.summary}
+                  onToggle={() => c.toggleSection('summary')}
                 />
-            )}
-        </>
-    );
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+
+      {c.corrections.errors && c.corrections.isModalOpen && (
+        <CorrectionReviewModal
+          isOpen
+          checkoutErrors={c.corrections.errors}
+          onAcceptAll={c.handleAcceptCorrections}
+          onClose={() => c.setCorrectionModalOpen(false)}
+        />
+      )}
+    </>
+  );
 };
 
 export default Checkout;

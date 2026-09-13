@@ -2,18 +2,19 @@ import type { Metadata } from 'next';
 import { Instrument_Sans } from 'next/font/google';
 import '@/styles/styles.scss';
 import GlobalProvider from './GlobalProvider';
+import CountdownTimeType from '@/types/CountdownType';
+import { countdownTime } from '@/store/countdownTime';
+import NextTopLoader from 'nextjs-toploader';
+import AppChrome from './AppChrome';
+import TopNavOne from '@/components/Header/TopNav/TopNavOne';
+import MenuEight from '@/components/Header/Menu/MenuEight';
+import Footer from '@/components/Footer/Footer';
 import ModalCart from '@/components/Modal/ModalCart';
 import ModalWishlist from '@/components/Modal/ModalWishlist';
 import ModalQuickview from '@/components/Modal/ModalQuickview';
 import ModalCompare from '@/components/Modal/ModalCompare';
 import ModalLogin from '@/components/Modal/ModalLogin';
-import CountdownTimeType from '@/types/CountdownType';
-import { countdownTime } from '@/store/countdownTime';
-import NextTopLoader from 'nextjs-toploader';
-import TopNavOne from '@/components/Header/TopNav/TopNavOne';
-import MenuEight from '@/components/Header/Menu/MenuEight';
-import SliderNine from '@/components/Slider/SliderNine';
-import Footer from '@/components/Footer/Footer';
+import SliderOrganic from '@/components/Slider/SliderOrganic';
 import { getDefaultMetadata, PrefetchImages } from '@/libs/seo';
 import { getStoreBranding } from '@/libs/storeBranding';
 import { StoreConfigProvider } from '@/context/StoreConfigContext';
@@ -24,7 +25,6 @@ import {
 } from '@/libs/structured-data';
 import 'react-quill-new/dist/quill.snow.css';
 import 'react-lazy-load-image-component/src/effects/blur.css';
-import SliderOrganic from '@/components/Slider/SliderOrganic';
 
 const serverTimeLeft: CountdownTimeType = countdownTime();
 
@@ -58,21 +58,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               easing="ease"
               speed={200}
             />
-            <TopNavOne
-              props="style-one bg-black"
-              slogan="New customers save 10% with the code GET10"
-            />
-            <div id="header" className="style-nine relative w-full">
-              <MenuEight />
-              <SliderOrganic />
-            </div>
+            <AppChrome>
+              <TopNavOne
+                props="style-one bg-black"
+                slogan="New customers save 10% with the code GET10"
+              />
+              <div id="header" className="style-nine relative w-full">
+                <MenuEight />
+                <SliderOrganic />
+              </div>
+              <ModalLogin />
+              <ModalCart serverTimeLeft={serverTimeLeft} />
+              <ModalWishlist />
+              <ModalQuickview />
+              <ModalCompare />
+            </AppChrome>
             {children}
-            <Footer />
-            <ModalLogin />
-            <ModalCart serverTimeLeft={serverTimeLeft} />
-            <ModalWishlist />
-            <ModalQuickview />
-            <ModalCompare />
+            <AppChrome>
+              <Footer />
+            </AppChrome>
           </body>
         </html>
       </StoreConfigProvider>

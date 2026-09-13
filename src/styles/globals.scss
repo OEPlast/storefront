@@ -444,10 +444,10 @@ input[type='file'] {
   }
 }
 
-$price-tag-background: #ff6347;
+$price-tag-background: #fe4d2e;
 $price-tag-color: #fff;
 $price-tag-height: 18px;
-$price-tag-corner: 4px;
+$price-tag-corner: 3px;
 $price-tag-dot-radius: 6px;
 $price-tag-dot-background: var(--surface);
 
@@ -508,6 +508,91 @@ $price-tag-dot-background: var(--surface);
 
     &::after {
       transform: translate(-50%, -50%) translateX($price-tag-height / 2) scale(2);
+    }
+  }
+
+  &--one-line {
+    flex-direction: row;
+    align-items: center;
+
+    span {
+      &:not(:first-child) {
+        &::before {
+          content: ', ';
+        }
+      }
+    }
+  }
+}
+
+$bulk-tag-background: #2681f6;
+$bulk-tag-color: #fff;
+$bulk-tag-height: 18px;
+$bulk-tag-corner: 1.5px;
+$bulk-tag-dot-radius: 6px;
+$bulk-tag-dot-background: #ffffff;
+
+.bulk-tag {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  height: $bulk-tag-height;
+  padding: 0 5px 0 5px;
+  color: $bulk-tag-color;
+  border-radius: $bulk-tag-corner;
+  background-color: $bulk-tag-background;
+  line-height: 1;
+  justify-content: center;
+  z-index: 3;
+
+  &::before,
+  &::after {
+    position: absolute;
+    content: '';
+    z-index: 2;
+    top: 50%;
+    width: $bulk-tag-dot-radius;
+    height: $bulk-tag-dot-radius;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background-color: $bulk-tag-dot-background;
+  }
+
+  &::before {
+    left: -$bulk-tag-dot-radius / 2;
+  }
+
+  &::after {
+    right: -$bulk-tag-dot-radius / 2;
+  }
+
+  &__main {
+    font-size: 1.15em;
+    font-weight: bold;
+
+    ~ * {
+      opacity: 0.85;
+    }
+  }
+
+  span {
+    position: relative;
+    z-index: 1;
+  }
+
+  &--two-lines {
+    $bulk-tag-side: round($bulk-tag-height / 1.428) * 2;
+    margin-left: $bulk-tag-height;
+    height: $bulk-tag-height * 2;
+
+    &::before {
+      left: -$bulk-tag-side / 2;
+      width: $bulk-tag-side;
+      height: $bulk-tag-side;
+    }
+
+    &::after {
+      transform: translate(-50%, -50%) translateX($bulk-tag-height / 2) scale(2);
     }
   }
 

@@ -191,7 +191,7 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                         key={item.id}
                         className="item flex items-center justify-between gap-3 border-b border-line py-5"
                       >
-                        <div className="infor flex w-full items-center gap-3">
+                        <div className="infor flex w-full gap-3">
                           <div className="bg-img aspect-square w-[100px] flex-shrink-0 overflow-hidden rounded-lg border border-gray-100">
                             <Image
                               src={item.imageUrl}
@@ -208,20 +208,20 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                             {(item.hasSale || item.hasPricingTier) && (
                               <div className="mb-1 flex items-center gap-1.5">
                                 {item.hasSale && (
-                                  <span className="flex rounded bg-red-600 px-1.5 text-[12px] font-medium text-white">
-                                    <span className="hidden text-[10px] md:block">-</span>
-                                    {item.salePercentage}%
+                                  <span className="price-tag flex text-[11px]">
+                                    - {item.salePercentage}%
                                   </span>
                                 )}
                                 {item.hasPricingTier && (
-                                  <span className="rounded bg-black px-1.5 text-[10px] font-medium text-white">
-                                    Bulk Deals
-                                  </span>
+                                  <span className="bulk-tag flex text-[11px]">Bulk Deals</span>
                                 )}
                               </div>
                             )}
                             <div className="flex w-full items-center justify-between">
-                              <Link href={item.slug} className="name text-button hover:underline">
+                              <Link
+                                href={item.slug}
+                                className="name text-button line-clamp-2 font-medium hover:underline"
+                              >
                                 {item.name}
                               </Link>
                               <div
@@ -232,8 +232,8 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                               </div>
                             </div>
                             <div className="mt-3 flex w-full items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 capitalize text-secondary2">
-                                <span>Qty: {item.qty}</span>
+                              <div className="flex items-center gap-2 self-end capitalize text-secondary2">
+                                <span className="text-sm">Qty: {item.qty}</span>
                                 {item.attrs && item.attrs.length > 0 && (
                                   <span className="text-xs">({item.attrs})</span>
                                 )}
@@ -251,7 +251,10 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                                     </span>
                                   )}
                                   <span className="text-xs text-secondary">
-                                    {formatToNaira(item.unitPrice)} per unit
+                                    {formatToNaira(item.unitPrice)}{' '}
+                                    <span className="text-xs text-secondary2 [word-spacing:0.5px]">
+                                      /unit
+                                    </span>
                                   </span>
                                 </div>
                               </div>
@@ -264,29 +267,6 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                 )}
               </div>
               <div className="footer-modal w-full flex-shrink-0 bg-white">
-                <div className="flex items-center justify-center gap-8 border-b border-line px-6 py-4 lg:gap-14">
-                  <div
-                    className="item flex cursor-pointer items-center gap-3"
-                    onClick={() => handleActiveTab('note')}
-                  >
-                    <Icon.NotePencil className="text-xl" />
-                    <div className="caption1">Note</div>
-                  </div>
-                  <div
-                    className="item flex cursor-pointer items-center gap-3"
-                    onClick={() => handleActiveTab('shipping')}
-                  >
-                    <Icon.Truck className="text-xl" />
-                    <div className="caption1">Shipping</div>
-                  </div>
-                  <div
-                    className="item flex cursor-pointer items-center gap-3"
-                    onClick={() => handleActiveTab('coupon')}
-                  >
-                    <Icon.Tag className="text-xl" />
-                    <div className="caption1">Coupon</div>
-                  </div>
-                </div>
                 <div className="flex items-center justify-between px-6 pt-6">
                   <div className="heading5">Subtotal</div>
                   <div className="heading5">{formatToNaira(totalCart)}</div>

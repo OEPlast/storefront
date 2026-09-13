@@ -7,6 +7,7 @@ import { useCategories } from '@/hooks/queries/useCategories';
 import { ApiCategory } from '@/types/category';
 import { getCdnUrl } from '@/libs/cdn-url';
 import { usePathname } from 'next/navigation';
+import QuickShop from '@/components/Shop/QuickShop';
 
 interface NavCategoriesComponentProps {
   isOpen: boolean;
@@ -39,22 +40,25 @@ const NavCategoriesComponent = ({ isOpen }: NavCategoriesComponentProps) => {
 
   return (
     <div className="menu-department-block h-full">
-      <div
-        onClick={toggleNavCategories}
-        className="menu-department-btn group relative flex h-full min-w-[230px] flex-1 items-center gap-1.5 bg-black px-2.5"
-      >
-        <Link
+      <div className="flex h-full items-center gap-3.5">
+        <div
           onClick={toggleNavCategories}
-          href={'/category'}
-          className="text-button-uppercase whitespace-nowrap text-white hover:underline"
+          className="menu-department-btn group relative flex h-full min-w-[200px] flex-1 items-center gap-1.5 bg-black px-2.5"
         >
-          All Categories
-        </Link>
+          <Link
+            onClick={toggleNavCategories}
+            href={'/category'}
+            className="text-button-uppercase whitespace-nowrap text-white hover:underline"
+          >
+            All Categories
+          </Link>
 
-        <CaretDownIcon
-          size={14}
-          className={`pointer-events-none text-white transition-all duration-300 ${showNavCategories ? 'rotate-180' : ''}`}
-        />
+          <CaretDownIcon
+            size={14}
+            className={`pointer-events-none text-white transition-all duration-300 ${showNavCategories ? 'rotate-180' : ''}`}
+          />
+        </div>
+        <QuickShop showLeadingText={false} className="flex-shrink-0 !border-none max-md:hidden" />
       </div>
       <div
         onMouseOver={showCategoryAndExpand}

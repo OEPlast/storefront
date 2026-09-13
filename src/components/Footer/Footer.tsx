@@ -2,12 +2,21 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
+import { FaFacebookF, FaInstagram, FaThreads, FaWhatsapp, FaXTwitter } from 'react-icons/fa6';
 import Logo from '../Logo';
 import FooterAccountLink from './FooterAccountLink';
 import { getStoreBranding } from '@/libs/storeBranding';
+import QuickShop from '../Shop/QuickShop';
 
 const Footer = async () => {
-  const { storeName, whatsappNumber } = await getStoreBranding();
+  const { storeName, whatsappNumber, socialLinks } = await getStoreBranding();
+  const socialPlatforms = [
+    { key: 'facebook', icon: FaFacebookF, label: 'Facebook' },
+    { key: 'instagram', icon: FaInstagram, label: 'Instagram' },
+    { key: 'x', icon: FaXTwitter, label: 'X' },
+    { key: 'whatsapp', icon: FaWhatsapp, label: 'WhatsApp' },
+    { key: 'threads', icon: FaThreads, label: 'Threads' },
+  ] as const;
 
   return (
     <>
@@ -93,48 +102,27 @@ const Footer = async () => {
                     </form>
                   </div>
                   <div className="list-social mt-4 flex items-center gap-6">
-                    <Link href={'https://www.facebook.com/'} target="_blank">
-                      <div className="icon-facebook text-2xl text-black"></div>
-                    </Link>
-                    <Link href={'https://www.instagram.com/'} target="_blank">
-                      <div className="icon-instagram text-2xl text-black"></div>
-                    </Link>
-                    <Link href={'https://www.twitter.com/'} target="_blank">
-                      <div className="icon-twitter text-2xl text-black"></div>
-                    </Link>
-                    <Link href={'https://www.youtube.com/'} target="_blank">
-                      <div className="icon-youtube text-2xl text-black"></div>
-                    </Link>
-                    <Link href={'https://www.pinterest.com/'} target="_blank">
-                      <div className="icon-pinterest text-2xl text-black"></div>
-                    </Link>
+                    {socialPlatforms.map(({ key, icon: SocialIcon, label }) => {
+                      const href = socialLinks?.[key];
+                      if (!href) return null;
+
+                      return (
+                        <Link
+                          key={key}
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={label}
+                        >
+                          <SocialIcon className="text-2xl text-black" aria-hidden />
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             </div>
-            {/* Internal-linking hubs: crawlable links that distribute authority to
-                shopping surfaces (SEO Phase 4). */}
-            <nav
-              aria-label="Shop"
-              className="footer-shop-links flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line py-4"
-            >
-              <span className="text-button-uppercase mr-2">Shop:</span>
-              <Link className="caption1 duration-300 hover:underline" href={'/deals'}>
-                Deals &amp; Offers
-              </Link>
-              <Link className="caption1 duration-300 hover:underline" href={'/new-products'}>
-                New Arrivals
-              </Link>
-              <Link className="caption1 duration-300 hover:underline" href={'/top-sold-products'}>
-                Best Sellers
-              </Link>
-              <Link className="caption1 duration-300 hover:underline" href={'/week-products'}>
-                Top This Week
-              </Link>
-              <Link className="caption1 duration-300 hover:underline" href={'/blog'}>
-                Blog
-              </Link>
-            </nav>
+            <QuickShop />
             <div className="footer-bottom flex items-center justify-between gap-5 border-t border-line py-3 max-lg:flex-col max-lg:justify-center">
               <div className="left flex items-center gap-8">
                 <div className="copyright caption1 text-secondary">

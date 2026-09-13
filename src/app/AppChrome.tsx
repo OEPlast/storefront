@@ -3,7 +3,15 @@
 import type React from 'react';
 import { usePathname } from 'next/navigation';
 
-const chromeFreeRoutes = ['/checkout', '/checkout2', '/forgot-password', '/reset-password', '/login', '/register', '/verify-otp'];
+const chromeFreeRoutes = [
+  '/checkout',
+  '/checkout2',
+  '/forgot-password',
+  '/reset-password',
+  '/login',
+  '/register',
+  '/verify-otp',
+];
 
 const isChromeFreeRoute = (pathname: string) =>
   chromeFreeRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));

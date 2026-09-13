@@ -25,7 +25,8 @@ export async function getStoreBranding(): Promise<StoreBranding> {
       next: { tags: ['branding'] },
     });
 
-    if (!response.ok) return { storeName: FALLBACK_STORE_NAME, whatsappNumber: '', socialLinks: {} };
+    if (!response.ok)
+      return { storeName: FALLBACK_STORE_NAME, whatsappNumber: '', socialLinks: {} };
 
     const json = await response.json();
     const storeName = json?.data?.storeName;
@@ -33,7 +34,8 @@ export async function getStoreBranding(): Promise<StoreBranding> {
     const socialLinks = json?.data?.socialLinks;
 
     return {
-      storeName: typeof storeName === 'string' && storeName.trim() ? storeName : FALLBACK_STORE_NAME,
+      storeName:
+        typeof storeName === 'string' && storeName.trim() ? storeName : FALLBACK_STORE_NAME,
       whatsappNumber: typeof whatsappNumber === 'string' ? whatsappNumber : '',
       socialLinks: socialLinks && typeof socialLinks === 'object' ? socialLinks : {},
     };

@@ -104,6 +104,11 @@ export interface Product {
   originPrice: number; // Original price before any discounts
   sku?: string | number;
   brand?: string;
+  /** Barcode number (GTIN-8/12/13/14), when the product has one. */
+  gtin?: string;
+  /** Manufacturer part number. */
+  mpn?: string;
+  condition?: 'new' | 'used' | 'refurbished';
   stock: number;
   originStock: number; // Original stock for calculating sold quantity
   lowStockThreshold?: number;

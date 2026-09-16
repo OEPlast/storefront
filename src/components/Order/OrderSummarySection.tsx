@@ -26,7 +26,7 @@ const OrderProductItem = ({
     <div className="flex gap-4 border-b border-line pb-5 last:border-0 last:pb-0">
       <div className="bg-img h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-surface">
         <Image
-          src={getCdnUrl(product.image) || '/images/product/1000x1000.png'}
+          src={getCdnUrl(product.image) || '/images/placeholder.png'}
           width={100}
           height={100}
           alt={product.name}

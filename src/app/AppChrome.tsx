@@ -5,11 +5,9 @@ import { usePathname } from 'next/navigation';
 
 const chromeFreeRoutes = [
   '/checkout',
-  '/checkout2',
   '/forgot-password',
-  '/reset-password',
-  '/login',
-  '/register',
+  // '/login',
+  // '/register',
   '/verify-otp',
 ];
 

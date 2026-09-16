@@ -24,22 +24,14 @@ import Logo from '@/components/Logo';
 
 // Data constants
 
-const BLOG_LINKS = [
-  { href: '/blog/default', label: 'Blog Default' },
-  { href: '/blog/list', label: 'Blog List' },
-  { href: '/blog/grid', label: 'Blog Grid' },
-  { href: '/blog/detail1', label: 'Blog Detail 1' },
-  { href: '/blog/detail2', label: 'Blog Detail 2' },
-];
-
 const PAGES_LINKS = [
   { href: '/pages/about', label: 'About Us' },
   { href: '/pages/contact', label: 'Contact Us' },
-  { href: '/pages/store-list', label: 'Store List' },
-  { href: '/pages/page-not-found', label: '404' },
   { href: '/pages/faqs', label: 'FAQs' },
-  { href: '/pages/coming-soon', label: 'Coming Soon' },
-  { href: '/pages/customer-feedbacks', label: 'Customer Feedbacks' },
+  { href: '/pages/shipping', label: 'Shipping & Delivery' },
+  { href: '/pages/returns', label: 'Returns & Refunds' },
+  { href: '/pages/terms', label: 'Terms of Use' },
+  { href: '/privacy-policy', label: 'Privacy Policy' },
 ];
 
 const MenuEight = () => {
@@ -72,7 +64,7 @@ const MenuEight = () => {
   }, [openAutocomplete, searchKeyword, history]);
 
   const handleSearch = (value: string) => {
-    router.push(`/search-result?query=${value}`);
+    router.push(`/search-result?query=${encodeURIComponent(value)}`);
     addHistory(value);
     setSearchKeyword('');
     setOpenAutocomplete(false);
@@ -353,15 +345,15 @@ const MenuEight = () => {
                     className={`${openSubNavMobile === 6 ? 'open' : ''}`}
                     onClick={() => handleOpenSubNavMobile(6)}
                   >
-                    <a
-                      href={'#!'}
-                      className="mt-5 flex items-center justify-between text-xl font-semibold"
+                    <button
+                      type="button"
+                      className="mt-5 flex w-full items-center justify-between text-left text-xl font-semibold"
                     >
                       Pages
                       <span className="text-right">
                         <Icon.CaretRight size={20} />
                       </span>
-                    </a>
+                    </button>
                     <div className="sub-nav-mobile">
                       <div
                         className="back-btn flex items-center gap-3"

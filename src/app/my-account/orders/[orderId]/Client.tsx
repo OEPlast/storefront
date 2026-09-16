@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useOrderById } from '@/hooks/queries/useOrderById';
 import { EnrichedOrder } from '@/types/order';
 import * as Icon from '@phosphor-icons/react/dist/ssr';
@@ -11,7 +11,10 @@ import OrderAddresses from '@/components/Order/OrderAddresses';
 import OrderPaymentInfo from '@/components/Order/OrderPaymentInfo';
 import OrderTrackingHistory from '@/components/Order/OrderTrackingHistory';
 import OrderSummarySection from '@/components/Order/OrderSummarySection';
-// import CancelOrderButton from '@/components/Order/CancelOrderButton';
+import OrderReturnsSection from '@/components/Order/OrderReturnsSection';
+import CancelOrderButton from '@/components/Order/CancelOrderButton';
+
+const CANCELLABLE_STATUSES: EnrichedOrder['status'][] = ['Pending', 'Processing'];
 
 interface OrderDetailsClientProps {
   orderId: string;
@@ -49,7 +52,10 @@ const formatCurrency = (amount: number) => {
 
 export default function OrderDetailsClient({ orderId }: OrderDetailsClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: order, isLoading, isError, error } = useOrderById(orderId);
+  // The "start a return" link in the delivered email lands on ?tab=returns.
+  const openReturns = searchParams.get('tab') === 'returns';
 
   // Handle loading state
   if (isLoading) {
@@ -101,11 +107,16 @@ export default function OrderDetailsClient({ orderId }: OrderDetailsClientProps)
             <h3 className="heading3">Order #{order.orderNumber}</h3>
             <p className="text-secondary mt-2">Placed on {formatDate(order.createdAt)}</p>
           </div>
-          <span
-            className={`tag px-5 py-2.5 rounded-full bg-opacity-10 text-button font-semibold ${getStatusBadge(order.status)}`}
-          >
-            {order.status}
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            {CANCELLABLE_STATUSES.includes(order.status) && (
+              <CancelOrderButton orderId={order._id} orderNumber={order.orderNumber} variant="subtle" />
+            )}
+            <span
+              className={`tag px-5 py-2.5 rounded-full bg-opacity-10 text-button font-semibold ${getStatusBadge(order.status)}`}
+            >
+              {order.status}
+            </span>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -119,7 +130,10 @@ export default function OrderDetailsClient({ orderId }: OrderDetailsClientProps)
           </div>
 
           {/* Right column - Products and Summary */}
-          <OrderSummarySection order={order} formatCurrency={formatCurrency} />
+          <div className="space-y-6">
+            <OrderSummarySection order={order} formatCurrency={formatCurrency} />
+            <OrderReturnsSection order={order} openForm={openReturns} />
+          </div>
         </div>
       </div>
     </div>

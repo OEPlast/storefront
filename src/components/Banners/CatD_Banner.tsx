@@ -32,7 +32,7 @@ const CatD_Banner = () => {
                             <div className="text-sub-display">{CAT_D_Banners[0].headerText || ''}</div>
                             <div className="heading2 md:mt-4 mt-2">{CAT_D_Banners[0].mainText || ''}</div>
                             <Link
-                                href='/shop/breadcrumb-img'
+                                href={CAT_D_Banners[0].pageLink || '/'}
                                 className="button-main md:mt-7 mt-3"
                                 style={{ backgroundColor: CAT_D_Banners[0].ctaColor || '#000000' }}
                             >

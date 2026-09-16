@@ -56,7 +56,7 @@ const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
         >
             {searchKeyword && searchKeyword.length > 0 && (
                 <Link
-                    href={`/search-result?query=${searchKeyword}`}
+                    href={`/search-result?query=${encodeURIComponent(searchKeyword)}`}
                     className="px-4 py-2 cursor-pointer bg-gray-50 hover:bg-gray-100 text-sm text-gray-800 w-full block"
                 >
                     {`Search for "${searchKeyword}"`}

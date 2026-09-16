@@ -7,6 +7,11 @@ import { apiClient, handleApiError } from '@/libs/api/axios';
 import api from '@/libs/api/endpoints';
 import { useQueryClient } from '@tanstack/react-query';
 import { ExistingReview, OrderInfo } from '@/hooks/queries/useCanReviewProduct';
+import { uploadImage } from '@/libs/uploadImage';
+import { getCdnUrl } from '@/libs/cdn-url';
+
+/** Must match Main-server `MAX_REVIEW_PHOTOS`. */
+const MAX_PHOTOS = 4;
 
 interface ReviewFormProps {
     productId: string;
@@ -25,9 +30,34 @@ export default function ReviewForm({ productId, orderInfo, existingReview, onSuc
         title: existingReview?.title || '',
         review: existingReview?.review || '',
     });
+    const [images, setImages] = useState<string[]>(existingReview?.images ?? []);
+    const [uploading, setUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+
+    const addPhotos = async (files: FileList | null) => {
+        if (!files?.length) return;
+        const room = MAX_PHOTOS - images.length;
+        if (room <= 0) {
+            setError(`You can add up to ${MAX_PHOTOS} photos`);
+            return;
+        }
+        setError(null);
+        setUploading(true);
+        try {
+            const uploaded: string[] = [];
+            for (const file of Array.from(files).slice(0, room)) {
+                if (!file.type.startsWith('image/')) throw new Error('Photos only, please');
+                uploaded.push((await uploadImage(file, 'reviews')).path);
+            }
+            setImages((prev) => [...prev, ...uploaded].slice(0, MAX_PHOTOS));
+        } catch (err) {
+            setError((err as Error).message || 'Photo upload failed');
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleRatingChange = (rating: number) => {
         setFormData(prev => ({ ...prev, rating }));
@@ -65,6 +95,7 @@ export default function ReviewForm({ productId, orderInfo, existingReview, onSuc
                         rating: formData.rating,
                         title: formData.title,
                         review: formData.review,
+                        images,
                     }
                 );
 
@@ -86,6 +117,7 @@ export default function ReviewForm({ productId, orderInfo, existingReview, onSuc
                         rating: formData.rating,
                         title: formData.title,
                         review: formData.review,
+                        images,
                         transactionId: orderInfo.transactionId,
                         orderId: orderInfo.orderId,
                     }
@@ -95,6 +127,7 @@ export default function ReviewForm({ productId, orderInfo, existingReview, onSuc
                     setSuccess(true);
                     // Reset form
                     setFormData({ rating: 5, title: '', review: '' });
+                    setImages([]);
                     // Invalidate queries to refresh the reviews list
                     queryClient.invalidateQueries({ queryKey: ['product-reviews', productId] });
                     queryClient.invalidateQueries({ queryKey: ['reviews-info', productId] });
@@ -245,12 +278,50 @@ export default function ReviewForm({ productId, orderInfo, existingReview, onSuc
                     </div>
                 </div>
 
+                {/* Photos */}
+                <div>
+                    <span className="text-button mb-2 block">Photos (optional)</span>
+                    <div className="flex flex-wrap gap-3">
+                        {images.map((path) => (
+                            <div key={path} className="relative h-20 w-20">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={getCdnUrl(path)} alt="" className="h-20 w-20 rounded-lg object-cover" />
+                                <button
+                                    type="button"
+                                    aria-label="Remove photo"
+                                    onClick={() => setImages((prev) => prev.filter((p) => p !== path))}
+                                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black text-white"
+                                >
+                                    <Icon.X size={12} weight="bold" />
+                                </button>
+                            </div>
+                        ))}
+                        {images.length < MAX_PHOTOS && (
+                            <label className={`flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line text-secondary hover:border-black hover:text-black ${uploading ? 'pointer-events-none opacity-60' : ''}`}>
+                                {uploading ? <Icon.CircleNotch size={20} className="animate-spin" /> : <Icon.Camera size={22} />}
+                                <span className="caption2">{uploading ? 'Uploading' : 'Add photo'}</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="sr-only"
+                                    onChange={(e) => {
+                                        void addPhotos(e.target.files);
+                                        e.target.value = '';
+                                    }}
+                                />
+                            </label>
+                        )}
+                    </div>
+                    <p className="caption1 mt-2 text-secondary">Up to {MAX_PHOTOS} photos of the product you received.</p>
+                </div>
+
                 {/* Submit Button */}
                 <div className="pt-3">
                     <button
                         type="submit"
-                        disabled={isSubmitting || formData.review.length < 10}
-                        className={`button-main ${isSubmitting || formData.review.length < 10
+                        disabled={isSubmitting || uploading || formData.review.length < 10}
+                        className={`button-main ${isSubmitting || uploading || formData.review.length < 10
                                 ? 'bg-gray-300 cursor-not-allowed'
                                 : 'bg-black text-white hover:bg-gray-800'
                             }`}

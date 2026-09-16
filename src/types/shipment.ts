@@ -16,12 +16,13 @@ export interface IShipment {
   shippingAddress: {
     firstName: string;
     lastName: string;
-    phoneNumber: string;
-    address1: string;
+    // Omitted by the public tracking endpoint.
+    phoneNumber?: string;
+    address1?: string;
     address2?: string;
     city: string;
     state: string;
-    zipCode: string;
+    zipCode?: string;
     country: string;
   };
   dimensions?: {

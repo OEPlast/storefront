@@ -44,6 +44,12 @@ import apiClient from '@/libs/api/axios';
 import api from '@/libs/api/endpoints';
 import { Review } from '@/hooks/queries/useProductReviews';
 import { useProductSocket } from '@/hooks/useProductSocket';
+import { useStoreConfig } from '@/context/StoreConfigContext';
+import { useFreeShippingThreshold } from '@/hooks/useFreeShippingThreshold';
+import { whatsappUrl } from '@/components/Policy/ContactChannels';
+import { siteConfig } from '@/config/siteConfig';
+import { formatNaira } from '@/libs/storeBranding';
+import toast from 'react-hot-toast';
 
 interface Props {
   slug: string;
@@ -54,6 +60,28 @@ const Sale: React.FC<Props> = ({ slug }) => {
   const queryClient = useQueryClient();
   // Fetch product data using React Query
   const { data: productMain, isLoading, error } = useProduct({ slug });
+  const { whatsappNumber, supportHours, policies } = useStoreConfig();
+  const { freeShippingThreshold } = useFreeShippingThreshold();
+
+  // Native share sheet on phones; copy the link elsewhere.
+  const handleShare = useCallback(async () => {
+    const url = window.location.href;
+    const title = productMain?.name ?? document.title;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch {
+        // Closing the share sheet rejects; nothing to do.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied');
+    } catch {
+      toast.error('Could not copy the link');
+    }
+  }, [productMain?.name]);
 
   useProductSocket({
     productIds: productMain?._id ? [productMain._id] : [],
@@ -377,7 +405,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
         <p className="mb-4 text-xl text-red-600">Failed to load product</p>
-        <Link href="/shop" className="button-main">
+        <Link href="/" className="button-main">
           Back to Shop
         </Link>
       </div>
@@ -798,23 +826,27 @@ const Sale: React.FC<Props> = ({ slug }) => {
                     </div>
                     <span>Compare</span>
                   </div>
-                  <div className="share flex cursor-pointer items-center gap-3">
+                  <button type="button" onClick={handleShare} className="share flex cursor-pointer items-center gap-3">
                     <div className="share-btn flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-line duration-300 hover:bg-black hover:text-white md:h-12 md:w-12">
                       <Icon.ShareNetwork weight="fill" className="heading6" />
                     </div>
                     <span>Share Products</span>
-                  </div>
+                  </button>
                 </div>
                 <div className="more-infor mt-6">
                   <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-1">
+                    <Link href="/pages/shipping" className="flex items-center gap-1 hover:underline">
                       <Icon.ArrowClockwise className="body1" />
                       <div className="text-title">Delivery & Return</div>
-                    </div>
-                    <div className="flex items-center gap-1">
+                    </Link>
+                    <Link
+                      href={whatsappNumber ? whatsappUrl(whatsappNumber) : '/pages/contact'}
+                      {...(whatsappNumber ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                      className="flex items-center gap-1 hover:underline"
+                    >
                       <Icon.Question className="body1" />
                       <div className="text-title">Ask A Question</div>
-                    </div>
+                    </Link>
                   </div>
                   {/* <div className="flex items-center gap-1 mt-3">
                                         <Icon.Eye className='body1' />
@@ -841,31 +873,38 @@ const Sale: React.FC<Props> = ({ slug }) => {
                 <PaymentMethodsBadge className="mt-7" title="Guaranteed safe checkout" />
               </div>
               <div className="get-it mt-6">
-                <div className="heading5">Get it today</div>
+                <div className="heading5">Delivery &amp; returns</div>
                 <div className="item mt-4 flex items-center gap-3">
                   <div className="icon-delivery-truck text-4xl"></div>
                   <div>
-                    <div className="text-title">Free shipping</div>
+                    <div className="text-title">
+                      {freeShippingThreshold ? 'Free delivery' : `Delivery across ${siteConfig.country}`}
+                    </div>
                     <div className="caption1 mt-1 text-secondary">
-                      Free shipping on orders over &#8358; 500,000.
+                      {freeShippingThreshold
+                        ? `Free delivery on orders over ${formatNaira(freeShippingThreshold)}.`
+                        : 'Delivery cost is shown at checkout before you pay.'}
                     </div>
                   </div>
                 </div>
                 <div className="item mt-4 flex items-center gap-3">
                   <div className="icon-phone-call text-4xl"></div>
                   <div>
-                    <div className="text-title">Support everyday</div>
+                    <div className="text-title">Customer support</div>
                     <div className="caption1 mt-1 text-secondary">
-                      Support from 9:00 AM to 9:00 PM everyday
+                      {supportHours ? `Reach us ${supportHours}.` : 'Questions? Reach us on WhatsApp or email.'}
                     </div>
                   </div>
                 </div>
                 <div className="item mt-4 flex items-center gap-3">
                   <div className="icon-return text-4xl"></div>
                   <div>
-                    <div className="text-title">2 Day Returns</div>
+                    <div className="text-title">{policies.returnWindowDays}-day returns</div>
                     <div className="caption1 mt-1 text-secondary">
-                      Not impressed? Get a refund. You have 2 days to break our hearts.
+                      Not right? Request a return within {policies.returnWindowDays} days of delivery.{' '}
+                      <Link href="/pages/returns" className="underline">
+                        Returns policy
+                      </Link>
                     </div>
                   </div>
                 </div>

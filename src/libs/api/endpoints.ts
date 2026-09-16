@@ -69,8 +69,16 @@ export const api = {
     create: '/myOrder/orders/create',
     cancel: (id: string) => `/myOrder/orders/${id}/cancel`,
     track: (trackingNumber: string) => `/myOrder/orders/track/${trackingNumber}`,
-    returns: '/myOrder/orders/returns',
-    initiateReturn: (id: string) => `/myOrder/orders/${id}/return`,
+  },
+
+  // Returns (Main-server routes/users/returns.ts)
+  returns: {
+    /** GET ?page&limit&status&orderId */
+    list: '/returns',
+    /** POST { orderId, items: [{ product, qty, reason, reasonDetails?, images? }], type, customerNotes? } */
+    create: '/returns',
+    byId: (id: string) => `/returns/${id}`,
+    cancel: (id: string) => `/returns/${id}/cancel`,
   },
 
   // User endpoints
@@ -80,6 +88,9 @@ export const api = {
     orders: '/user/orders',
     wishlist: '/user/wishlist',
     changePassword: '/user/password/change',
+    emailPreferences: '/user/email-preferences',
+    accountDeletion: '/user/account/deletion',
+    dataExport: '/user/account/export',
     // Address endpoints
     addresses: '/user/address/all',
     addAddress: '/user/address',
@@ -131,12 +142,13 @@ export const api = {
     grouped: '/banners/grouped',
   },
 
-  // Blog endpoints
-  blog: {
-    posts: '/blog',
-    bySlug: (slug: string) => `/blog/${slug}`,
-    categories: '/blog/categories',
+  // Newsletter (works signed in or as a guest)
+  newsletter: {
+    subscribe: '/newsletter/subscribe',
   },
+
+  // Guest order lookup: order number + the email used at checkout, sent in the POST body
+  orderLookup: '/orders/lookup',
 
   // Checkout endpoints
   checkout: {

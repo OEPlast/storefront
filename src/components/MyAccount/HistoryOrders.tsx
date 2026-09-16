@@ -96,7 +96,7 @@ const OrderProductStack = ({ order }: { order: OrderHistoryType }) => {
             }`}
           >
             <Image
-              src={getCdnUrl(item.image) || '/images/product/1000x1000.png'}
+              src={getCdnUrl(item.image) || '/images/placeholder.png'}
               width={80}
               height={80}
               alt={item.name || 'Product'}

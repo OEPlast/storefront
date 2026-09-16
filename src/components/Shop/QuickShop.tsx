@@ -26,9 +26,6 @@ const QuickShop = ({
       <Link className="caption1 duration-300 hover:underline" href={'/week-products'}>
         Top This Week
       </Link>
-      <Link className="caption1 duration-300 hover:underline" href={'/blog'}>
-        Blog
-      </Link>
     </nav>
   );
 };

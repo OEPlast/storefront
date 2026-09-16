@@ -29,7 +29,7 @@ This document outlines the architectural design for the OEPlast storefront appli
 - **Type Safety**: End-to-end type safety with TypeScript and Zod
 - **Performance**: Optimized data fetching with React Query and Next.js SSR
 - **Maintainability**: Clear separation between server and client state
-- **Developer Experience**: Reusable components, HOCs, and utilities
+- **Developer Experience**: Reusable components, hooks, and utilities
 - **Scalability**: Modular architecture that grows with the application
 
 ---
@@ -123,7 +123,7 @@ React Component Props
 ### 4. Code Organization
 
 - **Colocation**: Keep related code together (components, hooks, types, schemas)
-- **Reusability**: Extract common patterns into HOCs, hooks, and utilities
+- **Reusability**: Extract common patterns into hooks and utilities
 - **DRY Principle**: Single source of truth for schemas, types, and API routes
 - **Modularity**: Each feature is self-contained with clear interfaces
 
@@ -231,12 +231,6 @@ storefront/
 │   │   ├── LoginForm.tsx
 │   │   ├── CheckoutForm.tsx
 │   │   └── ReviewForm.tsx
-│   │
-│   ├── hocs/                         # Higher-Order Components
-│   │   ├── withAuth.tsx              # Authentication guard
-│   │   ├── withErrorBoundary.tsx     # Error handling
-│   │   ├── withLogging.tsx           # Analytics/logging
-│   │   └── withFeatureFlag.tsx       # Feature toggles
 │   │
 │   ├── types/                        # TypeScript types
 │   │   ├── api.types.ts              # API response types
@@ -1188,135 +1182,6 @@ export default function LoginForm() {
       </button>
     </form>
   );
-}
-```
-
----
-
-### 6. HOC Layer
-
-**Purpose**: Reusable cross-cutting concerns like authentication, logging, and error handling.
-
-#### File: `src/hocs/withAuth.tsx`
-
-```typescript
-"use client";
-
-import { ComponentType, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-
-interface WithAuthOptions {
-  redirectTo?: string;
-  requiredRole?: "user" | "admin";
-}
-
-export function withAuth<P extends object>(Component: ComponentType<P>, options: WithAuthOptions = {}) {
-  return function AuthenticatedComponent(props: P) {
-    const { data: session, status } = useSession();
-    const router = useRouter();
-    const { redirectTo = "/login", requiredRole } = options;
-
-    useEffect(() => {
-      if (status === "loading") return;
-
-      // Not authenticated
-      if (!session) {
-        router.push(redirectTo);
-        return;
-      }
-
-      // Check role if required
-      if (requiredRole && session.user?.role !== requiredRole) {
-        router.push("/unauthorized");
-      }
-    }, [session, status, router]);
-
-    // Show loading state
-    if (status === "loading") {
-      return (
-        <div className="flex h-screen items-center justify-center">
-          <p>Loading...</p>
-        </div>
-      );
-    }
-
-    // Not authenticated
-    if (!session) {
-      return null;
-    }
-
-    // Wrong role
-    if (requiredRole && session.user?.role !== requiredRole) {
-      return null;
-    }
-
-    return <Component {...props} />;
-  };
-}
-
-// Usage example:
-// const ProtectedPage = withAuth(MyPage, { requiredRole: 'admin' });
-```
-
-#### File: `src/hocs/withErrorBoundary.tsx`
-
-```typescript
-"use client";
-
-import { Component, ComponentType, ReactNode } from "react";
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-}
-
-interface ErrorFallbackProps {
-  error: Error;
-  resetError: () => void;
-}
-
-const DefaultErrorFallback = ({ error, resetError }: ErrorFallbackProps) => (
-  <div className="flex min-h-screen flex-col items-center justify-center">
-    <h2 className="mb-4 text-2xl font-bold text-red-600">Something went wrong</h2>
-    <p className="mb-4 text-gray-600">{error.message}</p>
-    <button onClick={resetError} className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-      Try again
-    </button>
-  </div>
-);
-
-export function withErrorBoundary<P extends object>(
-  Component: ComponentType<P>,
-  ErrorFallback: ComponentType<ErrorFallbackProps> = DefaultErrorFallback
-) {
-  return class extends Component<P, ErrorBoundaryState> {
-    constructor(props: P) {
-      super(props);
-      this.state = { hasError: false };
-    }
-
-    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-      return { hasError: true, error };
-    }
-
-    componentDidCatch(error: Error, errorInfo: any) {
-      console.error("Error caught by boundary:", error, errorInfo);
-      // Send to error tracking service (e.g., Sentry)
-    }
-
-    resetError = () => {
-      this.setState({ hasError: false, error: undefined });
-    };
-
-    render() {
-      if (this.state.hasError && this.state.error) {
-        return <ErrorFallback error={this.state.error} resetError={this.resetError} />;
-      }
-
-      return <Component {...this.props} />;
-    }
-  };
 }
 ```
 

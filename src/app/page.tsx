@@ -18,9 +18,7 @@ export default function Home() {
 
             {/* Product sections fetched from API */}
             <HomeClient />
-            {/* <Testimonial data={testimonialData} limit={5} /> */}
             <Benefit props="md:py-20 py-10" />
-            {/* <ModalNewsletter /> */}
         </>
     );
 }

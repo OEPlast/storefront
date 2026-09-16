@@ -41,6 +41,14 @@ interface ForgotPasswordState {
   resendLoading: boolean;
   setResendLoading: (loading: boolean) => void;
   
+  /**
+   * True when the shopper arrived from checkout/login/register with an email that was used for
+   * guest checkout. Same code flow; Stage 1 words it as setting a first password, not a reset.
+   */
+  isGuestClaim: boolean;
+  /** Opens the flow on Stage 1 with the email filled in. Call before navigating to /forgot-password. */
+  startGuestClaim: (email: string) => void;
+
   // Reset all state
   reset: () => void;
 }
@@ -57,6 +65,7 @@ const initialState = {
   resendTimer: 0,
   resendSuccess: false,
   resendLoading: false,
+  isGuestClaim: false,
 };
 
 export const useForgotPasswordStore = create<ForgotPasswordState>((set) => ({
@@ -74,5 +83,6 @@ export const useForgotPasswordStore = create<ForgotPasswordState>((set) => ({
   decrementTimer: () => set((state) => ({ resendTimer: Math.max(0, state.resendTimer - 1) })),
   setResendSuccess: (success) => set({ resendSuccess: success }),
   setResendLoading: (loading) => set({ resendLoading: loading }),
+  startGuestClaim: (email) => set({ ...initialState, email, isGuestClaim: true }),
   reset: () => set(initialState),
 }));

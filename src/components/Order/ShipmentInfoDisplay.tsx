@@ -116,12 +116,17 @@ export default function ShipmentInfoDisplay({ shipment }: ShipmentInfoDisplayPro
           <div className="font-semibold text-title">
             {shippingAddress.firstName} {shippingAddress.lastName}
           </div>
-          <div className="text-secondary">{shippingAddress.phoneNumber}</div>
+          {/* Public tracking returns only the delivery area; street, phone and postcode are
+              withheld because anyone with the tracking number can open this page. */}
+          {shippingAddress.phoneNumber && (
+            <div className="text-secondary">{shippingAddress.phoneNumber}</div>
+          )}
           <div className="text-secondary">
-            <div>{shippingAddress.address1}</div>
+            {shippingAddress.address1 && <div>{shippingAddress.address1}</div>}
             {shippingAddress.address2 && <div>{shippingAddress.address2}</div>}
             <div>
-              {shippingAddress.city}, {shippingAddress.state} {shippingAddress.zipCode}
+              {[shippingAddress.city, shippingAddress.state].filter(Boolean).join(', ')}
+              {shippingAddress.zipCode ? ` ${shippingAddress.zipCode}` : ''}
             </div>
             <div>{shippingAddress.country}</div>
           </div>

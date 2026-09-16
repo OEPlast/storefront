@@ -46,7 +46,7 @@ const SliderOrganic = () => {
                       </div>
                       <div className="body1 mt-4">{banner.mainText}</div>
                       <Link
-                        href={banner.pageLink}
+                        href={banner.pageLink || '/'}
                         className="button-main mt-3 text-white md:mt-8"
                         style={{ backgroundColor: banner.ctaColor || '#000000' }}
                       >

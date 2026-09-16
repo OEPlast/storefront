@@ -88,6 +88,7 @@ export default function ReviewsList({ productId, className = '' }: ReviewsListPr
                                 onChange={(e) => setSortBy(e.target.value as SortOption)}
                             >
                                 <option value="newest">Newest</option>
+                                <option value="helpful">Most helpful</option>
                                 <option value="5star">5 Star</option>
                                 <option value="4star">4 Star</option>
                                 <option value="3star">3 Star</option>
@@ -98,6 +99,10 @@ export default function ReviewsList({ productId, className = '' }: ReviewsListPr
                         </div>
                     </div>
                 </div>
+                <label className="mt-4 inline-flex cursor-pointer items-center gap-2 text-sm">
+                    <input type="checkbox" checked={hasImages} onChange={(e) => setHasImages(e.target.checked)} />
+                    With photos only
+                </label>
                 <div className="list-review mt-6">
                     {isLoading ? (
                         <div className="text-center py-10">Loading reviews...</div>

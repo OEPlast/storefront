@@ -1,11 +1,13 @@
 export default function Loading() {
   return (
     <div className="container py-8">
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-8">
-        <div className="text-6xl font-bold text-gray-800 animate-pulse">
-          OEP
-        </div>
-
+      <div
+        className="flex min-h-[400px] items-center justify-center"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-line border-t-black" />
+        <span className="sr-only">Loading…</span>
       </div>
     </div>
   );

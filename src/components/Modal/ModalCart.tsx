@@ -40,7 +40,6 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
      }, []);
      */
 
-  const [activeTab, setActiveTab] = useState<string | undefined>('');
   const { isModalOpen, closeModalCart } = useModalCartContext();
   const { freeShippingThreshold } = useFreeShippingThreshold();
 
@@ -107,10 +106,6 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
   const handleAddToCart = (productItem: ProductDetail) => {
     // This is for "You May Also Like" section - can be implemented later if needed
     console.log('Add to cart from modal:', productItem);
-  };
-
-  const handleActiveTab = (tab: string) => {
-    setActiveTab(tab);
   };
 
   // Calculate total from cart items with render-time pricing
@@ -218,12 +213,19 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                               </div>
                             )}
                             <div className="flex w-full items-center justify-between">
-                              <Link
-                                href={item.slug}
-                                className="name text-button line-clamp-2 font-medium hover:underline"
-                              >
-                                {item.name}
-                              </Link>
+                              {item.slug ? (
+                                <Link
+                                  href={`/product/${item.slug}`}
+                                  className="name text-button line-clamp-2 font-medium hover:underline"
+                                  onClick={closeModalCart}
+                                >
+                                  {item.name}
+                                </Link>
+                              ) : (
+                                <span className="name text-button line-clamp-2 font-medium">
+                                  {item.name}
+                                </span>
+                              )}
                               <div
                                 className="remove-cart-btn caption1 group cursor-pointer rounded-full p-1.5 font-semibold underline outline outline-gray-100 hover:bg-red"
                                 onClick={() => removeItem(item.cartItemId)}
@@ -293,157 +295,6 @@ const ModalCart = ({ serverTimeLeft }: { serverTimeLeft: CountdownTimeType }) =>
                     className="text-button-uppercase has-line-before mt-4 inline-block cursor-pointer text-center"
                   >
                     Or continue shopping
-                  </div>
-                </div>
-                <div className={`tab-item note-block ${activeTab === 'note' ? 'active' : ''}`}>
-                  <div className="border-b border-line px-6 py-4">
-                    <div className="item flex cursor-pointer items-center gap-3">
-                      <Icon.NotePencil className="text-xl" />
-                      <div className="caption1">Note</div>
-                    </div>
-                  </div>
-                  <div className="form px-6 pt-4">
-                    <textarea
-                      name="form-note"
-                      id="form-note"
-                      rows={4}
-                      placeholder="Add special instructions for your order..."
-                      className="caption1 w-full rounded-md border-line bg-surface px-4 py-3"
-                    ></textarea>
-                  </div>
-                  <div className="block-button px-6 pb-6 pt-4 text-center">
-                    <div
-                      className="button-main w-full text-center"
-                      onClick={() => setActiveTab('')}
-                    >
-                      Save
-                    </div>
-                    <div
-                      onClick={() => setActiveTab('')}
-                      className="text-button-uppercase has-line-before mt-4 inline-block cursor-pointer text-center"
-                    >
-                      Cancel
-                    </div>
-                  </div>
-                </div>
-                <div className={`tab-item note-block ${activeTab === 'shipping' ? 'active' : ''}`}>
-                  <div className="border-b border-line px-6 py-4">
-                    <div className="item flex cursor-pointer items-center gap-3">
-                      <Icon.Truck className="text-xl" />
-                      <div className="caption1">Estimate shipping rates</div>
-                    </div>
-                  </div>
-                  <div className="form px-6 pt-4">
-                    <div className="">
-                      <label htmlFor="select-country" className="caption1 text-secondary">
-                        Country/region
-                      </label>
-                      <div className="select-block relative mt-2">
-                        <select
-                          id="select-country"
-                          name="select-country"
-                          className="w-full rounded-xl border border-line bg-white py-3 pl-5"
-                          defaultValue={'Country/region'}
-                        >
-                          <option value="Country/region" disabled>
-                            Country/region
-                          </option>
-                          <option value="France">France</option>
-                          <option value="Spain">Spain</option>
-                          <option value="UK">UK</option>
-                          <option value="USA">USA</option>
-                        </select>
-                        <Icon.CaretDown
-                          size={12}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 md:right-5"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <label htmlFor="select-state" className="caption1 text-secondary">
-                        State
-                      </label>
-                      <div className="select-block relative mt-2">
-                        <select
-                          id="select-state"
-                          name="select-state"
-                          className="w-full rounded-xl border border-line bg-white py-3 pl-5"
-                          defaultValue={'State'}
-                        >
-                          <option value="State" disabled>
-                            State
-                          </option>
-                          <option value="Paris">Paris</option>
-                          <option value="Madrid">Madrid</option>
-                          <option value="London">London</option>
-                          <option value="New York">New York</option>
-                        </select>
-                        <Icon.CaretDown
-                          size={12}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 md:right-5"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <label htmlFor="select-code" className="caption1 text-secondary">
-                        Postal/Zip Code
-                      </label>
-                      <input
-                        className="mt-3 w-full rounded-xl border-line px-5 py-3"
-                        id="select-code"
-                        type="text"
-                        placeholder="Postal/Zip Code"
-                      />
-                    </div>
-                  </div>
-                  <div className="block-button px-6 pb-6 pt-4 text-center">
-                    <div
-                      className="button-main w-full text-center"
-                      onClick={() => setActiveTab('')}
-                    >
-                      Calculator
-                    </div>
-                    <div
-                      onClick={() => setActiveTab('')}
-                      className="text-button-uppercase has-line-before mt-4 inline-block cursor-pointer text-center"
-                    >
-                      Cancel
-                    </div>
-                  </div>
-                </div>
-                <div className={`tab-item note-block ${activeTab === 'coupon' ? 'active' : ''}`}>
-                  <div className="border-b border-line px-6 py-4">
-                    <div className="item flex cursor-pointer items-center gap-3">
-                      <Icon.Tag className="text-xl" />
-                      <div className="caption1">Add A Coupon Code</div>
-                    </div>
-                  </div>
-                  <div className="form px-6 pt-4">
-                    <div className="">
-                      <label htmlFor="select-discount" className="caption1 text-secondary">
-                        Enter Code
-                      </label>
-                      <input
-                        className="mt-3 w-full rounded-xl border-line px-5 py-3"
-                        id="select-discount"
-                        type="text"
-                        placeholder="Discount code"
-                      />
-                    </div>
-                  </div>
-                  <div className="block-button px-6 pb-6 pt-4 text-center">
-                    <div
-                      className="button-main w-full text-center"
-                      onClick={() => setActiveTab('')}
-                    >
-                      Apply
-                    </div>
-                    <div
-                      onClick={() => setActiveTab('')}
-                      className="text-button-uppercase has-line-before mt-4 inline-block cursor-pointer text-center"
-                    >
-                      Cancel
-                    </div>
                   </div>
                 </div>
               </div>

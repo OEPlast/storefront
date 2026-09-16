@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { serverGetWithMeta } from '@/libs/query/server-api-client';
 import api from '@/libs/api/endpoints';
 import type { ProductListItem } from '@/types/product';
 import { getDefaultMetadata } from '@/libs/seo';
-import { getStoreName } from '@/libs/storeBranding';
+import { getStoreBranding } from '@/libs/storeBranding';
 import { getCdnUrl } from '@/libs/cdn-url';
-import { formatToNaira } from '@/utils/currencyFormatter';
+import ProductSection from '@/components/Home7/ProductSection';
 import {
     generateCollectionSchema,
     generateItemListSchema,
@@ -21,13 +20,15 @@ export const revalidate = 3600;
 
 const PAGE_TITLE = 'Deals & Offers';
 
-function pageDescFor(storeName: string): string {
-    return `Shop the best deals, discounts and daily offers at ${storeName}. Save on quality products with free delivery across Nigeria and 7-day returns.`;
+// Only "free" delivery when there is a free-delivery threshold would be true for every order, so
+// the copy says delivery, not free delivery. The return window comes from the server.
+function pageDescFor(storeName: string, returnDays: number): string {
+    return `Shop the best deals, discounts and daily offers at ${storeName}. Save on quality products with delivery across Nigeria and ${returnDays}-day returns.`;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-    const storeName = await getStoreName();
-    const description = pageDescFor(storeName);
+    const { storeName, policies } = await getStoreBranding();
+    const description = pageDescFor(storeName, policies.returnWindowDays);
 
     return getDefaultMetadata({
         title: PAGE_TITLE,
@@ -71,8 +72,8 @@ async function fetchDeals(): Promise<ProductListItem[]> {
 }
 
 export default async function DealsPage() {
-    const [products, storeName] = await Promise.all([fetchDeals(), getStoreName()]);
-    const description = pageDescFor(storeName);
+    const [products, { storeName, policies }] = await Promise.all([fetchDeals(), getStoreBranding()]);
+    const description = pageDescFor(storeName, policies.returnWindowDays);
 
     const listProducts: ListItemProduct[] = products.map((p) => ({
         name: p.name,
@@ -101,56 +102,40 @@ export default async function DealsPage() {
                     'ld-itemlist'
                 )}
 
-            <div className="container py-10">
-                <nav aria-label="Breadcrumb" className="mb-4 text-sm text-secondary">
-                    <Link href="/" className="hover:underline">
-                        Home
-                    </Link>{' '}
-                    / <span aria-current="page">Deals</span>
-                </nav>
+            <div className="pb-10 md:pb-20">
+                <div className="container pt-10">
+                    <nav aria-label="Breadcrumb" className="text-sm text-secondary">
+                        <Link href="/" className="hover:underline">
+                            Home
+                        </Link>{' '}
+                        / <span aria-current="page">Deals</span>
+                    </nav>
+                </div>
 
-                <header className="mb-8">
-                    <h1 className="heading3">Deals &amp; Offers</h1>
-                    <p className="body1 mt-2 text-secondary">
-                        Save big on quality products. Free delivery across Nigeria &middot; 7-day returns.
-                    </p>
-                </header>
+                {/* Same section the homepage uses, so deals render as full product cards (add to
+                    cart, wishlist, quick view, sale badges). The products are still fetched here on
+                    the server, so ISR and the structured data above are unchanged; the client
+                    component only receives the plain product array. */}
+                <ProductSection
+                    data={products}
+                    header={PAGE_TITLE}
+                    headingAs="h1"
+                    description={`Save big on quality products. Delivery across Nigeria · ${policies.returnWindowDays}-day returns.`}
+                    showCountdown
+                    isLoading={false}
+                    spacingClassName="pt-4"
+                />
 
-                {listProducts.length === 0 ? (
-                    <p className="body1 text-secondary">
-                        No live deals right now. Check back soon or{' '}
-                        <Link href="/" className="underline">
-                            browse all products
-                        </Link>
-                        .
-                    </p>
-                ) : (
-                    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                        {products.map((p) => {
-                            const img = coverImageOf(p);
-                            return (
-                                <li key={p.slug} className="rounded-lg border border-line p-3">
-                                    <Link href={`/product/${p.slug}`} className="block">
-                                        {img && (
-                                            <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-md bg-surface">
-                                                <Image
-                                                    src={img}
-                                                    alt={p.name}
-                                                    fill
-                                                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                                    className="object-cover"
-                                                />
-                                            </div>
-                                        )}
-                                        <span className="text-title line-clamp-2 block">{p.name}</span>
-                                        <span className="mt-1 block font-semibold">
-                                            {formatToNaira(p.price)}
-                                        </span>
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                {products.length === 0 && (
+                    <div className="container">
+                        <p className="body1 text-secondary">
+                            No live deals right now. Check back soon or{' '}
+                            <Link href="/" className="underline">
+                                browse all products
+                            </Link>
+                            .
+                        </p>
+                    </div>
                 )}
             </div>
         </>

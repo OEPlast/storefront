@@ -13,13 +13,13 @@ const StoreConfigContext = createContext<StoreConfigValue | null>(null);
  * fetch boundary itself.
  */
 export function StoreConfigProvider({
-  storeName,
-  whatsappNumber,
+  branding,
   children,
-}: StoreConfigValue & { children: React.ReactNode }) {
-  return (
-    <StoreConfigContext.Provider value={{ storeName, whatsappNumber }}>{children}</StoreConfigContext.Provider>
-  );
+}: {
+  branding: StoreConfigValue;
+  children: React.ReactNode;
+}) {
+  return <StoreConfigContext.Provider value={branding}>{children}</StoreConfigContext.Provider>;
 }
 
 export function useStoreConfig(): StoreConfigValue {

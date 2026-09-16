@@ -112,7 +112,7 @@ export default function Dashboard() {
                         {firstProduct ? (
                           <Link href={`/product/${firstProduct.slug}`} className="product flex items-center gap-3">
                             <Image
-                              src={getCdnUrl(firstProduct.image) || '/images/product/1000x1000.png'}
+                              src={getCdnUrl(firstProduct.image) || '/images/placeholder.png'}
                               width={48}
                               height={48}
                               alt={firstProduct.name}

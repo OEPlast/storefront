@@ -12,6 +12,16 @@ class InvalidLoginError extends CredentialsSignin {
   code = 'Invalid identifier or password';
 }
 
+/**
+ * The email belongs to a guest-checkout record that has no password yet. Its `code` survives
+ * signIn() (Auth.js rethrows its own error types unchanged), so the login action can send the
+ * shopper to the emailed-code flow instead of reporting a wrong password.
+ */
+export const GUEST_ACCOUNT_LOGIN_CODE = 'guest_account';
+class GuestAccountLoginError extends CredentialsSignin {
+  code = GUEST_ACCOUNT_LOGIN_CODE;
+}
+
 class AccountNotFoundError extends AuthError {
   constructor() {
     super();
@@ -69,6 +79,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (response.status === 401) {
               throw new InvalidLoginError();
             }
+            const failure = (await response.json().catch(() => null)) as {
+              data?: { reason?: string } | null;
+            } | null;
+            if (failure?.data?.reason === 'GUEST_ACCOUNT') {
+              throw new GuestAccountLoginError();
+            }
             return null;
           }
 
@@ -83,7 +99,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return res.data ?? null;
         } catch (error) {
           console.log('Error during credentials authorization:', error);
-          if (error instanceof InvalidLoginError) {
+          if (error instanceof InvalidLoginError || error instanceof GuestAccountLoginError) {
             throw error;
           }
           throw new AuthenticationFailedError(
@@ -154,6 +170,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             body: JSON.stringify({
               provider: account.provider,
               providerAccountId: account.providerAccountId,
+              // Google's signed ID token: the backend verifies it before issuing a session, since
+              // the account id on its own proves nothing.
+              idToken: account.id_token,
             }),
           });
 
@@ -187,6 +206,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (trigger === 'update' && session) {
         token.emailVerified = session.user.emailVerified;
+        // A password change revokes every older backend token and hands back a new one.
+        if (typeof session.user.token === 'string' && session.user.token) {
+          token.token = session.user.token;
+        }
       }
 
       return token;

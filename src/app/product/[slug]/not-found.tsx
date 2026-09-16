@@ -24,7 +24,7 @@ export default function NotFound() {
                     {/* Action Buttons */}
                     <div className="flex items-center gap-4 flex-wrap justify-center">
                         <Link
-                            href="/shop"
+                            href="/category"
                             className="button-main"
                         >
                             Browse All Products
@@ -46,7 +46,7 @@ export default function NotFound() {
                         </p>
                         <div className="flex flex-col sm:flex-row items-center gap-4 justify-center text-sm">
                             <Link
-                                href="/contact"
+                                href="/pages/contact"
                                 className="flex items-center gap-2 text-black hover:underline"
                             >
                                 <Icon.Envelope size={18} />
@@ -54,7 +54,7 @@ export default function NotFound() {
                             </Link>
                             <span className="text-gray-300 max-sm:hidden">|</span>
                             <Link
-                                href="/search"
+                                href="/search-result"
                                 className="flex items-center gap-2 text-black hover:underline"
                             >
                                 <Icon.MagnifyingGlass size={18} />

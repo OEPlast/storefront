@@ -53,7 +53,7 @@ export async function generateMetadata({
 
         const description = category.description
             ? category.description.substring(0, 155) + '...'
-            : `Browse ${category.name} products at ${storeName}. Shop quality ${category.name.toLowerCase()} items with free delivery across Nigeria.`;
+            : `Browse ${category.name} products at ${storeName}. Shop quality ${category.name.toLowerCase()} items with delivery across Nigeria.`;
 
         // Prefetch category image
         if (category.image) {

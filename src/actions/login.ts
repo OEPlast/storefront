@@ -8,6 +8,8 @@ export interface LoginActionResult {
   success: boolean;
   error?: string;
   emailVerified?: boolean;
+  /** Set when the email was used for guest checkout and has no password yet. */
+  guestAccount?: boolean;
 }
 
 export async function credentialsLogin(
@@ -33,6 +35,16 @@ export async function credentialsLogin(
   } catch (error) {
     if (isRedirectError(error)) {
       throw error;
+    }
+
+    // Compared by code rather than instanceof: the error class lives in auth.ts, and this is the
+    // one failure the shopper can act on, so it gets its own message.
+    if ((error as { code?: string } | null)?.code === "guest_account") {
+      return {
+        success: false,
+        guestAccount: true,
+        error: "You've checked out with this email before but haven't set a password yet.",
+      };
     }
 
     if (error instanceof AuthError) {

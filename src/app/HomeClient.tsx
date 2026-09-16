@@ -35,7 +35,7 @@ export default function HomeClient() {
           limit={10}
           isLoading={isLoadingDeals}
           header="Deals of the Day"
-          viewAllLink="/campaign/deals-of-the-day"
+          viewAllLink="/deals"
         />
       )}
 

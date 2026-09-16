@@ -41,7 +41,7 @@ import { hasProductIssues } from '@/utils/cartCorrections';
 
 import { useCheckoutStore } from '@/store/useCheckoutStore';
 import { usePaymentStore } from '@/store/usePaymentStore';
-import { useLoginModalStore } from '@/store/useLoginModalStore';
+import { useLoginModalStore, type LoginModalOptions } from '@/store/useLoginModalStore';
 import {
   useAllShippingConfig,
   type LogisticsConfigRecord,
@@ -55,12 +55,14 @@ import { useProductSocket } from '@/hooks/useProductSocket';
 
 import {
   EMPTY_CHECKOUT_ADDRESS,
+  EMPTY_GUEST_CONTACT,
   addressFromSavedAddress,
   addressSchema,
   validateCheckoutForm,
   type CheckoutAddress,
   type CheckoutFieldErrors,
   type CheckoutFormInput,
+  type GuestContact,
 } from '@/libs/schemas/checkout.schema';
 
 import type { CheckoutErrors } from '@/types/checkout';
@@ -232,7 +234,17 @@ export interface SecureCheckoutPayload {
   shippingCost: number;
   acceptChanges: boolean;
   notes: string;
+  /** Guest checkout only. The backend requires it when no token is sent and ignores it otherwise. */
+  guest?: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+  };
 }
+
+/** Backend `data.reason` when a guest types an email that already has a registered account. */
+const ACCOUNT_EXISTS_REASON = 'ACCOUNT_EXISTS';
 
 // ── Module constants / helpers ──────────────────────────────────────────────
 
@@ -384,11 +396,19 @@ export interface UseCheckoutControllerReturn {
   subtotal: number;
 
   // ---- contact / auth -------------------------------------------------------
+  /** Session email when signed in; the typed guest email otherwise. */
   contactEmail: string;
   isAuthenticated: boolean;
   isSessionLoading: boolean;
+  /** Signed out and the session has finished loading. */
+  isGuestCheckout: boolean;
   userName: string | null;
-  openLoginModal: (redirectPath?: string | null) => void;
+  openLoginModal: (redirectPath?: string | null, options?: LoginModalOptions) => void;
+  guestEmail: string;
+  setGuestEmail: (email: string) => void;
+  /** Name + phone for a guest picking up in store (delivery orders take them from the address). */
+  guestContact: GuestContact;
+  handleGuestContactChange: <K extends keyof GuestContact>(field: K, value: GuestContact[K]) => void;
 
   // ---- delivery method ------------------------------------------------------
   shippingMethod: ShippingMethodType;
@@ -608,13 +628,25 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
   const { openLoginModal } = useLoginModalStore();
 
   const { data: session, status: sessionStatus } = useSession();
-  const { data: addresses } = useAddresses();
+  const { data: addresses } = useAddresses({ enabled: sessionStatus === 'authenticated' });
   const createAddressMutation = useAddAddress();
 
   const isAuthenticated = sessionStatus === 'authenticated' && !!session?.user;
   const isSessionLoading = sessionStatus === 'loading';
-  const contactEmail = session?.user?.email ?? '';
+  // Not the cart's `isGuest`, which is also true while the session is still loading.
+  const isGuestCheckout = !isAuthenticated && !isSessionLoading;
   const userName = session?.user?.name ?? null;
+
+  // ---- guest contact ----------------------------------------------------------
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestContact, setGuestContact] = useState<GuestContact>(EMPTY_GUEST_CONTACT);
+  const handleGuestContactChange = useCallback(
+    <K extends keyof GuestContact>(field: K, value: GuestContact[K]) => {
+      setGuestContact((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
+  const contactEmail = isAuthenticated ? (session?.user?.email ?? '') : guestEmail.trim();
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [addressValidationError, setAddressValidationError] = useState<string | null>(null);
@@ -938,12 +970,16 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
     (code: string, orderTotal: number): ValidateCouponRequest => ({
       code: code.trim().toUpperCase(),
       orderTotal,
-      productIds: items.map((item) => item._id || item.id),
-      categoryIds: items
-        .map((item) => (item.category ? String(item.category) : null))
-        .filter((category): category is string => category !== null),
+      // The server prices these lines itself, so a product- or category-limited coupon is
+      // worked out on the eligible lines exactly as checkout and the order will.
+      items: items.map((item) => ({
+        product: String(item._id || item.id),
+        qty: item.qty,
+        selectedAttributes: item.selectedAttributes ?? [],
+      })),
+      ...(!isAuthenticated && contactEmail.includes('@') ? { email: contactEmail } : {}),
     }),
-    [items]
+    [items, isAuthenticated, contactEmail]
   );
 
   // `${code}|${orderTotal}` already answered by the server — stops the re-check
@@ -1167,6 +1203,19 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
         payload.billingAddress = toAddressPayload(billingAddress);
       }
 
+      // Guests identify themselves here; a signed-in shopper is identified by the token.
+      // Delivery orders already carry name and phone on the shipping address, so only pickup
+      // takes them from the Contact step.
+      if (isGuestCheckout) {
+        const contactSource = payloadDeliveryType === 'pickup' ? guestContact : shippingAddress;
+        payload.guest = {
+          email: contactEmail,
+          firstName: contactSource.firstName.trim(),
+          lastName: contactSource.lastName.trim(),
+          phoneNumber: contactSource.phoneNumber.trim(),
+        };
+      }
+
       return payload;
     },
     [
@@ -1176,6 +1225,8 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
       items,
       shippingAddress,
       contactEmail,
+      isGuestCheckout,
+      guestContact,
       billingSameAsShipping,
       billingAddress,
       activePayment,
@@ -1319,6 +1370,8 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
     () => ({
       deliveryType,
       email: contactEmail,
+      isGuest: isGuestCheckout,
+      guestContact: isGuestCheckout && deliveryType === 'pickup' ? guestContact : undefined,
       shippingAddress: deliveryType === 'pickup' ? undefined : shippingAddress,
       billingSameAsShipping: effectiveBillingSameAsShipping,
       billingAddress: effectiveBillingSameAsShipping ? undefined : billingAddress,
@@ -1328,6 +1381,8 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
     [
       deliveryType,
       contactEmail,
+      isGuestCheckout,
+      guestContact,
       shippingAddress,
       effectiveBillingSameAsShipping,
       billingAddress,
@@ -1347,13 +1402,15 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
 
   const canProceedToPayment = useMemo(() => {
     if (outOfStockProductIds.size > 0) return false;
-    if (!isAuthenticated) return false;
+    // Guests can check out. Only wait for the session to resolve, so a signed-in shopper is
+    // never submitted as a guest during the first render.
+    if (isSessionLoading) return false;
     if (!isBillingComplete) return false;
     if (shippingMethod === 'pickup') return true;
     return isShippingFormComplete && calculatedShippingCost !== null && !isCalculatingShipping;
   }, [
     outOfStockProductIds,
-    isAuthenticated,
+    isSessionLoading,
     isBillingComplete,
     shippingMethod,
     isShippingFormComplete,
@@ -1508,7 +1565,22 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
         errorM = 'An unknown error occurred.';
       }
 
-      if (errorM === 'No token provided') {
+      const accountExists =
+        axios.isAxiosError(submitError) &&
+        submitError.response?.status === 409 &&
+        submitError.response.data?.data?.reason === ACCOUNT_EXISTS_REASON;
+
+      if (accountExists) {
+        // The typed email belongs to a registered account. Sign in right here — the popup
+        // keeps the shopper on checkout, and the cart and entered address stay as they are.
+        const existingEmail =
+          (axios.isAxiosError(submitError) && submitError.response?.data?.data?.email) || contactEmail;
+        setCheckoutError('You already have an account with this email. Log in to place your order.');
+        openLoginModal(null, {
+          email: existingEmail,
+          message: 'You already have an account with this email. Log in to finish checking out.',
+        });
+      } else if (errorM === 'No token provided') {
         if (isAuthenticated) {
           // A session without a backend token (e.g. a failed provider login): the
           // popup never shows while authenticated, so drop the broken session first.
@@ -1549,6 +1621,7 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
     createAddressMutation,
     openLoginModal,
     isAuthenticated,
+    contactEmail,
   ]);
 
   // ---- geocoding (MUST stay declared before the quote effect) ----------------
@@ -1856,8 +1929,13 @@ export function useCheckoutController(): UseCheckoutControllerReturn {
     contactEmail,
     isAuthenticated,
     isSessionLoading,
+    isGuestCheckout,
     userName,
     openLoginModal,
+    guestEmail,
+    setGuestEmail,
+    guestContact,
+    handleGuestContactChange,
 
     // delivery method
     shippingMethod,

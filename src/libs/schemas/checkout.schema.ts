@@ -95,12 +95,38 @@ export const couponCodeSchema = z.object({
 
 export type CouponCodeInput = z.infer<typeof couponCodeSchema>;
 
+// ── Guest contact ───────────────────────────────────────────────────────────
+/**
+ * Name and phone a signed-out shopper gives in the Contact step. Only collected for pickup:
+ * a delivery order already carries both on its shipping address, so guests aren't asked twice.
+ */
+export const guestContactSchema = addressSchema.pick({
+  firstName: true,
+  lastName: true,
+  phoneNumber: true,
+});
+
+export type GuestContact = z.infer<typeof guestContactSchema>;
+
+export const EMPTY_GUEST_CONTACT: GuestContact = {
+  firstName: "",
+  lastName: "",
+  phoneNumber: "",
+};
+
+const GUEST_CONTACT_FIELD_KEYS = Object.keys(guestContactSchema.shape) as Array<
+  keyof GuestContact
+>;
+
 // ── Whole-form schema ───────────────────────────────────────────────────────
 export const checkoutFormSchema = z
   .object({
     deliveryType: z.enum(["shipping", "pickup", "gig"]),
-    /** Contact email. Login is required, so in practice this is the session email. */
-    email: z.string().trim().email("Invalid email address"),
+    /** Contact email: the session email when signed in, typed by the shopper as a guest. */
+    email: z.string().trim().email("Enter a valid email address"),
+    isGuest: z.boolean(),
+    /** Guest + pickup only (see guestContactSchema). Undefined otherwise. */
+    guestContact: guestContactSchema.optional(),
     /** Absent for pickup. Required otherwise (enforced in superRefine). */
     shippingAddress: addressSchema.optional(),
     billingSameAsShipping: z.boolean(),
@@ -133,6 +159,15 @@ export const checkoutFormSchema = z
         });
       }
     }
+    // R4 — a guest picking up in store has no shipping address, so name and phone must
+    //      come from the Contact step; the backend refuses a guest order without them.
+    if (value.isGuest && value.deliveryType === "pickup" && !value.guestContact) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Name and phone number are required",
+        path: ["guestContact"],
+      });
+    }
     // R3 — the backend REJECTS billingSameAsShipping:false with no billingAddress.
     if (!value.billingSameAsShipping && !value.billingAddress) {
       ctx.addIssue({
@@ -148,8 +183,11 @@ export type CheckoutFormInput = z.infer<typeof checkoutFormSchema>;
 // ── Error projection consumed by every section component ────────────────────
 export type AddressFieldErrors = Partial<Record<keyof CheckoutAddress, string>>;
 
+export type GuestContactFieldErrors = Partial<Record<keyof GuestContact, string>>;
+
 export interface CheckoutFieldErrors {
   email?: string;
+  guestContact?: GuestContactFieldErrors;
   shippingAddress?: AddressFieldErrors;
   billingAddress?: AddressFieldErrors;
   /** Form-level message not attributable to a single field. */
@@ -203,6 +241,21 @@ export function validateCheckoutForm(
 
     if (root === "email") {
       if (errors.email === undefined) errors.email = issue.message;
+      continue;
+    }
+
+    if (root === "guestContact") {
+      if (
+        typeof child === "string" &&
+        GUEST_CONTACT_FIELD_KEYS.indexOf(child as keyof GuestContact) !== -1
+      ) {
+        const bucket: GuestContactFieldErrors = errors.guestContact ?? {};
+        const field = child as keyof GuestContact;
+        if (bucket[field] === undefined) bucket[field] = issue.message;
+        errors.guestContact = bucket;
+      } else {
+        setFormError(issue.message);
+      }
       continue;
     }
 

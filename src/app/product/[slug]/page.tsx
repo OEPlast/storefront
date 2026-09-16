@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import {
     dehydrate,
     HydrationBoundary,
@@ -25,6 +25,24 @@ import {
 
 interface ProductPageProps {
     params: Promise<{ slug: string; }>;
+}
+
+/**
+ * When a product was renamed, its old slug is kept on the server; send the visitor (and search
+ * engines) to the current URL with a permanent redirect instead of a 404. Cached for an hour.
+ */
+async function redirectIfRenamed(slug: string): Promise<void> {
+    let current: string | undefined;
+    try {
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/products/slug-redirect/${encodeURIComponent(slug)}`,
+            { next: { revalidate: 3600 } }
+        );
+        if (response.ok) current = (await response.json())?.data?.slug;
+    } catch {
+        // Lookup failure falls through to the normal not-found page.
+    }
+    if (current && current !== slug) permanentRedirect(`/product/${current}`);
 }
 
 // Server-side prefetch function
@@ -61,6 +79,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
     const [{ product }, storeName] = await Promise.all([prefetchProduct(slug), getStoreName()]);
 
     if (!product) {
+        await redirectIfRenamed(slug);
         return {
             title: `Product Not Found | ${storeName}`,
             description: 'The product you are looking for does not exist.',
@@ -163,8 +182,9 @@ export async function generateMetadata({ params }: ProductPageProps) {
 export default async function ProductPage({ params }: ProductPageProps) {
     const { slug } = await params;
     const { queryClient, product } = await prefetchProduct(slug);
-    // If product not found, trigger Next.js not-found page
+    // Renamed product → 301 to its current URL; otherwise the not-found page.
     if (!product) {
+        await redirectIfRenamed(slug);
         notFound();
     }
 
@@ -195,10 +215,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     stock: product.stock,
                     images: productImages,
                     brand: product.brand,
+                    gtin: product.gtin,
+                    mpn: product.mpn,
                     category: product.category?.name,
                     slug: product.slug,
                     sku: product.sku ? String(product.sku) : undefined,
-                    condition: 'new',
+                    condition: product.condition ?? 'new',
                     ratingValue: product.reviewStats?.averageRating,
                     reviewCount: product.reviewStats?.totalReviews,
                     variantPrices,

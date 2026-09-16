@@ -89,6 +89,18 @@ const UserIcon = () => {
       </Link>
     );
   }
+
+  // Everywhere else: quick login popup, stay on the current page after signing in
+  return (
+    <button
+      type="button"
+      aria-label="Log in or create an account"
+      className="user-icon flex cursor-pointer items-center justify-center"
+      onClick={() => openLoginModal()}
+    >
+      <UI_UserICon size={24} color="black" />
+    </button>
+  );
 };
 
 export default memo(UserIcon);

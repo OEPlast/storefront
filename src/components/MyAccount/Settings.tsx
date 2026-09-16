@@ -6,6 +6,8 @@ import { usePasswordStatus } from '@/hooks/queries/usePasswordStatus';
 import SetPasswordForm from './SetPasswordForm';
 import ChangePasswordForm from './ChangePasswordForm';
 import ProfileInformation from './ProfileInformation';
+import EmailPreferences from './EmailPreferences';
+import AccountDataSection from './AccountDataSection';
 
 export default function Settings() {
   const { activeTab } = useAccountStore();
@@ -33,6 +35,18 @@ export default function Settings() {
       ) : (
         <SetPasswordForm />
       )}
+
+      <div className="my-5">
+        <hr className="border-line" />
+      </div>
+
+      <EmailPreferences />
+
+      <div className="my-5">
+        <hr className="border-line" />
+      </div>
+
+      <AccountDataSection />
     </>
   );
 }

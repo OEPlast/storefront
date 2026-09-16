@@ -68,6 +68,16 @@ export default function Sidebar() {
           <Link
             href={'#!'}
             scroll={false}
+            className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white mt-1.5 ${activeTab === 'returns' ? 'active' : ''
+              }`}
+            onClick={() => setActiveTab('returns')}
+          >
+            <Icon.ArrowUUpLeft size={20} />
+            <strong className="heading6">Returns</strong>
+          </Link>
+          <Link
+            href={'#!'}
+            scroll={false}
             className={`item flex items-center gap-3 w-full px-5 py-4 rounded-lg cursor-pointer duration-300 hover:bg-white mt-1.5 ${activeTab === 'address' ? 'active' : ''
               }`}
             onClick={() => setActiveTab('address')}

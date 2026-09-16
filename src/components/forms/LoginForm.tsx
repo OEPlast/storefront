@@ -17,24 +17,38 @@ import {
   saveCallbackUrl,
 } from '@/libs/utils/authRedirect';
 import { resolveLoginDestination } from '@/components/Auth/loginDestination';
+import { useForgotPasswordStore } from '@/store/useForgotPasswordStore';
 interface LoginFormProps {
   onLoginSuccess?: () => void;
   redirectPath?: string;
   /**
    * "page" (default): the /login page flow, navigates to the saved callback URL.
    * "modal": the login popup. Stays on the current page (quick login) unless a
-   * safe redirectPath is given. The register / forgot-password links are hidden
-   * because the popup renders its own footer actions.
+   * safe redirectPath is given. The register link is hidden because the popup
+   * renders its own footer actions; forgot-password goes through onForgotPassword.
    */
   variant?: 'page' | 'modal';
+  /** Prefills the email field, e.g. when checkout found an existing account for the typed email. */
+  defaultEmail?: string;
+  /**
+   * Replaces the plain forgot-password link. The popup passes one that saves the page the shopper
+   * is on before navigating, so finishing the reset brings them back there.
+   */
+  onForgotPassword?: () => void;
 }
 
 export default function LoginForm({
   onLoginSuccess,
   redirectPath,
   variant = 'page',
+  defaultEmail,
+  onForgotPassword,
 }: LoginFormProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Set when the email belongs to a guest-checkout record with no password: the fix is the
+  // emailed-code flow, so the error offers that instead of "try again".
+  const [guestClaimEmail, setGuestClaimEmail] = useState<string | null>(null);
+  const startGuestClaim = useForgotPasswordStore((state) => state.startGuestClaim);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { update } = useSession();
@@ -47,7 +61,7 @@ export default function LoginForm({
 
   const form = useForm({
     defaultValues: {
-      email: '',
+      email: defaultEmail ?? '',
       password: '',
       rememberMe: false,
     } as LoginInput,
@@ -56,6 +70,7 @@ export default function LoginForm({
     },
     onSubmit: async ({ value }) => {
       setSubmitError(null);
+      setGuestClaimEmail(null);
       setIsLoading(true);
 
       // Resolve the popup destination before any await, so closing the popup
@@ -102,6 +117,7 @@ export default function LoginForm({
           // while the navigation / refresh is in flight.
         } else {
           setSubmitError(result.error || 'Invalid credentials. Please try again.');
+          setGuestClaimEmail(result.guestAccount ? value.email : null);
           setIsLoading(false);
         }
       } catch (error) {
@@ -193,15 +209,38 @@ export default function LoginForm({
             </div>
           )}
         </form.Field>
-        <Link href="/forgot-password" className="text-sm font-medium hover:underline">
-          Forgot Your Password?
-        </Link>
+        {onForgotPassword ? (
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-sm font-medium hover:underline"
+          >
+            Forgot Your Password?
+          </button>
+        ) : (
+          <Link href="/forgot-password" className="text-sm font-medium hover:underline">
+            Forgot Your Password?
+          </Link>
+        )}
       </div>
 
       {/* Error Message */}
       {submitError && (
         <div className="mt-5 rounded-lg border border-red-400 bg-red-100 p-4 text-red-700">
           <p className="text-sm">{submitError}</p>
+          {guestClaimEmail && (
+            <button
+              type="button"
+              onClick={() => {
+                startGuestClaim(guestClaimEmail);
+                // A route change also closes the login popup.
+                router.push('/forgot-password');
+              }}
+              className="mt-2 text-sm font-semibold text-black underline"
+            >
+              Email me a code to set a password
+            </button>
+          )}
         </div>
       )}
 

@@ -1,17 +1,36 @@
 import { siteConfig } from '@/config/siteConfig';
+import { formatNaira, getShippingConfig, getStoreBranding } from '@/libs/storeBranding';
 
-// Static, cacheable. `llms.txt` gives AI answer engines a clean summary of the
-// store, key surfaces, and policies so they can cite Rawura accurately.
-export const dynamic = 'force-static';
+// `llms.txt` gives AI answer engines a clean summary of the store, key surfaces, and policies so
+// they can cite the store accurately. Built from Store Settings and the checkout delivery config
+// (both cached by Next), and regenerated hourly so an edit in the admin shows up here.
+export const revalidate = 3600;
 
-export function GET() {
+export async function GET() {
   const url = siteConfig.url;
-  const body = `# ${siteConfig.name}
+  const [branding, shipping] = await Promise.all([getStoreBranding(), getShippingConfig()]);
+  const { storeName, supportEmail, supportPhone, whatsappNumber, addressLine, policies } = branding;
+
+  const shippingLines = [
+    shipping.deliveryEnabled && `- Delivery across ${siteConfig.country}; cost is calculated at checkout from the address.`,
+    shipping.freeShippingThreshold && `- Free delivery on orders over ${formatNaira(shipping.freeShippingThreshold)}.`,
+    shipping.deliveryWindowLabel && `- Delivery estimate: ${shipping.deliveryWindowLabel} after dispatch.`,
+    shipping.pickupEnabled && '- Store pickup is available at checkout.',
+    `- Returns accepted within ${policies.returnWindowDays} days of delivery.`,
+  ].filter(Boolean);
+
+  const contactLines = [
+    supportEmail && `- Email: ${supportEmail}`,
+    supportPhone && `- Phone: ${supportPhone}`,
+    whatsappNumber && `- WhatsApp: ${whatsappNumber}`,
+    addressLine && `- Address: ${addressLine}`,
+  ].filter(Boolean);
+
+  const body = `# ${storeName}
 
 > ${siteConfig.description}
 
-${siteConfig.name} is an online store serving ${siteConfig.country}. We offer affordable, quality
-products with free delivery nationwide and a ${siteConfig.policy.returnDays}-day return policy.
+${storeName} is an online store serving ${siteConfig.country}.
 
 ## Key pages
 - Home: ${url}/
@@ -19,20 +38,17 @@ products with free delivery nationwide and a ${siteConfig.policy.returnDays}-day
 - Categories: ${url}/category/<category-slug>
 - Products: ${url}/product/<product-slug>
 - Search: ${url}/search-result?query=<query>
-- Blog / buying guides: ${url}/blog
+- Order tracking: ${url}/order-tracking
 - Contact: ${url}/pages/contact
 - FAQs: ${url}/pages/faqs
+- Shipping & delivery: ${url}/pages/shipping
+- Returns & refunds: ${url}/pages/returns
+- Terms of use: ${url}/pages/terms
+- Privacy policy: ${url}/privacy-policy
 
 ## Shipping & returns
-- Free delivery across ${siteConfig.country}.
-- Delivery estimate: ${siteConfig.policy.deliveryDaysMin}-${siteConfig.policy.deliveryDaysMax} business days.
-- Returns accepted within ${siteConfig.policy.returnDays} days.
-
-## Contact
-- Email: ${siteConfig.contact.email}
-- Phone: ${siteConfig.contact.phone}
-- Location: ${siteConfig.contact.address.city}, ${siteConfig.contact.address.country}
-
+${shippingLines.join('\n')}
+${contactLines.length ? `\n## Contact\n${contactLines.join('\n')}\n` : ''}
 ## Structured data
 Product, Offer, AggregateRating, BreadcrumbList, ItemList, CollectionPage,
 Organization and WebSite schema.org markup is published across the site.

@@ -1,9 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import * as Icon from "@phosphor-icons/react/dist/ssr";
+import React from "react";
 
 interface Props {
   props: string;
@@ -11,11 +8,6 @@ interface Props {
 }
 
 const TopNavOne: React.FC<Props> = ({ props, slogan }) => {
-  const [isOpenLanguage, setIsOpenLanguage] = useState(false);
-  const [isOpenCurrence, setIsOpenCurrence] = useState(false);
-  const [language, setLanguage] = useState("English");
-  const [currence, setCurrence] = useState("USD");
-
   return (
     <>
       <div className={`top-nav md:h-[44px] h-[30px] ${props}`}>

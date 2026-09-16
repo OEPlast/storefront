@@ -22,7 +22,7 @@ const CatB_Banner = () => {
             {CAT_B_Banners.map((banner, index) => (
               <Link
                 key={banner._id || index}
-                href={banner.pageLink || '/shop/breadcrumb-img'}
+                href={banner.pageLink || '/'}
                 className={`banner-item relative block duration-500 ${index === 2 ? 'max-lg:hidden' : ''}`}
               >
                 <div className="banner-img w-full overflow-hidden rounded-lg">

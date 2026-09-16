@@ -7,11 +7,11 @@ import { getDefaultMetadata } from '@/libs/seo';
 export async function generateMetadata(): Promise<Metadata> {
   return getDefaultMetadata({
     title: 'Order Tracking',
-    description: 'Track your order status and delivery. Enter your tracking number to see real-time updates.',
+    description: 'Track your order with your order number and email, or a courier tracking number.',
     keywords: ['order tracking', 'track order', 'delivery status', 'shipment tracking'],
     openGraph: {
       title: 'Order Tracking',
-      description: 'Track your order status and delivery. Enter your tracking number to see real-time updates.',
+      description: 'Track your order with your order number and email, or a courier tracking number.',
     },
   });
 }

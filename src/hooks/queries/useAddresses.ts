@@ -15,10 +15,15 @@ const fetchAddresses = async (): Promise<Address[]> => {
 };
 
 // Hook for fetching user addresses
-export const useAddresses = (): UseQueryResult<Address[], Error> => {
+export const useAddresses = (
+  options: { enabled?: boolean } = {}
+): UseQueryResult<Address[], Error> => {
   return useQuery({
     queryKey: ['user', 'addresses'],
     queryFn: fetchAddresses,
+    // Saved addresses only exist for a signed-in account. Checkout passes `enabled: false` for
+    // guests so it doesn't fire a request that can only come back 401.
+    enabled: options.enabled ?? true,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: false,

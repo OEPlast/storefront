@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "@tanstack/react-form";
 import { registerSchema, RegisterInput } from "@/libs/schemas/auth.schema";
+import axios from "axios";
 import { apiClient, handleApiError } from "@/libs/api/axios";
+import { useForgotPasswordStore } from "@/store/useForgotPasswordStore";
 import { api } from "@/libs/api/endpoints";
 import * as Icon from "@phosphor-icons/react/dist/ssr";
 import { GetCountries } from "react-country-state-city";
@@ -16,6 +18,10 @@ import { signIn, signOut, useSession } from "next-auth/react";
 export default function RegisterForm() {
   const [countriesList, setCountriesList] = useState<Country[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Set when the email was already used for guest checkout: that record is claimed through the
+  // emailed code (proving the email is theirs), not by registering over it.
+  const [guestClaimEmail, setGuestClaimEmail] = useState<string | null>(null);
+  const startGuestClaim = useForgotPasswordStore((state) => state.startGuestClaim);
   const router = useRouter();
   const { update } = useSession();
 
@@ -40,6 +46,7 @@ export default function RegisterForm() {
     },
     onSubmit: async ({ value }) => {
       setSubmitError(null);
+      setGuestClaimEmail(null);
       try {
         // Remove confirmPassword and agreeToTerms before sending to API
         const { confirmPassword, agreeToTerms, ...dataToSend } = value;
@@ -71,6 +78,9 @@ export default function RegisterForm() {
 
         const errorMessage = handleApiError(error);
         setSubmitError(errorMessage);
+        if (axios.isAxiosError(error) && error.response?.data?.data?.reason === "GUEST_ACCOUNT") {
+          setGuestClaimEmail(value.email);
+        }
       }
     }
   });
@@ -256,8 +266,13 @@ export default function RegisterForm() {
               </div>
               <label htmlFor={field.name} className="pl-2 cursor-pointer text-secondary2">
                 I agree to the
-                <Link href={"#!"} className="text-black hover:underline pl-1">
-                  Terms of User
+                <Link
+                  href="/pages/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-black hover:underline pl-1"
+                >
+                  Terms of Use
                 </Link>
               </label>
             </div>
@@ -270,6 +285,18 @@ export default function RegisterForm() {
       {submitError && (
         <div className="text-red p-1 mt-2 text-center">
           <p className="text-sm text-red-800">{submitError}</p>
+          {guestClaimEmail && (
+            <button
+              type="button"
+              onClick={() => {
+                startGuestClaim(guestClaimEmail);
+                router.push("/forgot-password");
+              }}
+              className="mt-2 text-sm font-semibold text-black underline"
+            >
+              Email me a code to set a password
+            </button>
+          )}
         </div>
       )}
 

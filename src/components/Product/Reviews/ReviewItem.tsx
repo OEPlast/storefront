@@ -10,6 +10,8 @@ import { useReviewLike } from '@/hooks/mutations/useReviewLike';
 import toast from 'react-hot-toast';
 import { useLoginModalStore } from '@/store/useLoginModalStore';
 import { HandsClappingIcon } from '@phosphor-icons/react';
+import { getCdnUrl } from '@/libs/cdn-url';
+import { useStoreConfig } from '@/context/StoreConfigContext';
 
 interface ReviewItemProps {
   review: {
@@ -25,6 +27,8 @@ interface ReviewItemProps {
     images?: string[];
     likesCount?: number;
     isLikedByUser?: boolean;
+    /** Staff replies, shown as the store's response. */
+    replies?: Array<{ _id: string; reply: string; createdAt: string }>;
   };
   productId: string;
 }
@@ -33,6 +37,7 @@ export default function ReviewItem({ review, productId }: ReviewItemProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const { openLoginModal } = useLoginModalStore();
+  const { storeName } = useStoreConfig();
 
   // Optimistic state for like
   const [optimisticLikesCount, setOptimisticLikesCount] = useState(review.likesCount || 0);
@@ -121,14 +126,31 @@ export default function ReviewItem({ review, productId }: ReviewItemProps) {
       {review.images && review.images.length > 0 && (
         <div className="list-img mt-3 flex flex-wrap items-center gap-2">
           {review.images.map((img, imgIndex) => (
-            <Image
-              key={imgIndex}
-              src={img}
-              width={400}
-              height={400}
-              alt={`review-img-${imgIndex}`}
-              className="aspect-square w-[100px] rounded-lg object-cover"
-            />
+            <a key={imgIndex} href={getCdnUrl(img)} target="_blank" rel="noopener noreferrer" aria-label={`Open photo ${imgIndex + 1}`}>
+              <Image
+                src={getCdnUrl(img) || '/images/placeholder.png'}
+                width={400}
+                height={400}
+                alt={`Customer photo ${imgIndex + 1}`}
+                className="aspect-square w-[100px] rounded-lg object-cover"
+              />
+            </a>
+          ))}
+        </div>
+      )}
+      {review.replies && review.replies.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {review.replies.map((reply) => (
+            <div key={reply._id} className="rounded-lg bg-surface px-4 py-3">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Icon.Storefront size={16} />
+                Response from {storeName}
+                <span className="font-normal text-secondary2">
+                  · {new Date(reply.createdAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+              <p className="mt-1 whitespace-pre-line text-secondary">{reply.reply}</p>
+            </div>
           ))}
         </div>
       )}

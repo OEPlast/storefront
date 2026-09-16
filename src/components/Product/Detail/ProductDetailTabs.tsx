@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ProductSpecification } from '@/types/product';
 import ProductDescription from './ProductDescription';
 import ReviewsList from '../Reviews/ReviewsList';
@@ -18,8 +18,24 @@ const ProductDetailTabs: React.FC<Props> = ({ productId, description, specificat
     setActiveTab(tab);
   };
 
+  // Review-request emails link to /product/<slug>?review=1#reviews: open the Review tab and
+  // scroll to it. Read from window rather than useSearchParams so the page needs no Suspense boundary.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (window.location.hash === '#reviews' || params.get('review') === '1') {
+      setActiveTab('review');
+      // Wait for the gallery above to lay out, or the scroll lands short (or is reset to the top).
+      const timer = window.setTimeout(
+        () => rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+        600
+      );
+      return () => window.clearTimeout(timer);
+    }
+  }, []);
+
   return (
-    <div className="desc-tab">
+    <div id="reviews" ref={rootRef} className="desc-tab scroll-mt-24">
       <div className="container">
         <div className="flex w-full items-center justify-center">
           <div className="menu-tab flex items-center gap-8 md:gap-[60px]">

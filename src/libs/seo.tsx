@@ -63,7 +63,14 @@ export async function getDefaultMetadata(overrides?: Partial<Metadata>): Promise
     },
   };
 
-  return { ...metadata, ...(overrides || {}) } as Metadata;
+  // Shallow-merge top-level keys, but deep-merge openGraph/twitter so a page that
+  // overrides e.g. openGraph.title keeps the default images, siteName and locale.
+  return {
+    ...metadata,
+    ...(overrides || {}),
+    openGraph: { ...metadata.openGraph, ...overrides?.openGraph },
+    twitter: { ...metadata.twitter, ...overrides?.twitter },
+  } as Metadata;
 }
 
 /**

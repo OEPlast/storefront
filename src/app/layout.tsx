@@ -16,8 +16,9 @@ import ModalCompare from '@/components/Modal/ModalCompare';
 import ModalLogin from '@/components/Modal/ModalLogin';
 import SliderOrganic from '@/components/Slider/SliderOrganic';
 import { getDefaultMetadata, PrefetchImages } from '@/libs/seo';
-import { getStoreBranding } from '@/libs/storeBranding';
+import { formatNaira, getShippingConfig, getStoreBranding } from '@/libs/storeBranding';
 import { StoreConfigProvider } from '@/context/StoreConfigContext';
+import { siteConfig } from '@/config/siteConfig';
 import {
   generateOrganizationSchema,
   generateWebsiteSchema,
@@ -35,16 +36,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const branding = await getStoreBranding();
+  const [branding, shipping] = await Promise.all([getStoreBranding(), getShippingConfig()]);
+  // The top bar only states offers the checkout actually applies.
+  const slogan = shipping.freeShippingThreshold
+    ? `Free delivery on orders over ${formatNaira(shipping.freeShippingThreshold)}`
+    : `Delivery across ${siteConfig.country}`;
 
   return (
     <GlobalProvider>
-      <StoreConfigProvider storeName={branding.storeName} whatsappNumber={branding.whatsappNumber}>
+      <StoreConfigProvider branding={branding}>
         <html lang="en">
           <head>
             <PrefetchImages />
             {/* Global structured data: Organization (brand entity) + WebSite (Sitelinks Search Box) */}
-            {injectStructuredData(generateOrganizationSchema(), 'ld-organization')}
+            {injectStructuredData(generateOrganizationSchema(branding), 'ld-organization')}
             {injectStructuredData(generateWebsiteSchema(), 'ld-website')}
           </head>
           <body className={instrument.className}>
@@ -61,19 +66,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <AppChrome>
               <TopNavOne
                 props="style-one bg-black"
-                slogan="New customers save 10% with the code GET10"
+                slogan={slogan}
               />
               <div id="header" className="style-nine relative w-full">
                 <MenuEight />
                 <SliderOrganic />
               </div>
-              <ModalLogin />
               <ModalCart serverTimeLeft={serverTimeLeft} />
               <ModalWishlist />
               <ModalQuickview />
               <ModalCompare />
             </AppChrome>
             {children}
+            {/* Outside AppChrome on purpose. The popup is an overlay, not page chrome: it renders
+                nothing until opened, and checkout (a chrome-free route) needs it. Inside AppChrome
+                it was never mounted there, so "Sign In" set isOpen and nothing appeared — and the
+                stale isOpen then popped the dialog open on the next page that had chrome. */}
+            <ModalLogin />
             <AppChrome>
               <Footer />
             </AppChrome>

@@ -45,7 +45,7 @@ export default async function OrderDetailsPage({
 
   try {
     await queryClient.prefetchQuery({
-      queryKey: ['orders', orderId],
+      queryKey: ['order', orderId],
       queryFn: () => prefetchOrder(orderId, session?.user.token
       ),
     });

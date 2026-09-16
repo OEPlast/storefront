@@ -38,9 +38,13 @@ export interface Coupon {
 export interface ValidateCouponRequest {
   code: string; // Note: API expects 'code' for validation
   orderTotal: number;
+  /** Cart lines; the server prices them to work out the coupon's discount. */
+  items?: Array<{ product: string; qty: number; selectedAttributes?: Array<{ name: string; value: string }> }>;
   productIds?: string[];
   categoryIds?: string[];
   userId?: string;
+  /** Guest checkout email, so one-per-customer rules apply to guests with an account email too. */
+  email?: string;
 }
 
 export interface ValidateCouponResponse {

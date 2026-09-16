@@ -27,33 +27,12 @@ export const siteConfig = {
   countryCode: 'NG',
   areaServed: ['Nigeria'] as string[],
 
-  // ── Contact / brand entity (E-E-A-T + Organization schema) ─────────────────
-  contact: {
-    email: 'Rawura@gmail.com',
-    phone: '+2348028299167',
-    address: {
-      street: 'No 1, Abule Ojo Busstop',
-      city: 'Lagos',
-      region: 'Lagos',
-      postalCode: '',
-      country: 'Nigeria',
-      countryCode: 'NG',
-    },
-  },
+  // Contact details, social links and delivery terms are NOT here: they live in Store Settings
+  // (libs/storeBranding.ts) and the checkout delivery config, so the admin can change them.
 
-  // ── Social profiles → schema.org `sameAs` (fill in real, active profiles) ──
-  social: {
-    twitter: 'https://twitter.com/rawura',
-    facebook: 'https://facebook.com/rawura',
-    instagram: 'https://instagram.com/rawura',
-  },
-
-  // ── Store policies (surfaced in Product schema + Merchant Center feed) ──────
+  // ── Store policies (surfaced in Product schema) ─────────────────────────────
   policy: {
-    freeShipping: true,
-    // Delivery estimate window (business days) across Nigeria — used by shippingDetails.
-    deliveryDaysMin: 1,
-    deliveryDaysMax: 7,
+    /** Must match Main-server config/storePolicies.ts RETURN_WINDOW_DAYS. */
     returnDays: 7,
   },
 };
@@ -65,11 +44,6 @@ export function absoluteUrl(path = ''): string {
   if (!path) return siteConfig.url;
   if (path.startsWith('http')) return path;
   return `${siteConfig.url}${path.startsWith('/') ? '' : '/'}${path}`;
-}
-
-/** Social profile URLs as a flat `sameAs` array (empty entries filtered out). */
-export function getSameAs(): string[] {
-  return Object.values(siteConfig.social).filter(Boolean);
 }
 
 export async function prefetchImages(imageUrls: string[]) {

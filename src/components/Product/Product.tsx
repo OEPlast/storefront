@@ -238,7 +238,7 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
     // If product has pack sizes, only allow quick add when a "Single" pack exists
     if (packSizes.length > 0 && !singlePack) {
       // Redirect to PDP for selection if Single pack doesn't exist
-      handleDetailProduct(data.id);
+      handleDetailProduct(data.slug);
       return;
     }
 
@@ -406,9 +406,9 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
     openQuickview(data._id || data.id);
   };
 
-  const handleDetailProduct = (productId: string) => {
-    // redirect to shop with category selected
-    router.push(`/product/default?id=${productId}`);
+  const handleDetailProduct = (slug?: string) => {
+    if (!slug) return;
+    router.push(`/product/${slug}`);
   };
 
   // Calculate the best sale discount for this product
@@ -733,7 +733,7 @@ export default Product;
                         <>
                             <div className="product-item list-type">
                                 <div className="product-main cursor-pointer flex lg:items-center sm:justify-between gap-7 max-lg:gap-5">
-                                    <div onClick={() => handleDetailProduct(data.id)} className="product-thumb bg-white relative overflow-hidden rounded-2xl block max-sm:w-1/2">
+                                    <div onClick={() => handleDetailProduct(data.slug)} className="product-thumb bg-white relative overflow-hidden rounded-2xl block max-sm:w-1/2">
                                         {data.new && (
                                             <div className="product-tag text-button-uppercase bg-green px-3 py-0.5 inline-block rounded-full absolute top-3 left-3 z-[1]">
                                                 New
@@ -789,7 +789,7 @@ export default Product;
                                     </div>
                                     <div className='flex sm:items-center gap-7 max-lg:gap-4 max-lg:flex-wrap max-lg:w-full max-sm:flex-col max-sm:w-1/2'>
                                         <div className="product-infor max-sm:w-full">
-                                            <div onClick={() => handleDetailProduct(data.id)} className="product-name heading6 inline-block duration-300">{data.name}</div>
+                                            <div onClick={() => handleDetailProduct(data.slug)} className="product-name heading6 inline-block duration-300">{data.name}</div>
                                             <div className="product-price-block flex items-center gap-2 flex-wrap mt-2 duration-300 relative z-[1]">
                                                 {saleInfo.hasActiveSale ? (
                                                     <>
@@ -915,7 +915,7 @@ export default Product;
 ----------------------
 
             {type === 'marketplace' ? (
-                <div className="product-item style-marketplace p-4 border border-line rounded-2xl" onClick={() => handleDetailProduct(data.id)}>
+                <div className="product-item style-marketplace p-4 border border-line rounded-2xl" onClick={() => handleDetailProduct(data.slug)}>
                     <div className="bg-img relative w-full">
                         <Image className='w-full aspect-square' width={5000} height={5000} src={getCdnUrl(data.images.find((img) => img.cover_image)!.url)} alt="img" />
                         <div className="list-action flex flex-col gap-1 absolute top-0 right-0">

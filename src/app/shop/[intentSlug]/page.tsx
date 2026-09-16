@@ -102,7 +102,6 @@ export default async function IntentPage({
             {injectStructuredData(
                 generateBreadcrumbSchema([
                     { name: 'Homepage', url: '/' },
-                    { name: 'Shop', url: '/shop' },
                     { name: intent.heading, url: basePath },
                 ]),
                 'ld-breadcrumb'

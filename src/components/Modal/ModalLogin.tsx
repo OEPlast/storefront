@@ -26,6 +26,8 @@ const FOCUSABLE_SELECTOR = [
 const ModalLogin = () => {
   const isOpen = useLoginModalStore((state) => state.isOpen);
   const redirectPath = useLoginModalStore((state) => state.redirectPath);
+  const prefillEmail = useLoginModalStore((state) => state.prefillEmail);
+  const message = useLoginModalStore((state) => state.message);
   const closeLoginModal = useLoginModalStore((state) => state.closeLoginModal);
   const { status } = useSession();
   const pathname = usePathname();
@@ -195,14 +197,22 @@ const ModalLogin = () => {
           <h2 id={titleId} className="heading4 text-center">
             Log in to your account
           </h2>
-          <p id={descriptionId} className="mt-2 text-center text-secondary">
-            Welcome back. Sign in to pick up where you left off.
+          <p id={descriptionId} className="mt-0.5 text-center text-secondary">
+            Welcome back. Pick up where you left off.
           </p>
+
+          {message ? (
+            <div className="mt-4 rounded-lg border border-line bg-surface px-4 py-3 text-sm" role="status">
+              {message}
+            </div>
+          ) : null}
 
           <LoginForm
             variant="modal"
             onLoginSuccess={closeLoginModal}
             redirectPath={safeRedirectPath}
+            defaultEmail={prefillEmail ?? undefined}
+            onForgotPassword={handleForgotPassword}
           />
 
           <div className="my-4 flex items-center">

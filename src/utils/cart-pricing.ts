@@ -1,34 +1,37 @@
 /**
  * Cart Pricing Utilities
  *
- * Calculate pricing at render time from stored ProductDetail.
- * These functions determine sale prices, discounts, and final prices.
+ * MIRRORS Main-server `src/services/pricing/linePricing.ts`, the formula checkout validates with
+ * and order creation charges with. Change both together: when they disagree, checkout shows the
+ * shopper a "prices changed" correction, or refuses the order.
  *
- * SALE MATCHING RULES:
- * 1. attributeName is null or 'all'/'All' → Sale applies to ALL products/variants
- * 2. attributeName exists BUT attributeValue is null or 'all'/'All' → Sale applies to ALL values of that specific attribute
- *    Example: attributeName='Color', attributeValue='All' → applies to all colors
- * 3. Both attributeName AND attributeValue specified → Exact match required
- *    Example: attributeName='Color', attributeValue='Red' → only applies to red color
+ * Order of operations (owner decision 2026-09-15, "sale on top of tier"):
+ *   1. List price: the selected option's own price when it has one, else the product price.
+ *   2. Bulk tier: the option's tiers when it has any, else the product's; the matching tier with
+ *      the highest minQty wins, and a tier never raises the price.
+ *   3. Sale: taken off the tier price (percent of it, or a fixed amount capped at it).
  *
- * MAXBUYS LIMIT:
- * - If sale type is 'Limited', check maxBuys - boughtCount
- * - If cart quantity exceeds remaining stock (maxBuys - boughtCount), sale is NOT applied
- * - This prevents overselling limited sale items
+ * SALE MATCHING (first matching variant wins):
+ *   - attributeName null / 'all' → every line
+ *   - attributeName set, attributeValue null / 'all' → any value of that attribute
+ *   - both set → exact match
+ *   A variant with a unit cap (maxBuys > 0) only applies when the whole line fits in what is left
+ *   (maxBuys - boughtCount), so a capped sale is never oversold. Flash sales apply only inside their
+ *   dates.
  */
 
-import { ProductDetail, ProductSale } from '@/types/product';
+import { ProductDetail, ProductSale, ProductPricingTier } from '@/types/product';
 import { CartItem } from '@/context/CartContext';
 
 export interface CartItemPricing {
-  basePrice: number; // Original price
-  unitPrice: number; // Final price per unit (after discounts)
+  basePrice: number; // List price (option price or product price)
+  unitPrice: number; // Final price per unit (after tier and sale)
   totalPrice: number; // unitPrice * qty
-  appliedDiscount: number; // Discount percentage (0-100) - cumulative sale + tier
-  saleDiscount: number; // Sale discount percentage (0-100) - sale only
-  tierDiscount: number; // Tier discount percentage (0-100) - tier only
-  discountAmount: number; // Dollar amount saved
-  sale: ProductSale | null;
+  appliedDiscount: number; // Total discount percentage vs list price (0-100)
+  saleDiscount: number; // Sale discount percentage of the tier price (0-100)
+  tierDiscount: number; // Tier discount percentage of the list price (0-100)
+  discountAmount: number; // Naira saved on the line
+  sale: ProductSale | null; // Set only when the sale actually applies to this line
   pricingTier: {
     minQty: number;
     maxQty: number | null;
@@ -38,158 +41,112 @@ export interface CartItemPricing {
   } | null;
 }
 
+const roundKobo = (value: number) => Math.round(value * 100) / 100;
+const isAll = (value: string | null | undefined) =>
+  value === null || value === undefined || value === '' || value.toLowerCase() === 'all';
+
+type SelectedAttribute = { name: string; value: string };
+
+function resolvePricedOption(product: ProductDetail, selected: SelectedAttribute[]) {
+  const groups = (product as { attributes?: Array<{ name: string; children: Array<{ name: string; price?: number; pricingTiers?: ProductPricingTier[] }> }> }).attributes;
+  if (!groups?.length || !selected.length) return undefined;
+  const picked = new Map(selected.map((a) => [a.name, a.value]));
+  for (const group of groups) {
+    const value = picked.get(group.name);
+    if (!value) continue;
+    const option = group.children?.find((c) => c.name === value);
+    if (option && (typeof option.price === 'number' || (option.pricingTiers?.length ?? 0) > 0)) return option;
+  }
+  return undefined;
+}
+
+function findTier(qty: number, tiers?: ProductPricingTier[]) {
+  if (!tiers?.length) return null;
+  const matching = tiers.filter((t) => qty >= t.minQty && (t.maxQty == null || t.maxQty === 0 || qty <= t.maxQty));
+  if (!matching.length) return null;
+  return [...matching].sort((a, b) => b.minQty - a.minQty)[0] ?? null;
+}
+
+function applyTier(price: number, tier: ProductPricingTier | null) {
+  if (!tier) return price;
+  switch (tier.strategy) {
+    case 'fixedPrice':
+      return Math.min(price, Math.max(0, tier.value));
+    case 'percentOff':
+      return Math.max(0, price - (price * tier.value) / 100);
+    case 'amountOff':
+      return Math.max(0, price - tier.value);
+    default:
+      return price;
+  }
+}
+
+/** The sale variant that applies to this line, or null. */
+export function matchSaleVariant(
+  sale: ProductSale | null | undefined,
+  selected: SelectedAttribute[],
+  qty: number,
+  now: Date = new Date()
+) {
+  if (!sale || !sale.isActive) return null;
+  if (sale.type === 'Flash') {
+    if (!sale.startDate || !sale.endDate) return null;
+    if (now < new Date(sale.startDate) || now > new Date(sale.endDate)) return null;
+  }
+  const variants = sale.variants ?? [];
+  for (let index = 0; index < variants.length; index += 1) {
+    const variant = variants[index]!;
+    const name = variant.attributeName;
+    const value = variant.attributeValue;
+    const matches = isAll(name)
+      ? true
+      : isAll(value)
+        ? selected.length === 0 || selected.some((a) => a.name === name)
+        : selected.some((a) => a.name === name && a.value === value);
+    if (!matches) continue;
+    const maxBuys = variant.maxBuys ?? 0;
+    if (maxBuys > 0 && qty > maxBuys - (variant.boughtCount ?? 0)) return null;
+    const hasDiscount = (variant.amountOff ?? 0) > 0 || (variant.discount ?? 0) > 0;
+    return hasDiscount ? { index, variant } : null;
+  }
+  return null;
+}
+
 /**
  * Calculate pricing for a cart item at render time
  */
 export function calculateCartItemPricing(item: CartItem): CartItemPricing {
-  const basePrice = item.price || 0;
-  let unitPrice = basePrice;
-  let appliedDiscount = 0;
-  let saleDiscount = 0;
-  let tierDiscount = 0;
-  let sale: ProductSale | null = null;
-  let pricingTier = null;
+  const selected = item.selectedAttributes ?? [];
+  const option = resolvePricedOption(item, selected);
+  const listPrice = typeof option?.price === 'number' ? option.price : item.price || 0;
 
-  // Check for active sale
-  if (item.sale && item.sale.isActive) {
-    const canShowIfFlash = () => {
-      if (item.sale && item.sale.type === 'Flash') {
-        const now = new Date();
-        const saleStart = item.sale.startDate ? new Date(item.sale.startDate) : null;
-        const saleEnd = item.sale.endDate ? new Date(item.sale.endDate) : null;
+  const tier = findTier(item.qty, option?.pricingTiers?.length ? option.pricingTiers : item.pricingTiers);
+  const tierPrice = applyTier(listPrice, tier);
 
-        const isWithinDateRange = !saleStart || !saleEnd || (now >= saleStart && now <= saleEnd);
-        if (isWithinDateRange) return true;
-        return false;
-      } else {
-        return true;
-      }
-    };
-
-    if (canShowIfFlash() && item.sale.variants && item.sale.variants.length > 0) {
-      sale = item.sale;
-      let matchingVariant = null;
-
-      // Helper to check if value is null or 'all'/'All'
-      const isAllOrNull = (value: any) => {
-        return value === null || value === 'all' || value === 'All';
-      };
-
-      // Find matching variant based on attribute rules
-      for (const variant of sale.variants) {
-        const attrName = variant.attributeName;
-        const attrValue = variant.attributeValue;
-
-        // Rule 1: attributeName is null or 'all'/'All' = applies to all products
-        if (isAllOrNull(attrName)) {
-          matchingVariant = variant;
-          break;
-        }
-
-        // Rule 2: attributeName exists but attributeValue is null or 'all'/'All' = applies to all values of that attribute
-        if (attrName && isAllOrNull(attrValue)) {
-          const hasAttribute = item.selectedAttributes.some((attr) => attr.name === attrName);
-          if (hasAttribute || item.selectedAttributes.length === 0) {
-            matchingVariant = variant;
-            break;
-          }
-        }
-
-        // Rule 3: Both attributeName and attributeValue are specified = exact match required
-        if (attrName && attrValue && !isAllOrNull(attrValue)) {
-          const exactMatch = item.selectedAttributes.some(
-            (attr) => attr.name === attrName && attr.value === attrValue
-          );
-          if (exactMatch) {
-            matchingVariant = variant;
-            break;
-          }
-        }
-      }
-
-      // Apply sale if matching variant found and within maxBuys limit
-      if (matchingVariant) {
-        const maxBuys = matchingVariant.maxBuys || 0;
-        const boughtCount = matchingVariant.boughtCount || 0;
-        const remainingStock = maxBuys - boughtCount;
-
-        // Only limited sales are capped by maxBuys. Bulk tiers should not
-        // disable normal or flash sale pricing when the cart quantity grows.
-        const exceedsSaleLimit =
-          sale.type === 'Limited' && maxBuys > 0 && item.qty > remainingStock;
-
-        if (!exceedsSaleLimit) {
-          appliedDiscount = matchingVariant.discount || 0;
-          saleDiscount = appliedDiscount; // Track sale discount separately
-          const amountOff = matchingVariant.amountOff || 0;
-
-          if (amountOff > 0) {
-            // Amount off discount
-            unitPrice = Math.max(0, basePrice - amountOff);
-            appliedDiscount = ((basePrice - unitPrice) / basePrice) * 100;
-            saleDiscount = appliedDiscount; // Update for amountOff case
-          } else if (appliedDiscount > 0) {
-            // Percentage discount
-            unitPrice = basePrice * (1 - appliedDiscount / 100);
-          }
-        } else {
-          // Quantity exceeds sale limit, no sale applied
-          sale = null;
-        }
-      }
-    }
+  const match = matchSaleVariant(item.sale, selected, item.qty);
+  let saleUnitDiscount = 0;
+  if (match) {
+    const amountOff = match.variant.amountOff ?? 0;
+    saleUnitDiscount = amountOff > 0 ? Math.min(amountOff, tierPrice) : (tierPrice * (match.variant.discount ?? 0)) / 100;
   }
 
-  // Check for pricing tiers (bulk discounts)
-  if (item.pricingTiers && item.pricingTiers.length > 0) {
-    const matchingTier = item.pricingTiers.find((tier) => {
-      const minMatch = item.qty >= tier.minQty;
-      const maxMatch = !tier.maxQty || item.qty <= tier.maxQty;
-      return minMatch && maxMatch;
-    });
-
-    if (matchingTier) {
-      let tierPrice = unitPrice;
-
-      if (matchingTier.strategy === 'percentOff') {
-        tierPrice = unitPrice * (1 - matchingTier.value / 100);
-      } else if (matchingTier.strategy === 'fixedPrice') {
-        tierPrice = matchingTier.value;
-      } else if (matchingTier.strategy === 'amountOff') {
-        tierPrice = unitPrice - matchingTier.value;
-      }
-
-      // Only apply if it's better than current price
-      if (tierPrice < unitPrice) {
-        const tierDiscountPercent = ((unitPrice - tierPrice) / unitPrice) * 100;
-        tierDiscount = tierDiscountPercent; // Track tier discount separately
-        appliedDiscount = appliedDiscount + tierDiscountPercent; // Cumulative discount
-        unitPrice = tierPrice;
-
-        pricingTier = {
-          minQty: matchingTier.minQty,
-          maxQty: matchingTier.maxQty ?? null,
-          strategy: matchingTier.strategy,
-          value: matchingTier.value,
-          appliedPrice: tierPrice,
-        };
-      }
-    }
-  }
-
-  const totalPrice = unitPrice * item.qty;
-  const discountAmount = (basePrice - unitPrice) * item.qty;
+  const unitPrice = roundKobo(Math.max(0, tierPrice - saleUnitDiscount));
+  const roundedList = roundKobo(listPrice);
+  const roundedTier = roundKobo(tierPrice);
+  const tierApplied = tier !== null && roundedTier < roundedList;
 
   return {
-    basePrice,
+    basePrice: roundedList,
     unitPrice,
-    totalPrice,
-    appliedDiscount,
-    saleDiscount,
-    tierDiscount,
-    discountAmount,
-    sale,
-    pricingTier,
+    totalPrice: roundKobo(unitPrice * item.qty),
+    appliedDiscount: roundedList > 0 ? ((roundedList - unitPrice) / roundedList) * 100 : 0,
+    saleDiscount: match && roundedTier > 0 ? ((roundedTier - unitPrice) / roundedTier) * 100 : 0,
+    tierDiscount: tierApplied && roundedList > 0 ? ((roundedList - roundedTier) / roundedList) * 100 : 0,
+    discountAmount: roundKobo((roundedList - unitPrice) * item.qty),
+    sale: match ? item.sale ?? null : null,
+    pricingTier: tierApplied && tier
+      ? { minQty: tier.minQty, maxQty: tier.maxQty ?? null, strategy: tier.strategy, value: tier.value, appliedPrice: roundedTier }
+      : null,
   };
 }
 
@@ -206,8 +163,8 @@ export function calculateCartTotals(items: CartItem[]): {
 
   items.forEach((item) => {
     const pricing = calculateCartItemPricing(item);
-    subtotal += pricing.totalPrice;
-    totalDiscount += pricing.discountAmount;
+    subtotal = roundKobo(subtotal + pricing.totalPrice);
+    totalDiscount = roundKobo(totalDiscount + pricing.discountAmount);
   });
 
   return {

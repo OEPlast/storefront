@@ -23,6 +23,7 @@ export default function Stage1EmailForm() {
     setIsTransitioning,
     setCurrentStage,
     setResendTimer,
+    isGuestClaim,
   } = useForgotPasswordStore();
 
   const form = useForm({
@@ -86,9 +87,11 @@ export default function Stage1EmailForm() {
 
   return (
     <>
-      <div className="heading4">Reset your password</div>
+      <div className="heading4">{isGuestClaim ? "Set a password" : "Reset your password"}</div>
       <div className="body1 mt-2">
-        We will send you an email to reset your password
+        {isGuestClaim
+          ? "You've ordered with this email before. We'll email you a code to confirm it's yours, then you can set a password."
+          : "We will send you an email to reset your password"}
       </div>
       <form
         onSubmit={(e) => {

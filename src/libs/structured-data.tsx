@@ -8,7 +8,8 @@ import type {
   FAQPage,
   WithContext,
 } from 'schema-dts';
-import { siteConfig, getSameAs, absoluteUrl } from '@/config/siteConfig';
+import { siteConfig, absoluteUrl } from '@/config/siteConfig';
+import type { StoreBranding } from '@/libs/storeBranding';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // JSON-LD injection
@@ -54,38 +55,15 @@ function availabilityUrl(inStock: boolean): string {
   return inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
 }
 
-/** Free nationwide shipping block (matches Merchant Center feed + store policy). */
-function shippingDetails() {
-  return {
-    '@type': 'OfferShippingDetails' as const,
-    shippingRate: {
-      '@type': 'MonetaryAmount' as const,
-      value: 0,
-      currency: CURRENCY,
-    },
-    shippingDestination: {
-      '@type': 'DefinedRegion' as const,
-      addressCountry: siteConfig.countryCode,
-    },
-    deliveryTime: {
-      '@type': 'ShippingDeliveryTime' as const,
-      handlingTime: {
-        '@type': 'QuantitativeValue' as const,
-        minValue: 0,
-        maxValue: 1,
-        unitCode: 'DAY',
-      },
-      transitTime: {
-        '@type': 'QuantitativeValue' as const,
-        minValue: siteConfig.policy.deliveryDaysMin,
-        maxValue: siteConfig.policy.deliveryDaysMax,
-        unitCode: 'DAY',
-      },
-    },
-  };
-}
-
-/** N-day return policy block (matches store policy). */
+/**
+ * N-day return policy block. No `returnFees` claim: faulty or wrong items come back free, but
+ * change-of-mind returns are at the customer's cost (see /pages/returns), so neither
+ * FreeReturn nor a flat fee is true for every return.
+ *
+ * There is deliberately no `shippingDetails` block: delivery is priced per address at checkout
+ * and only free above a threshold, which a single schema rate can't express. Shipping and
+ * returns are configured in Merchant Center account settings instead (same as the product feed).
+ */
 function merchantReturnPolicy() {
   return {
     '@type': 'MerchantReturnPolicy' as const,
@@ -93,7 +71,6 @@ function merchantReturnPolicy() {
     returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
     merchantReturnDays: siteConfig.policy.returnDays,
     returnMethod: 'https://schema.org/ReturnByMail',
-    returnFees: 'https://schema.org/FreeReturn',
   };
 }
 
@@ -137,7 +114,7 @@ export function generateProductSchema(input: ProductSchemaInput): WithContext<Pr
   const priceValidUntil = input.priceValidUntil || dateFromNow(30);
   const itemCondition = CONDITION_URL[input.condition || 'new'];
 
-  // Shared offer fields (shipping/returns/condition/seller) reused for single &
+  // Shared offer fields (returns/condition/seller) reused for single &
   // aggregate offers.
   const commonOffer = {
     priceCurrency: CURRENCY,
@@ -145,7 +122,6 @@ export function generateProductSchema(input: ProductSchemaInput): WithContext<Pr
     itemCondition,
     url,
     seller: { '@type': 'Organization' as const, name: siteConfig.name },
-    shippingDetails: shippingDetails(),
     hasMerchantReturnPolicy: merchantReturnPolicy(),
   };
 
@@ -159,7 +135,7 @@ export function generateProductSchema(input: ProductSchemaInput): WithContext<Pr
         lowPrice: Math.min(...prices),
         highPrice: Math.max(...prices),
         offerCount: prices.length,
-        ...commonOffer, // provides priceCurrency, availability, shipping, returns, seller
+        ...commonOffer, // provides priceCurrency, availability, returns, seller
       }
     : {
         '@type': 'Offer' as const,
@@ -215,34 +191,43 @@ export function generateProductSchema(input: ProductSchemaInput): WithContext<Pr
 // Organization (brand entity)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function generateOrganizationSchema(): WithContext<Organization> {
+export function generateOrganizationSchema(branding?: StoreBranding): WithContext<Organization> {
+  // Contact details come from Store Settings; a field that isn't set is left out, not guessed.
+  const email = branding?.supportEmail || undefined;
+  const telephone = branding?.supportPhone || branding?.whatsappNumber || undefined;
+  const sameAs = Object.entries(branding?.socialLinks ?? {})
+    .filter(([key, url]) => key !== 'whatsapp' && typeof url === 'string' && url.startsWith('http'))
+    .map(([, url]) => url as string);
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: siteConfig.name,
+    name: branding?.storeName || siteConfig.name,
     url: siteConfig.url,
     logo: absoluteUrl(siteConfig.logo.transparent),
     image: absoluteUrl(siteConfig.ogImage),
     description: siteConfig.description,
-    email: siteConfig.contact.email,
-    telephone: siteConfig.contact.phone,
+    ...(email && { email }),
+    ...(telephone && { telephone }),
     areaServed: siteConfig.areaServed,
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: siteConfig.contact.address.street,
-      addressLocality: siteConfig.contact.address.city,
-      addressRegion: siteConfig.contact.address.region,
-      addressCountry: siteConfig.contact.address.countryCode,
-    },
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: siteConfig.contact.phone,
-      email: siteConfig.contact.email,
-      contactType: 'customer service',
-      areaServed: siteConfig.countryCode,
-      availableLanguage: ['English'],
-    },
-    sameAs: getSameAs(),
+    ...(branding?.addressLine && {
+      address: {
+        '@type': 'PostalAddress' as const,
+        streetAddress: branding.addressLine,
+        addressCountry: siteConfig.countryCode,
+      },
+    }),
+    ...((email || telephone) && {
+      contactPoint: {
+        '@type': 'ContactPoint' as const,
+        ...(telephone && { telephone }),
+        ...(email && { email }),
+        contactType: 'customer service',
+        areaServed: siteConfig.countryCode,
+        availableLanguage: ['English'],
+      },
+    }),
+    ...(sameAs.length > 0 && { sameAs: Array.from(new Set(sameAs)) }),
   };
 }
 

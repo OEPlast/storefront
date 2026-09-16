@@ -3,7 +3,7 @@ import { siteConfig } from '@/config/siteConfig';
 
 /**
  * Robots policy.
- * - Allow all indexable commerce surfaces (home, product, category, campaign, deals, blog).
+ * - Allow all indexable commerce surfaces (home, product, category, campaign, deals).
  * - Disallow private/transactional/auth routes and API.
  * - Disallow internal search results (thin/duplicate) — high-demand queries get
  *   dedicated indexable landing pages instead (see /shop programmatic pages).
@@ -15,8 +15,6 @@ export default function robots(): MetadataRoute.Robots {
     '/my-account',
     '/checkout/',
     '/checkout',
-    '/checkout2/',
-    '/checkout2',
     '/cart',
     '/wishlist',
     '/compare',

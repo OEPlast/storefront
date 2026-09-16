@@ -9,7 +9,6 @@ import { useCart } from '@/context/CartContext';
 import { calculateCartItemPricing } from '@/utils/cart-pricing';
 import { countdownTime } from '@/store/countdownTime';
 import { getCdnUrl } from '@/libs/cdn-url';
-import { useSession } from 'next-auth/react';
 import { useLoginModalStore } from '@/store/useLoginModalStore';
 import { CartIcon } from '@/components/Icons';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -21,7 +20,6 @@ import { useProductSocket } from '@/hooks/useProductSocket';
 const Cart = () => {
   const [timeLeft, setTimeLeft] = useState(countdownTime());
   const router = useRouter();
-  const { status } = useSession();
   const { freeShippingThreshold } = useFreeShippingThreshold();
   const { openLoginModal } = useLoginModalStore();
   const { setShippingMethod: setCheckoutShippingMethod } = useCheckoutStore();
@@ -140,12 +138,7 @@ const Cart = () => {
     // Save shipping method to checkout store
     setCheckoutShippingMethod(shippingMethod as 'pickup' | 'normal' | 'express');
 
-    if (status === 'unauthenticated') {
-      // Log in through the popup, then continue to checkout
-      openLoginModal('/checkout');
-      return;
-    }
-
+    // Guests go straight through: checkout collects their email and offers the login popup.
     router.push('/checkout');
   };
 
@@ -244,7 +237,6 @@ const Cart = () => {
                     onClick={() => cartItems.forEach((item) => removeItem(item._id))}
                     className="flex items-center gap-1 text-sm text-red hover:underline"
                   >
-                    <Icon.Trash size={16} />
                     Clear Cart
                   </button>
                 </div>
@@ -488,7 +480,7 @@ const Cart = () => {
                       </div>
                       <div className="space-y-2">
                         <label
-                          className={`flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all md:p-3 ${shippingMethod === 'pickup' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}
+                          className={`flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${shippingMethod === 'pickup' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}
                         >
                           <div className="flex items-center gap-2">
                             <input
@@ -506,7 +498,7 @@ const Cart = () => {
                         </label>
 
                         <label
-                          className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all ${shippingMethod === 'normal' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}
+                          className={`flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${shippingMethod === 'normal' ? 'border-black bg-black text-white' : 'border-line hover:border-gray-400'}`}
                         >
                           <div className="flex items-center gap-2">
                             <input
@@ -550,17 +542,10 @@ const Cart = () => {
                     <div className="border-t border-line pt-4">
                       <div className="flex items-center justify-between">
                         <div className="text-lg font-semibold">Total</div>
-                        <div className="text-4xl font-extrabold text-black">
+                        <div className="text-3xl font-bold text-black">
                           {formatToNaira(totalCart)}
                         </div>
                       </div>
-                      {(shippingMethod === 'normal' || shippingMethod === 'express') && (
-                        <div className="mt-2 text-xs text-secondary">
-                          {hasQualifiedForFreeShipping
-                            ? '+ Shipping (free at checkout)'
-                            : '+ Shipping (calculated at checkout)'}
-                        </div>
-                      )}
                     </div>
                     {/* {(shippingMethod === 'normal' || shippingMethod === 'express') && (
                                             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -575,17 +560,17 @@ const Cart = () => {
                   </div>
 
                   {/* Checkout Button */}
-                  <div className="block-button mt-4 flex flex-col items-center gap-y-3 md:mt-5 md:gap-y-4">
+                  <div className="block-button mt-4 flex flex-col items-center md:mt-5">
                     <button
-                      className="checkout-btn button-main flex w-full items-center justify-center gap-2 py-3 text-center text-base font-semibold transition-all hover:shadow-lg md:py-4 md:text-lg"
+                      className="checkout-btn button-main flex w-full items-center justify-center gap-2 py-3 text-center text-base font-semibold transition-all hover:shadow-lg md:text-lg"
                       onClick={redirectToCheckout}
                     >
                       <Icon.ShoppingCartSimple size={20} />
                       Checkout
                     </button>
                     <Link
-                      className="text-button hover-underline flex items-center gap-1 text-secondary"
-                      href={'/shop/breadcrumb1'}
+                      className="text-button flex items-center gap-1 text-[13px] text-secondary hover:underline"
+                      href={'/'}
                     >
                       <Icon.ArrowLeft size={16} />
                       Continue shopping
@@ -609,7 +594,7 @@ const Cart = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Icon.Headset size={16} className="text-purple-600" />
-                        <span>24/7 Support</span>
+                        <span>Customer support</span>
                       </div>
                     </div>
                   </div>

@@ -50,7 +50,13 @@ const Checkout = () => {
   // `checkoutSuccess!.orderId` off a non-null assertion was a render-time crash
   // waiting for the wrong ordering.
   if (c.paymentSuccess && c.checkoutSuccess) {
-    return <CheckoutSuccess orderId={c.checkoutSuccess.orderId} />;
+    return (
+      <CheckoutSuccess
+        orderId={c.checkoutSuccess.orderId}
+        isGuest={c.isGuestCheckout}
+        email={c.contactEmail}
+      />
+    );
   }
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -140,8 +146,15 @@ const Checkout = () => {
                   isAuthenticated={c.isAuthenticated}
                   isSessionLoading={c.isSessionLoading}
                   userName={c.userName}
-                  onSignInClick={() => c.openLoginModal()}
+                  onSignInClick={() => c.openLoginModal(null, { email: c.guestEmail })}
                   error={c.fieldErrors.email}
+                  guestEmail={c.guestEmail}
+                  onGuestEmailChange={c.setGuestEmail}
+                  showGuestNameFields={c.shippingMethod === 'pickup'}
+                  guestContact={c.guestContact}
+                  onGuestContactChange={c.handleGuestContactChange}
+                  guestContactErrors={c.fieldErrors.guestContact}
+                  disabled={c.isSubmittingCheckout}
                 />
 
                 {c.availableShippingMethods === null ? (

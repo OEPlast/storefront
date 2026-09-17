@@ -105,8 +105,8 @@ export default function WeekProductsClient() {
 
     const {
         data: productsData,
-        isLoading,
-        isFetching,
+        isPending,
+        isPlaceholderData,
     } = useWeekProducts({
         minPrice: minPrice ? parseFloat(minPrice) : undefined,
         maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
@@ -118,6 +118,14 @@ export default function WeekProductsClient() {
         page: parseInt(page, 10),
         limit: 15,
     });
+
+    /**
+     * Skeletons only when there is genuinely nothing to render. This used to include `isFetching`,
+     * which was harmless while the grid was fetched fresh on every page load — but now the server
+     * seeds this query from a cached render and the client refreshes it in the background, and
+     * `isFetching` would blank the real products out behind skeletons on every hydration.
+     */
+    const showSkeletons = isPending || isPlaceholderData;
 
     const products = productsData?.data;
     const meta = productsData?.meta;
@@ -351,7 +359,7 @@ export default function WeekProductsClient() {
 
                         {/* Products Grid */}
                         <div className={`list-filtered mt-7 ${gridClass} sm:gap-[30px] gap-[20px]`}>
-                            {isLoading || isFetching ? (
+                            {showSkeletons ? (
                                 Array(15).fill(0).map((_, index) => (
                                     <ProductSkeleton key={`productSkeleton__${index}`} />
                                 ))

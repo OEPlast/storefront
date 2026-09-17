@@ -28,6 +28,7 @@ import Color from 'color';
 import SalesCountdownTimer from './SalesCountdownTimer';
 import ProductDetailTabs from './ProductDetailTabs';
 import { calculateBestSale } from '@/utils/calculateSale';
+import { useNow } from '@/hooks/useNow';
 import { ProductListItem } from '@/types/product';
 import { OptimisticWishlistProduct } from '@/types/wishlist';
 import type { ProductSale } from '@/types/product';
@@ -334,9 +335,13 @@ const Sale: React.FC<Props> = ({ slug }) => {
     } as ProductSale;
   }, [productMain?.sale]);
 
+  // Render clock, not `Date.now()`: this page is cached, so a flash sale that starts or ends
+  // between the cached render and the visit must not change the price mid-hydration.
+  const now = useNow();
+
   const saleCalculation = useMemo(
-    () => calculateBestSale(normalizedSale, productMain?.price ?? 0, selectedSaleAttribute),
-    [normalizedSale, productMain?.price, selectedSaleAttribute]
+    () => calculateBestSale(normalizedSale, productMain?.price ?? 0, selectedSaleAttribute, now),
+    [normalizedSale, productMain?.price, selectedSaleAttribute, now]
   );
 
   const basePrice = productMain?.price ?? 0;

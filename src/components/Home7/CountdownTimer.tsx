@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { countdownTime } from '@/store/countdownTime';
+import { useNow } from '@/hooks/useNow';
 
 interface CountdownTimerProps {
     showCountdown: boolean;
@@ -12,12 +13,16 @@ interface CountdownTimerProps {
  * Only renders when both start and limit dates are provided
  */
 const CountdownTimer: React.FC<CountdownTimerProps> = ({ showCountdown }) => {
-    const [timeLeft, setTimeLeft] = useState(countdownTime());
-
+    // The render clock, so the server's digits and the browser's first render agree. Reading
+    // `Date.now()` here mismatched by a second or two even before pages were cached; on a cached
+    // page it would be hours out. The interval below takes over as soon as the component mounts.
+    const renderNow = useNow();
+    const [timeLeft, setTimeLeft] = useState(() => countdownTime(renderNow));
 
     useEffect(() => {
         if (!showCountdown) return;
 
+        setTimeLeft(countdownTime());
         const timer = setInterval(() => {
             setTimeLeft(countdownTime());
         }, 1000);

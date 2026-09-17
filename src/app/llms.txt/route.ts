@@ -2,9 +2,10 @@ import { siteConfig } from '@/config/siteConfig';
 import { formatNaira, getShippingConfig, getStoreBranding } from '@/libs/storeBranding';
 
 // `llms.txt` gives AI answer engines a clean summary of the store, key surfaces, and policies so
-// they can cite the store accurately. Built from Store Settings and the checkout delivery config
-// (both cached by Next), and regenerated hourly so an edit in the admin shows up here.
-export const revalidate = 3600;
+// they can cite the store accurately. Built from Store Settings and the checkout delivery config;
+// both carry the `branding` / `delivery-config` tags, so an admin save rebuilds this immediately
+// and the 12-hour schedule is only the fallback.
+export const revalidate = 43200;
 
 export async function GET() {
   const url = siteConfig.url;

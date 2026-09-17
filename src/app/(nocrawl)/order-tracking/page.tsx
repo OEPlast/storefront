@@ -3,10 +3,12 @@ import type { Metadata } from 'next';
 import Breadcrumb from '@/components/Breadcrumb/Breadcrumb';
 import ShipmentClient from './ShipmentClient';
 import { getDefaultMetadata } from '@/libs/seo';
+import { PRIVATE_PAGE_ROBOTS } from '@/config/indexing';
 
 export async function generateMetadata(): Promise<Metadata> {
   return getDefaultMetadata({
     title: 'Order Tracking',
+    robots: PRIVATE_PAGE_ROBOTS,
     description: 'Track your order with your order number and email, or a courier tracking number.',
     keywords: ['order tracking', 'track order', 'delivery status', 'shipment tracking'],
     openGraph: {

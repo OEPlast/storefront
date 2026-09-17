@@ -1,9 +1,12 @@
 /**
- * Store branding and contact details, fetched once from Main-server's `/settings/branding` and
- * cached indefinitely by Next.js's Data Cache — no time-based revalidation. The cache is only ever
- * busted on-demand, by `/api/revalidate-branding`, which Main-server calls the moment the
- * Settings document is actually saved (see `SettingsService.triggerBrandingRevalidation`).
- * This avoids polling Main-server on every request for values that change essentially never.
+ * Store branding and contact details, fetched from Main-server's `/settings/branding` and held in
+ * Next.js's Data Cache under the `branding` tag. Main-server purges that tag the moment the
+ * Settings document is saved (`SettingsService.triggerBrandingRevalidation`), and the 12-hour
+ * revalidation is only the backstop for a purge that never arrived.
+ *
+ * The `revalidate` is not optional: in Next 15 an un-cached `fetch` defaults to `no-store`, so
+ * while this only carried `tags` it was re-fetched on every single render — and, because the root
+ * layout reads it, that was once per page view across the whole site.
  *
  * `storeName` falls back to `NEXT_PUBLIC_STORE_NAME` on failure — a generic title beats a
  * broken page. Contact fields have no env fallback: they come from the Settings document only,
@@ -14,6 +17,8 @@
  * (`config/storePolicies.ts`), served here so the policy pages can't drift from what the
  * returns flow actually enforces.
  */
+
+import { CacheTag, DEFAULT_REVALIDATE } from '@/libs/api/cacheTags';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const FALLBACK_STORE_NAME = process.env.NEXT_PUBLIC_STORE_NAME || 'Rawura';
@@ -61,7 +66,7 @@ const positiveInt = (value: unknown, fallback: number): number =>
 export async function getStoreBranding(): Promise<StoreBranding> {
   try {
     const response = await fetch(`${API_URL}/settings/branding`, {
-      next: { tags: ['branding'] },
+      next: { revalidate: DEFAULT_REVALIDATE, tags: [CacheTag.BRANDING] },
     });
 
     if (!response.ok) return FALLBACK_BRANDING;
@@ -103,9 +108,13 @@ export interface ShippingConfig {
 }
 
 /**
- * Public checkout delivery settings (`/gig/config`) for the shipping page and FAQ. Revalidated
- * every 10 minutes rather than tagged: these are edited in the admin delivery settings, which
- * don't call the branding revalidation hook.
+ * Public checkout delivery settings (`/gig/config`) for the shipping page, the FAQ and the top
+ * bar's free-delivery line. Tagged `delivery-config`, which the admin delivery settings purge on
+ * save; the 12-hour revalidate is the backstop.
+ *
+ * It used to revalidate every 10 minutes, with no tag. Since the root layout reads it, that 600
+ * became the effective revalidate of every page on the site — a page can never be fresher than
+ * the shortest-lived fetch in its render.
  */
 export async function getShippingConfig(): Promise<ShippingConfig> {
   const fallback: ShippingConfig = {
@@ -115,7 +124,9 @@ export async function getShippingConfig(): Promise<ShippingConfig> {
     deliveryEnabled: true,
   };
   try {
-    const response = await fetch(`${API_URL}/gig/config`, { next: { revalidate: 600 } });
+    const response = await fetch(`${API_URL}/gig/config`, {
+      next: { revalidate: DEFAULT_REVALIDATE, tags: [CacheTag.DELIVERY_CONFIG] },
+    });
     if (!response.ok) return fallback;
     const data = (await response.json())?.data ?? {};
     const threshold = data.freeShippingThreshold;

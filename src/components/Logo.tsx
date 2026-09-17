@@ -10,13 +10,15 @@ interface LogoProps {
   storeName: string;
 }
 
+// The logo always sits inside a link home, so its alt text is the link's name: just the store name.
+// "<store> Logo" read as page text, and Google quoted it ("Rawura Logo.") in search snippets.
 const Logo = ({ alwaysFull = false, storeName }: LogoProps) => {
   if (alwaysFull) {
     return (
       <div className="max-w-[120px]">
         <Image
           src={'/images/brand/logoTransparent.png'}
-          alt={`${storeName} Logo`}
+          alt={storeName}
           width={120}
           height={60}
           priority
@@ -33,7 +35,7 @@ const Logo = ({ alwaysFull = false, storeName }: LogoProps) => {
       <div className="hidden max-w-[120px] sm:block">
         <Image
           src={'/images/brand/logoTransparent.png'}
-          alt={`${storeName} Logo`}
+          alt={storeName}
           width={120}
           height={60}
           priority

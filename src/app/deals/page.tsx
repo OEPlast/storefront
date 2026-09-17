@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { serverGetWithMeta } from '@/libs/query/server-api-client';
+import { cachedGet } from '@/libs/api/cachedApi';
+import { CacheTag } from '@/libs/api/cacheTags';
 import api from '@/libs/api/endpoints';
 import type { ProductListItem } from '@/types/product';
 import { getDefaultMetadata } from '@/libs/seo';
@@ -15,8 +16,12 @@ import {
     type ListItemProduct,
 } from '@/libs/structured-data';
 
-// Revalidate hourly — deals change often but not per-request.
-export const revalidate = 3600;
+/**
+ * 12 hours. Deals are time-sensitive, so the schedule is the backstop, not the mechanism: the
+ * `products` tag is purged whenever a sale is created, edited or ends, and `cron/storefrontBoundaries`
+ * on Main-server fires it the minute a scheduled sale starts or expires.
+ */
+export const revalidate = 43200;
 
 const PAGE_TITLE = 'Deals & Offers';
 
@@ -51,15 +56,25 @@ function coverImageOf(p: ProductListItem): string | undefined {
 }
 
 async function fetchDeals(): Promise<ProductListItem[]> {
+    const params = { page: 1, limit: 48 };
+    const tags = [CacheTag.PRODUCTS];
     const results = await Promise.allSettled([
-        serverGetWithMeta<ProductListItem[]>(`${api.products.dealsOfTheDay}?page=1&limit=48`),
-        serverGetWithMeta<ProductListItem[]>(`${api.products.hotSales}?page=1&limit=48`),
+        cachedGet<ProductListItem[]>(api.products.dealsOfTheDay, { params, tags }),
+        cachedGet<ProductListItem[]>(api.products.hotSales, { params, tags }),
     ]);
+
+    // One source failing still leaves a usable page; both failing throws, so ISR keeps serving
+    // the last good render rather than caching an empty deals page for 12 hours.
+    if (results.every((r) => r.status === 'rejected')) {
+        throw (results[0] as PromiseRejectedResult).reason;
+    }
 
     const merged: ProductListItem[] = [];
     for (const r of results) {
         if (r.status === 'fulfilled' && Array.isArray(r.value.data)) {
             merged.push(...r.value.data);
+        } else if (r.status === 'rejected') {
+            console.error('[deals] source failed:', r.reason?.message ?? r.reason);
         }
     }
     // De-dupe by slug, preserve order.

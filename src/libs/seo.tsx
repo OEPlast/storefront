@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/config/siteConfig";
 import { getStoreName } from "@/libs/storeBranding";
+import { isIndexableDeployment } from "@/config/indexing";
 
 export async function getDefaultMetadata(overrides?: Partial<Metadata>): Promise<Metadata> {
   const storeName = await getStoreName();
   const defaultTitle = `${storeName} - Affordable Quality Products`;
   const description = `${storeName} Online Store - Your One-Stop Shop for Affordable Quality Products`;
+
+  // Staging and preview deployments carry noindex on every page, as a second line of defence
+  // behind robots.txt: a URL that was linked to directly is crawled even when robots.txt
+  // disallows it, and only the meta tag keeps it out of the index.
+  const indexable = isIndexableDeployment();
 
   const metadata: Metadata = {
     title: {
@@ -41,17 +47,19 @@ export async function getDefaultMetadata(overrides?: Partial<Metadata>): Promise
       creator: siteConfig.twitter,
       images: [siteConfig.ogImage],
     },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
+    robots: indexable
+      ? {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+          },
+        }
+      : { index: false, follow: false, googleBot: { index: false, follow: false } },
     icons: {
       icon: '/favicon.ico',
       shortcut: '/favicon.ico',
@@ -70,6 +78,9 @@ export async function getDefaultMetadata(overrides?: Partial<Metadata>): Promise
     ...(overrides || {}),
     openGraph: { ...metadata.openGraph, ...overrides?.openGraph },
     twitter: { ...metadata.twitter, ...overrides?.twitter },
+    // Applied after the overrides: a page may narrow indexing (noindex a thin page), but it can
+    // never opt a staging deployment back in.
+    ...(indexable ? {} : { robots: metadata.robots }),
   } as Metadata;
 }
 

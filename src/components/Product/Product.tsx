@@ -28,6 +28,7 @@ import {
   shouldShowSaleMarquee,
   shouldShowSaleProgress,
 } from '@/utils/calculateSale';
+import { useNow } from '@/hooks/useNow';
 import { ProductVariant, ProductVariantChild } from '@/types/product';
 import { useSession } from 'next-auth/react';
 import { useLoginModalStore } from '@/store/useLoginModalStore';
@@ -411,10 +412,18 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
     router.push(`/product/${slug}`);
   };
 
+  /**
+   * Everything below that compares a sale window against "now" reads the render clock instead of
+   * `Date.now()`. This card is server-rendered into pages that are cached for up to 12 hours, so a
+   * direct clock read would disagree with the HTML being hydrated the moment a sale starts or ends
+   * — React would then discard the server tree. See hooks/useNow.tsx.
+   */
+  const now = useNow();
+
   // Calculate the best sale discount for this product
   const saleInfo = useMemo(() => {
-    return calculateBestSale(data.sale, data.price);
-  }, [data.sale, data.price]);
+    return calculateBestSale(data.sale, data.price, undefined, now);
+  }, [data.sale, data.price, now]);
 
   // Calculate sold quantity from sale variants (cumulative boughtCount)
   const soldQuantity = useMemo(() => {
@@ -433,8 +442,8 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
 
   // Check if should show sale marquee (isHot = true and not sold out)
   const showSaleMarquee = useMemo(() => {
-    return shouldShowSaleMarquee(data.sale);
-  }, [data.sale]);
+    return shouldShowSaleMarquee(data.sale, now);
+  }, [data.sale, now]);
 
   // Check if should show sold/available progress (isHot = true and not sold out)
   const showSaleProgress = useMemo(() => {
@@ -444,20 +453,19 @@ const Product: React.FC<ProductProps> = ({ data: rawData, type }) => {
   const isNewProduct = useMemo(() => {
     if (saleInfo.hasActiveSale) return false;
     const daysSinceCreation =
-      new Date().getTime() - new Date(data.createdAt!).getTime() / (24 * 60 * 60 * 1000);
+      now - new Date(data.createdAt!).getTime() / (24 * 60 * 60 * 1000);
     const isNew = daysSinceCreation <= 5;
     return isNew;
-  }, [saleInfo.hasActiveSale, data.createdAt]);
+  }, [saleInfo.hasActiveSale, data.createdAt, now]);
 
   // Check if should show flash sale countdown
   const showFlashSaleCountdown = useMemo(() => {
     if (!data.sale || data.sale.type !== 'Flash' || !data.sale.startDate || !data.sale.endDate)
       return false;
-    const now = new Date();
-    const start = new Date(data.sale.startDate);
-    const end = new Date(data.sale.endDate);
+    const start = new Date(data.sale.startDate).getTime();
+    const end = new Date(data.sale.endDate).getTime();
     return now >= start && now <= end;
-  }, [data.sale]);
+  }, [data.sale, now]);
 
   return (
     <>

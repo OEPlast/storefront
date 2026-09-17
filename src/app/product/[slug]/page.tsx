@@ -2,20 +2,20 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import {
     dehydrate,
     HydrationBoundary,
-    QueryClient,
 } from '@tanstack/react-query';
 import api from '@/libs/api/endpoints';
-import { serverAPI } from '@/libs/api/serverAPI';
+import { getQueryClient } from '@/libs/query/get-query-client';
+import { cachedGet, cachedGetOrNull, seedData, type CachedResult } from '@/libs/api/cachedApi';
+import { CacheTag, productTag } from '@/libs/api/cacheTags';
 import MainProduct from '@/components/Product/Detail/MainProduct';
-import Footer from '@/components/Footer/Footer';
 import BreadcrumbProduct from '@/components/Breadcrumb/BreadcrumbProduct';
 import type { ProductDetail } from '@/hooks/queries/useProduct';
-import { headers } from 'next/headers';
+import type { ProductListItem } from '@/types/product';
 import removeMarkdown from "markdown-to-text";
 import { getProductDisplayPrice } from '@/utils/cart-pricing';
 import { formatToNaira } from '@/utils/currencyFormatter';
 import { getCdnUrl } from '@/libs/cdn-url';
-import { prefetchImages } from '@/config/siteConfig';
+import { siteConfig } from '@/config/siteConfig';
 import { getStoreName } from '@/libs/storeBranding';
 import {
     generateProductSchema,
@@ -28,55 +28,72 @@ interface ProductPageProps {
 }
 
 /**
+ * 12 hours. A product page is regenerated on its first visit after that, and immediately when
+ * Main-server purges `product:<slug>` (a price, stock or copy change) — see libs/api/cacheTags.ts.
+ */
+export const revalidate = 43200;
+
+/**
+ * Pre-renders the best sellers at build time. Everything else is rendered on first request and
+ * cached from then on (`dynamicParams` defaults to true), so this is a warm-up list, not the
+ * catalogue — pre-rendering thousands of products would make every deploy crawl.
+ *
+ * It also earns its keep as a guard: exporting this turns the route into a static one, so a future
+ * `headers()`/`cookies()` call here fails `next build` instead of quietly making every product
+ * page dynamic again, which is exactly how the site lost its caching the first time.
+ */
+export async function generateStaticParams(): Promise<{ slug: string; }[]> {
+    try {
+        const { data } = await cachedGet<ProductListItem[]>(api.products.topSold, {
+            params: { page: 1, limit: 20 },
+            tags: [CacheTag.PRODUCTS],
+        });
+        return (data ?? []).filter((p) => p?.slug).map((p) => ({ slug: p.slug }));
+    } catch (error) {
+        // A build shouldn't fail because the warm-up list was unavailable; pages still render on
+        // demand. A *product page* failing to fetch is a different matter — that one throws.
+        console.error('[product/generateStaticParams] falling back to on-demand rendering:', error);
+        return [];
+    }
+}
+
+/**
  * When a product was renamed, its old slug is kept on the server; send the visitor (and search
- * engines) to the current URL with a permanent redirect instead of a 404. Cached for an hour.
+ * engines) to the current URL with a permanent redirect instead of a 404.
  */
 async function redirectIfRenamed(slug: string): Promise<void> {
     let current: string | undefined;
     try {
-        const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/products/slug-redirect/${encodeURIComponent(slug)}`,
-            { next: { revalidate: 3600 } }
+        const result = await cachedGetOrNull<{ slug?: string; }>(
+            `/products/slug-redirect/${encodeURIComponent(slug)}`,
+            { tags: [productTag(slug)] }
         );
-        if (response.ok) current = (await response.json())?.data?.slug;
+        current = result?.data?.slug;
     } catch {
         // Lookup failure falls through to the normal not-found page.
     }
     if (current && current !== slug) permanentRedirect(`/product/${current}`);
 }
 
-// Server-side prefetch function
-async function prefetchProduct(slug: string) {
-    const queryClient = new QueryClient();
-
-    try {
-        await queryClient.prefetchQuery({
-            queryKey: ['product', slug],
-            queryFn: async () => {
-                const response = await serverAPI.get<ProductDetail>(api.products.bySlug(slug));
-                if (!response.data) {
-                    console.error('[Server Prefetch] No data in response');
-                    throw new Error('Product not found');
-                }
-
-                return response.data;
-            },
-            staleTime: 5 * 60 * 1000, // 5 minutes
-        });
-
-        // Get the prefetched data to check if product exists
-        const product = queryClient.getQueryData<ProductDetail>(['product', slug]);
-        return { queryClient, product };
-    } catch (error) {
-        console.error('[Server Prefetch] Error:', error);
-        return { queryClient, product: null };
-    }
+/**
+ * The product itself. Returns null only when the API says 404 — any other failure throws, so a
+ * blip can't be baked into a cached "Product Not Found" page for the next 12 hours.
+ *
+ * `cachedGet` memoizes on the request, so `generateMetadata` and the page body below share one
+ * fetch even though both call this.
+ */
+async function getProduct(slug: string): Promise<CachedResult<ProductDetail> | null> {
+    const result = await cachedGetOrNull<ProductDetail>(api.products.bySlug(slug), {
+        tags: [productTag(slug)],
+    });
+    return result?.data ? result : null;
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ProductPageProps) {
     const { slug } = await params;
-    const [{ product }, storeName] = await Promise.all([prefetchProduct(slug), getStoreName()]);
+    const [fetched, storeName] = await Promise.all([getProduct(slug), getStoreName()]);
+    const product = fetched?.data;
 
     if (!product) {
         await redirectIfRenamed(slug);
@@ -112,14 +129,10 @@ export async function generateMetadata({ params }: ProductPageProps) {
         ? `${removeMarkdown(product.description).substring(0, 155)}...`
         : `Buy ${product.name} at ${storeName}. ${priceText}. ${product.category?.name || 'Quality products'}.`;
 
-    const imageUrls = product.description_images?.map(img => getCdnUrl(img.url)) || [];
-    await prefetchImages(imageUrls);
-
-    // Build dynamic OG image URL
-    const headersList = await headers();
-    const host = headersList.get('host') || 'localhost:3009';
-    const protocol = headersList.get('x-forwarded-proto') || 'http';
-    const origin = `${protocol}://${host}`;
+    // The OG image is served by this app's own /api/og route, so the origin is the canonical site
+    // URL. It used to be read from the request's Host header, which made every product page
+    // dynamic — and would have put a preview deployment's hostname into a cached page.
+    const origin = siteConfig.url;
 
     const coverImage = product.description_images?.find(img => img.cover_image)
         || product.description_images?.[0];
@@ -181,12 +194,19 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
     const { slug } = await params;
-    const { queryClient, product } = await prefetchProduct(slug);
+    const fetched = await getProduct(slug);
     // Renamed product → 301 to its current URL; otherwise the not-found page.
-    if (!product) {
+    if (!fetched) {
         await redirectIfRenamed(slug);
         notFound();
     }
+    const product = fetched.data;
+
+    // Seeded under the key `useProduct(slug)` reads, so MainProduct renders from this data during
+    // SSR instead of showing its loading state to crawlers. `seedData` stamps it with the age of
+    // the cached response, so a page served from a 12-hour-old render still refetches on mount.
+    const queryClient = getQueryClient();
+    seedData(queryClient, ['product', slug], fetched);
 
     // Accurate current price (accounts for active sale / static discount).
     const { price: displayPrice, originalPrice } = getProductDisplayPrice(product);

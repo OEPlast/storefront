@@ -62,17 +62,38 @@ const nextConfig = {
     // would redirect a host to itself — an infinite loop that browsers cache
     // permanently, because `permanent: true` is a 301.
     async redirects() {
-        if (!APEX_HOST || !CANONICAL_HOST || APEX_HOST === CANONICAL_HOST) {
-            return [];
-        }
-        return [
-            {
+        const rules = [];
+
+        if (APEX_HOST && CANONICAL_HOST && APEX_HOST !== CANONICAL_HOST) {
+            rules.push({
                 source: '/:path*',
                 has: [{ type: 'host', value: APEX_HOST }],
                 destination: `https://${CANONICAL_HOST}/:path*`,
                 permanent: true,
-            },
-        ];
+            });
+        }
+
+        // The production deployment answers on its `*.vercel.app` alias too, serving the identical
+        // site on a second indexable host. That alias IS production, so the noindex rule in
+        // config/indexing.ts deliberately does not cover it — send it to the canonical host instead,
+        // which also consolidates any links people have shared to it.
+        //
+        // Only added to production builds: preview deployments are built with VERCEL_ENV=preview and
+        // must keep working on their own *.vercel.app URLs (they carry noindex instead).
+        if (
+            process.env.VERCEL_ENV === 'production' &&
+            CANONICAL_HOST &&
+            !CANONICAL_HOST.endsWith('.vercel.app')
+        ) {
+            rules.push({
+                source: '/:path*',
+                has: [{ type: 'host', value: '(?<vercelAlias>.*\\.vercel\\.app)' }],
+                destination: `https://${CANONICAL_HOST}/:path*`,
+                permanent: true,
+            });
+        }
+
+        return rules;
     },
 };
 

@@ -4,15 +4,17 @@ import TopNavOne from "@/components/Header/TopNav/TopNavOne";
 import Breadcrumb from "@/components/Breadcrumb/Breadcrumb";
 import Footer from "@/components/Footer/Footer";
 import VerifyOTPForm from "@/components/forms/VerifyOTPForm";
-import { auth } from "../../../auth";
+import { auth } from "@@/auth";
 import { redirect } from "next/navigation";
 import { getStoreName } from "@/libs/storeBranding";
+import { PRIVATE_PAGE_ROBOTS } from '@/config/indexing';
 
 export async function generateMetadata(): Promise<Metadata> {
   const storeName = await getStoreName();
   return {
-    title: `Verify OTP - ${storeName}`,
+    title: 'Verify your email',
     description: "Verify your email address with OTP",
+    robots: PRIVATE_PAGE_ROBOTS,
   };
 }
 

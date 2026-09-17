@@ -13,7 +13,8 @@
  * hurt the whole domain.
  */
 
-import { serverAPI } from '@/libs/api/serverAPI';
+import { cachedGet, cachedGetOrNull } from '@/libs/api/cachedApi';
+import { CacheTag, intentTag } from '@/libs/api/cacheTags';
 import api from '@/libs/api/endpoints';
 
 /**
@@ -60,8 +61,10 @@ export interface IntentSlugItem {
  */
 export async function getAllIntents(): Promise<IntentConfig[]> {
   try {
-    const res = await serverAPI.get<IntentConfig[]>(api.intents.list);
-    return Array.isArray(res.data) ? res.data : [];
+    const { data } = await cachedGet<IntentConfig[]>(api.intents.list, {
+      tags: [CacheTag.INTENTS, CacheTag.PRODUCTS],
+    });
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('[intents] list fetch failed:', error);
     return [];
@@ -73,8 +76,10 @@ export async function getAllIntents(): Promise<IntentConfig[]> {
  */
 export async function getAllIntentSlugs(): Promise<IntentSlugItem[]> {
   try {
-    const res = await serverAPI.get<IntentSlugItem[]>(api.intents.slugs);
-    return Array.isArray(res.data) ? res.data : [];
+    const { data } = await cachedGet<IntentSlugItem[]>(api.intents.slugs, {
+      tags: [CacheTag.INTENTS],
+    });
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('[intents] slugs fetch failed:', error);
     return [];
@@ -82,14 +87,16 @@ export async function getAllIntentSlugs(): Promise<IntentSlugItem[]> {
 }
 
 /**
- * A single published intent, or undefined for unknown/draft/inactive slugs
- * (the backend 404s those, which surfaces here as a thrown request error).
+ * A single published intent, or undefined for unknown/draft/inactive slugs (the backend 404s
+ * those). Any other failure throws on purpose: the page is cached for 12 hours, so swallowing a
+ * 500 here would serve a `notFound()` for a real intent page until the next purge.
+ *
+ * Tagged with `products` as well as its own slug, because the curated products (names, prices,
+ * stock) are embedded in this payload.
  */
 export async function getIntent(slug: string): Promise<IntentConfig | undefined> {
-  try {
-    const res = await serverAPI.get<IntentConfig>(api.intents.bySlug(slug));
-    return res.data || undefined;
-  } catch {
-    return undefined;
-  }
+  const result = await cachedGetOrNull<IntentConfig>(api.intents.bySlug(slug), {
+    tags: [intentTag(slug), CacheTag.INTENTS, CacheTag.PRODUCTS],
+  });
+  return result?.data || undefined;
 }

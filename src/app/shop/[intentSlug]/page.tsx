@@ -18,7 +18,8 @@ import {
 // Quality gate: never publish a thin/doorway page. Below this many products we 404.
 const MIN_PRODUCTS = 3;
 
-export const revalidate = 3600;
+/** 12 hours; purged sooner by the `intents` / `intent:<slug>` tags when an intent is edited. */
+export const revalidate = 43200;
 
 // Pre-render published intents (a small, curated set managed in the admin panel).
 export async function generateStaticParams() {

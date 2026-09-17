@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { isIndexableDeployment } from '@/config/indexing';
 
 /**
  * Faceted-navigation + pagination indexation policy — the e-commerce crawl-budget
@@ -110,12 +111,20 @@ export function getListingIndexation(
 export function withIndexation(
   basePath: string,
   sp: ListingSearchParams,
-  base: Metadata
+  base: Metadata,
+  options: { empty?: boolean } = {}
 ): Metadata {
   const { robots, alternates } = getListingIndexation(basePath, sp);
   return {
     ...base,
-    robots,
+    // A staging deployment stays noindex whatever the URL (config/indexing.ts), and a listing with
+    // nothing in it is kept out of the index: its page says "No products found", which is what
+    // Google showed as the snippet.
+    robots: !isIndexableDeployment()
+      ? { index: false, follow: false }
+      : options.empty
+        ? { index: false, follow: true }
+        : robots,
     alternates: { ...(base.alternates || {}), ...alternates },
   };
 }

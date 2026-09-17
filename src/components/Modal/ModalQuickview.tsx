@@ -25,6 +25,7 @@ import {
     calculateSaleProgress,
     shouldShowSaleProgress,
 } from '@/utils/calculateSale';
+import { useNow } from '@/hooks/useNow';
 import { ProductVariant, ProductListItem } from '@/types/product';
 import { OptimisticWishlistProduct } from '@/types/wishlist';
 import Link from 'next/link';
@@ -106,10 +107,11 @@ const ModalQuickview = () => {
         );
     }, [attributes]);
 
-    // Calculate sale info from product.sale (same as Product.tsx)
+    // Calculate sale info from product.sale (same as Product.tsx), on the render clock.
+    const now = useNow();
     const saleInfo = useMemo(() => {
-        return calculateBestSale(product?.sale, product?.price || 0);
-    }, [product?.sale, product?.price]);
+        return calculateBestSale(product?.sale, product?.price || 0, undefined, now);
+    }, [product?.sale, product?.price, now]);
 
     // Calculate sold quantity from sale variants (cumulative boughtCount)
     const soldQuantity = useMemo(() => {

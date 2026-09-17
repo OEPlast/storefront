@@ -22,7 +22,12 @@ export interface SaleCalculation {
 export function calculateBestSale(
   sale: ProductSale | null | undefined,
   originalPrice: number,
-  activeAttribute?: { name: string; value: string }
+  activeAttribute?: { name: string; value: string },
+  /**
+   * The clock to judge a flash sale's window against, in ms. Client components pass `useNow()` so
+   * the first render agrees with the cached HTML they are hydrating; see hooks/useNow.tsx.
+   */
+  nowMs: number = Date.now()
 ): SaleCalculation {
   const result: SaleCalculation = {
     hasActiveSale: false,
@@ -34,7 +39,7 @@ export function calculateBestSale(
   };
 
   if (!sale || !sale.isActive || !sale.variants?.length) return result;
-  const now = new Date();
+  const now = new Date(nowMs);
   const saleStart = sale.startDate ? new Date(sale.startDate) : null;
   const saleEnd = sale.endDate ? new Date(sale.endDate) : null;
 
@@ -264,11 +269,14 @@ export function isSaleSoldOut(sale: ProductSale | null | undefined): boolean {
  * @param sale - The sale object from the product
  * @returns true if should show marquee, false otherwise
  */
-export function shouldShowSaleMarquee(sale: ProductSale | null | undefined): boolean {
+export function shouldShowSaleMarquee(
+  sale: ProductSale | null | undefined,
+  nowMs: number = Date.now()
+): boolean {
   if (!sale || !sale.isActive || !sale.isHot) {
     return false;
   }
-  const now = new Date();
+  const now = new Date(nowMs);
   const saleStart = sale.startDate ? new Date(sale.startDate) : null;
   const saleEnd = sale.endDate ? new Date(sale.endDate) : null;
 
@@ -276,7 +284,7 @@ export function shouldShowSaleMarquee(sale: ProductSale | null | undefined): boo
   if (!isWithinDateRange) return false;
 
   // Check if sale has ended
-  if (sale.type === 'Flash' && sale.endDate && new Date(sale.endDate) < new Date()) {
+  if (sale.type === 'Flash' && sale.endDate && new Date(sale.endDate) < now) {
     return false;
   }
 

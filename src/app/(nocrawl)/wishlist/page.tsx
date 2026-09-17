@@ -6,14 +6,7 @@ import Footer from '@/components/Footer/Footer';
 import WishlistClient from './WishlistClient';
 
 const Wishlist = () => {
-    return (
-        <>
-            <div className='py-14 px-4 md:px-8 lg:px-16'>
-                <div className="heading2 text-center">Wishlist</div>
-            </div>
-            <WishlistClient />
-        </>
-    );
+  return <WishlistClient />;
 };
 
 export default Wishlist;

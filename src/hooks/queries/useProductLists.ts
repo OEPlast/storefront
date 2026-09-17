@@ -6,6 +6,16 @@ import api from '@/libs/api/endpoints';
 import { ProductListItem, ProductListMeta, ProductListParams } from '@/types/product';
 
 /**
+ * These four lists are seeded on the server (`app/page.tsx` and the listing routes), and that
+ * render can be served from a cache entry up to 12 hours old. None of them sets
+ * `refetchOnMount: false` any more: the seeded entry is stamped with the age of the cached data,
+ * so react-query refreshes it once past `staleTime` and a visitor never sees a stale price.
+ *
+ * The components reading them must therefore key their skeletons off `isPending`, not
+ * `isFetching` — a background refresh would otherwise blank out the server-rendered grid.
+ */
+
+/**
  * Hook to fetch new products (sorted by creation date)
  * Returns ProductListItem for efficient list rendering
  * @param params - Filter and pagination params (optional - defaults to simple page 1)
@@ -47,7 +57,6 @@ export const useNewProducts = (params?: ProductListParams | number) => {
     },
     placeholderData: { data: [], meta: { total: 0, page: 1, limit: 20, pages: 0 } },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: false,
   });
 };
 
@@ -93,7 +102,6 @@ export const useWeekProducts = (params?: ProductListParams | number) => {
     },
     placeholderData: { data: [], meta: { total: 0, page: 1, limit: 20, pages: 0 } },
     staleTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnMount: false,
   });
 };
 
@@ -139,7 +147,6 @@ export const useTopSoldProducts = (params?: ProductListParams | number) => {
     },
     placeholderData: { data: [], meta: { total: 0, page: 1, limit: 20, pages: 0 } },
     staleTime: 15 * 60 * 1000, // 15 minutes
-    refetchOnMount: false,
   });
 };
 
@@ -168,6 +175,5 @@ export const useDealsOfTheDay = (page = 1) => {
     },
     placeholderData: { data: [], meta: { total: 0, page: 1, limit: 20, pages: 0 } },
     staleTime: 5 * 60 * 1000, // 5 minutes (shorter cache for time-sensitive deals)
-    refetchOnMount: false,
   });
 };

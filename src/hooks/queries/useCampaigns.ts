@@ -54,7 +54,8 @@ export const useCampaignBySlug = (params: CampaignProductsParams) => {
         meta: response.meta || { page: 1, limit: 15, total: 0, pages: 0 },
       };
     },
-    refetchOnMount: false,
+    // Seeded on the server; see the note in useProductLists — no `refetchOnMount: false`, so a
+    // page served from cache still refreshes its prices after hydration.
     refetchOnWindowFocus: false,
     enabled: !!params.slug,
     staleTime: 3 * 60 * 1000, // 3 minutes

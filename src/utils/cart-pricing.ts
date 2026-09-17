@@ -115,7 +115,7 @@ export function matchSaleVariant(
 /**
  * Calculate pricing for a cart item at render time
  */
-export function calculateCartItemPricing(item: CartItem): CartItemPricing {
+export function calculateCartItemPricing(item: CartItem, nowMs: number = Date.now()): CartItemPricing {
   const selected = item.selectedAttributes ?? [];
   const option = resolvePricedOption(item, selected);
   const listPrice = typeof option?.price === 'number' ? option.price : item.price || 0;
@@ -123,7 +123,7 @@ export function calculateCartItemPricing(item: CartItem): CartItemPricing {
   const tier = findTier(item.qty, option?.pricingTiers?.length ? option.pricingTiers : item.pricingTiers);
   const tierPrice = applyTier(listPrice, tier);
 
-  const match = matchSaleVariant(item.sale, selected, item.qty);
+  const match = matchSaleVariant(item.sale, selected, item.qty, new Date(nowMs));
   let saleUnitDiscount = 0;
   if (match) {
     const amountOff = match.variant.amountOff ?? 0;
@@ -153,7 +153,7 @@ export function calculateCartItemPricing(item: CartItem): CartItemPricing {
 /**
  * Calculate cart totals from all items
  */
-export function calculateCartTotals(items: CartItem[]): {
+export function calculateCartTotals(items: CartItem[], nowMs: number = Date.now()): {
   subtotal: number;
   totalDiscount: number;
   total: number;
@@ -162,7 +162,7 @@ export function calculateCartTotals(items: CartItem[]): {
   let totalDiscount = 0;
 
   items.forEach((item) => {
-    const pricing = calculateCartItemPricing(item);
+    const pricing = calculateCartItemPricing(item, nowMs);
     subtotal = roundKobo(subtotal + pricing.totalPrice);
     totalDiscount = roundKobo(totalDiscount + pricing.discountAmount);
   });
@@ -179,7 +179,12 @@ export function calculateCartTotals(items: CartItem[]): {
  */
 export function getProductDisplayPrice(
   product: ProductDetail,
-  selectedAttributes?: Array<{ name: string; value: string }>
+  selectedAttributes?: Array<{ name: string; value: string }>,
+  /**
+   * The clock the sale window is judged against, in ms. Client components pass `useNow()` so a
+   * page rendered before a sale boundary still hydrates without a mismatch; see hooks/useNow.tsx.
+   */
+  nowMs: number = Date.now()
 ): {
   price: number;
   originalPrice: number | null;
@@ -190,7 +195,7 @@ export function getProductDisplayPrice(
   let discountPercentage = 0;
 
   if (product.sale && product.sale.isActive) {
-    const now = new Date();
+    const now = new Date(nowMs);
     const saleStart = product.sale.startDate ? new Date(product.sale.startDate) : null;
     const saleEnd = product.sale.endDate ? new Date(product.sale.endDate) : null;
 

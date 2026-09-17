@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import RouteClient from './RouteClient';
 import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query';
-import { serverGet, serverGetWithMeta } from '@/libs/query/server-api-client';
+import { cachedGetOrNull, seedData } from '@/libs/api/cachedApi';
+import { CacheTag, categoryTag } from '@/libs/api/cacheTags';
+import { hasFacetParams, isListingEmpty, listingPage, listingSort, seedListing } from '@/libs/query/seedListing';
 import api from '@/libs/api/endpoints';
 import type { CategoryDetail } from '@/hooks/queries/useCategoryBySlug';
 import type { ProductListItem } from '@/types/product';
 import { getDefaultMetadata } from '@/libs/seo';
 import { getStoreName } from '@/libs/storeBranding';
 import { getCdnUrl } from '@/libs/cdn-url';
-import { prefetchImages } from '@/config/siteConfig';
 import { withIndexation } from '@/libs/indexation';
 import {
     generateCollectionSchema,
@@ -17,6 +18,16 @@ import {
     injectStructuredData,
     type ListItemProduct,
 } from '@/libs/structured-data';
+
+/**
+ * The category record. Cached and tagged, and memoized per request, so `generateMetadata` and the
+ * page body below share one call. A 404 (unknown slug) returns null; anything else throws.
+ */
+async function getCategory(slug: string) {
+    return cachedGetOrNull<CategoryDetail>(api.categories.bySlug(slug), {
+        tags: [categoryTag(slug), CacheTag.CATEGORIES],
+    });
+}
 
 /** Pick a product's cover image URL (absolute, CDN). */
 function coverImageOf(p: ProductListItem): string | undefined {
@@ -41,7 +52,7 @@ export async function generateMetadata({
     const basePath = `/category/${slug}`;
 
     try {
-        const category = await serverGet<CategoryDetail>(api.categories.bySlug(slug));
+        const category = (await getCategory(slug))?.data;
 
         if (!category) {
             return getDefaultMetadata({
@@ -54,11 +65,6 @@ export async function generateMetadata({
         const description = category.description
             ? category.description.substring(0, 155) + '...'
             : `Browse ${category.name} products at ${storeName}. Shop quality ${category.name.toLowerCase()} items with delivery across Nigeria.`;
-
-        // Prefetch category image
-        if (category.image) {
-            await prefetchImages([getCdnUrl(category.image)]);
-        }
 
         const base = await getDefaultMetadata({
             title: category.name,
@@ -78,8 +84,12 @@ export async function generateMetadata({
             },
         });
 
-        // Facet/pagination-aware robots + canonical.
-        return withIndexation(basePath, sp, base);
+        // Facet/pagination-aware robots + canonical; an empty category is not indexed.
+        const empty = await isListingEmpty(api.products.byCategorySlug(slug), {}, [
+            categoryTag(slug),
+            CacheTag.PRODUCTS,
+        ]);
+        return withIndexation(basePath, sp, base, { empty });
     } catch (error) {
         console.error('Error generating category metadata:', error);
         return getDefaultMetadata({
@@ -99,27 +109,32 @@ export default async function CategoryPage({
     const { slug } = await params;
     const serverSearchParams = searchParams ? await searchParams : undefined;
 
-    // Prefetch category data on server
+    // Category record, seeded under the key `useCategoryBySlug` reads.
     const queryClient = new QueryClient();
-    const [category] = await Promise.all([
-        serverGet<CategoryDetail>(api.categories.bySlug(slug)),
-        queryClient.prefetchQuery({
-            queryKey: ['category', 'bySlug', slug],
-            queryFn: async () => {
-                const data = await serverGet<CategoryDetail>(api.categories.bySlug(slug));
-                if (!data) throw new Error('Category not found');
-                return data;
-            },
-        }),
-    ]);
+    const fetched = await getCategory(slug);
+    const category = fetched?.data ?? null;
+    if (fetched) seedData(queryClient, ['category', 'bySlug', slug], fetched);
 
-    // Server-fetch first page of products to emit an ItemList (crawlable product set).
+    // First page of products, fetched on the server with the client's exact query params, so the
+    // grid renders in the HTML crawlers receive (it previously shipped "Loading…") and doubles as
+    // the ItemList. Filtered views are noindex and keep fetching on the client.
     let listProducts: ListItemProduct[] = [];
-    try {
-        const { data } = await serverGetWithMeta<ProductListItem[]>(
-            `${api.products.byCategorySlug(slug)}?page=1&limit=24`
+    if (!hasFacetParams(serverSearchParams)) {
+        const listingParams = {
+            slug,
+            sort: [listingSort(serverSearchParams, 'newest')],
+            page: listingPage(serverSearchParams),
+            limit: 15,
+        };
+        const seeded = await seedListing<ProductListItem[]>(
+            queryClient,
+            ['products', 'byCategorySlug', listingParams],
+            api.products.byCategorySlug(slug),
+            { sort: listingParams.sort, page: listingParams.page, limit: listingParams.limit },
+            { limit: 15, page: 1, pages: 0, total: 0, hasSubcategories: false, slug },
+            [categoryTag(slug), CacheTag.PRODUCTS]
         );
-        const products = Array.isArray(data) ? data : [];
+        const products = Array.isArray(seeded?.data) ? seeded.data : [];
         listProducts = products.map((p) => ({
             name: p.name,
             slug: p.slug,
@@ -127,8 +142,6 @@ export default async function CategoryPage({
             price: p.price,
             inStock: (p.stock ?? 0) > 0,
         }));
-    } catch {
-        /* ItemList is best-effort; page still renders without it */
     }
 
     const basePath = `/category/${slug}`;

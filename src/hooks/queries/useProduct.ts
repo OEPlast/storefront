@@ -48,7 +48,9 @@ export const useProduct = ({ slug, ...options }: UseProductOptions) => {
       return data as ProductDetail;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: false,
+    // Deliberately no `refetchOnMount: false`. The server seeds this query, and that render can
+    // now come from a cache entry up to 12 hours old, so the client must be free to refresh once
+    // staleTime has passed — otherwise a visitor could be shown yesterday's price and stock.
     refetchOnWindowFocus: false,
     enabled: !!slug, // Only run if slug is provided
     ...options,

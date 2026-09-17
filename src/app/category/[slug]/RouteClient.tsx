@@ -95,8 +95,7 @@ export default function RouteClient({ slug, searchParams: initialParams = {} }: 
     // API queries
     const {
         data: products,
-        isLoading,
-        isFetching,
+        isPending,
         error: productError,
     } = useProductsByCategorySlug({
         slug,
@@ -110,6 +109,14 @@ export default function RouteClient({ slug, searchParams: initialParams = {} }: 
         page: parseInt(page, 10),
         limit: 15,
     });
+
+    /**
+     * Skeletons only when there is genuinely nothing to render. This used to include `isFetching`,
+     * which was harmless while the grid was fetched fresh on every page load — but now the server
+     * seeds this query from a cached render and the client refreshes it in the background, and
+     * `isFetching` would blank the real products out behind skeletons on every hydration.
+     */
+    const showSkeletons = isPending;
 
     const { data: filters, isLoading: filtersLoading } = useCategoryFilters(slug);
     const { data: currentCategory } = useCategoryBySlug(slug);
@@ -279,7 +286,7 @@ export default function RouteClient({ slug, searchParams: initialParams = {} }: 
 
                         <div className="list-filtered flex items-center gap-3 mt-4">
                             <div className="total-product">
-                                {(isLoading || isFetching) ? 'Loading...' :
+                                {showSkeletons ? 'Loading...' :
                                     <>
                                         {products?.meta?.total || 0}
                                         <span className='text-secondary pl-1'>Products Found</span>
@@ -426,7 +433,7 @@ export default function RouteClient({ slug, searchParams: initialParams = {} }: 
                         {/* Product grid */}
                         {!productError && (
                             <div className={`list-product hide-product-sold ${gridClass} sm:gap-[30px] gap-[20px] mt-7`}>
-                                {isLoading ? (
+                                {showSkeletons ? (
                                     Array.from({ length: 12 }).map((_, i) => (
                                         <div key={i} className="bg-gray-300 animate-pulse h-80 rounded-lg" />
                                     ))

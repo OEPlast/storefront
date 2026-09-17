@@ -1,6 +1,7 @@
 'use client';
 import { ProductSale } from '@/types/product';
 import React, { memo, useEffect, useState } from 'react';
+import { useNow } from '@/hooks/useNow';
 
 interface CountdownTime {
     days: number;
@@ -33,8 +34,11 @@ const calculateCountdownFromEndDate = (endDate: string): CountdownTime => {
 const SalesCountdownTimer = ({ sale, salesType }: SalesCountdownTimerProps) => {
     const [timeLeft, setTimeLeft] = useState<CountdownTime>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-    // Only display if salesType is 'Flash' and endDate exists
-    const shouldDisplay = salesType === 'Flash' && sale?.endDate && new Date(sale.endDate).getTime() > Date.now();
+    // Only display if salesType is 'Flash' and the sale hasn't ended. The comparison uses the
+    // render clock, not `Date.now()`: on a cached page a sale that expired since the render would
+    // otherwise be shown by the server and hidden by the browser, breaking hydration.
+    const now = useNow();
+    const shouldDisplay = salesType === 'Flash' && sale?.endDate && new Date(sale.endDate).getTime() > now;
 
     useEffect(() => {
         if (!shouldDisplay) return;

@@ -5,12 +5,14 @@ import { auth } from "../../../auth";
 import { redirect } from "next/navigation";
 import { getStoreName } from "@/libs/storeBranding";
 import { isSafeCallbackUrl } from "@/libs/utils/authRedirect";
+import { PRIVATE_PAGE_ROBOTS } from '@/config/indexing';
 
 export async function generateMetadata(): Promise<Metadata> {
   const storeName = await getStoreName();
   return {
-    title: `Login - ${storeName}`,
+    title: 'Login',
     description: `Login to your ${storeName} account`,
+    robots: PRIVATE_PAGE_ROBOTS,
   };
 }
 

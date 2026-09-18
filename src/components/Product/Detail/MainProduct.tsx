@@ -643,7 +643,7 @@ const Sale: React.FC<Props> = ({ slug }) => {
                   <div className="caption2 font-semibold uppercase text-secondary">
                     {product.type}
                   </div>
-                  <div className="heading4 mt-1">{product.name}</div>
+                  <h1 className="heading4 mt-1">{product.name}</h1>
                 </div>
                 <div
                   className={`add-wishlist-btn flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl border border-line duration-300 hover:bg-black hover:text-white ${isInWishlist ? 'active' : ''}`}

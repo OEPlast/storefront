@@ -7,14 +7,13 @@ import VerifyOTPForm from "@/components/forms/VerifyOTPForm";
 import { auth } from "@@/auth";
 import { redirect } from "next/navigation";
 import { getStoreName } from "@/libs/storeBranding";
-import { PRIVATE_PAGE_ROBOTS } from '@/config/indexing';
 
+// Robots come from the (nocrawl) group layout.
 export async function generateMetadata(): Promise<Metadata> {
   const storeName = await getStoreName();
   return {
     title: 'Verify your email',
     description: "Verify your email address with OTP",
-    robots: PRIVATE_PAGE_ROBOTS,
   };
 }
 

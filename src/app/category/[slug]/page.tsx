@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import RouteClient from './RouteClient';
 import { HydrationBoundary, QueryClient, dehydrate } from '@tanstack/react-query';
-import { cachedGetOrNull, seedData } from '@/libs/api/cachedApi';
+import { seedData } from '@/libs/api/cachedApi';
 import { CacheTag, categoryTag } from '@/libs/api/cacheTags';
 import { hasFacetParams, isListingEmpty, listingPage, listingSort, seedListing } from '@/libs/query/seedListing';
 import api from '@/libs/api/endpoints';
-import type { CategoryDetail } from '@/hooks/queries/useCategoryBySlug';
+import { getCategory, requireCategory } from './data';
 import type { ProductListItem } from '@/types/product';
 import { getDefaultMetadata } from '@/libs/seo';
 import { getStoreName } from '@/libs/storeBranding';
@@ -18,16 +18,6 @@ import {
     injectStructuredData,
     type ListItemProduct,
 } from '@/libs/structured-data';
-
-/**
- * The category record. Cached and tagged, and memoized per request, so `generateMetadata` and the
- * page body below share one call. A 404 (unknown slug) returns null; anything else throws.
- */
-async function getCategory(slug: string) {
-    return cachedGetOrNull<CategoryDetail>(api.categories.bySlug(slug), {
-        tags: [categoryTag(slug), CacheTag.CATEGORIES],
-    });
-}
 
 /** Pick a product's cover image URL (absolute, CDN). */
 function coverImageOf(p: ProductListItem): string | undefined {
@@ -109,11 +99,13 @@ export default async function CategoryPage({
     const { slug } = await params;
     const serverSearchParams = searchParams ? await searchParams : undefined;
 
-    // Category record, seeded under the key `useCategoryBySlug` reads.
+    // Category record, seeded under the key `useCategoryBySlug` reads. An unknown slug never gets
+    // this far: layout.tsx has already answered with a real 404, which this page can't do from
+    // inside loading.tsx's Suspense boundary. This call just reads the same memoized result.
+    const fetched = await requireCategory(slug);
+    const category = fetched.data;
     const queryClient = new QueryClient();
-    const fetched = await getCategory(slug);
-    const category = fetched?.data ?? null;
-    if (fetched) seedData(queryClient, ['category', 'bySlug', slug], fetched);
+    seedData(queryClient, ['category', 'bySlug', slug], fetched);
 
     // First page of products, fetched on the server with the client's exact query params, so the
     // grid renders in the HTML crawlers receive (it previously shipped "Loading…") and doubles as
@@ -145,7 +137,7 @@ export default async function CategoryPage({
     }
 
     const basePath = `/category/${slug}`;
-    const categoryName = category?.name || slug;
+    const categoryName = category.name;
 
     return (
         <>
@@ -154,9 +146,9 @@ export default async function CategoryPage({
             {injectStructuredData(
                 generateCollectionSchema({
                     name: categoryName,
-                    description: category?.description,
+                    description: category.description,
                     url: basePath,
-                    image: category?.image ? getCdnUrl(category.image) : undefined,
+                    image: category.image ? getCdnUrl(category.image) : undefined,
                 }),
                 'ld-collection'
             )}

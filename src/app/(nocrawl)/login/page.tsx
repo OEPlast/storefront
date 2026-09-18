@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import Footer from "@/components/Footer/Footer";
 import LoginClient from "./LoginClient";
-import { auth } from "../../../auth";
+import { auth } from "@@/auth";
 import { redirect } from "next/navigation";
 import { getStoreName } from "@/libs/storeBranding";
 import { isSafeCallbackUrl } from "@/libs/utils/authRedirect";
-import { PRIVATE_PAGE_ROBOTS } from '@/config/indexing';
 
+// Robots come from the (nocrawl) group layout.
 export async function generateMetadata(): Promise<Metadata> {
   const storeName = await getStoreName();
   return {
     title: 'Login',
     description: `Login to your ${storeName} account`,
-    robots: PRIVATE_PAGE_ROBOTS,
   };
 }
 

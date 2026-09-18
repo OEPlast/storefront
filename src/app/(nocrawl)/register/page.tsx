@@ -1,8 +1,12 @@
+import type { Metadata } from 'next';
 import Footer from '@/components/Footer/Footer';
 import RegisterClient from './RegisterClient';
-import { auth } from '../../../auth';
+import { auth } from '@@/auth';
 import { redirect } from 'next/navigation';
 import { isSafeCallbackUrl } from '@/libs/utils/authRedirect';
+
+// Robots come from the (nocrawl) group layout; only the title belongs here.
+export const metadata: Metadata = { title: 'Create Account' };
 
 const Register = async ({
   searchParams,

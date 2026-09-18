@@ -1,16 +1,15 @@
-import { notFound, permanentRedirect } from 'next/navigation';
 import {
     dehydrate,
     HydrationBoundary,
 } from '@tanstack/react-query';
 import api from '@/libs/api/endpoints';
 import { getQueryClient } from '@/libs/query/get-query-client';
-import { cachedGet, cachedGetOrNull, seedData, type CachedResult } from '@/libs/api/cachedApi';
-import { CacheTag, productTag } from '@/libs/api/cacheTags';
+import { cachedGet, seedData } from '@/libs/api/cachedApi';
+import { CacheTag } from '@/libs/api/cacheTags';
 import MainProduct from '@/components/Product/Detail/MainProduct';
 import BreadcrumbProduct from '@/components/Breadcrumb/BreadcrumbProduct';
-import type { ProductDetail } from '@/hooks/queries/useProduct';
 import type { ProductListItem } from '@/types/product';
+import { getProduct, redirectIfRenamed, requireProduct } from './data';
 import removeMarkdown from "markdown-to-text";
 import { getProductDisplayPrice } from '@/utils/cart-pricing';
 import { formatToNaira } from '@/utils/currencyFormatter';
@@ -57,38 +56,6 @@ export async function generateStaticParams(): Promise<{ slug: string; }[]> {
     }
 }
 
-/**
- * When a product was renamed, its old slug is kept on the server; send the visitor (and search
- * engines) to the current URL with a permanent redirect instead of a 404.
- */
-async function redirectIfRenamed(slug: string): Promise<void> {
-    let current: string | undefined;
-    try {
-        const result = await cachedGetOrNull<{ slug?: string; }>(
-            `/products/slug-redirect/${encodeURIComponent(slug)}`,
-            { tags: [productTag(slug)] }
-        );
-        current = result?.data?.slug;
-    } catch {
-        // Lookup failure falls through to the normal not-found page.
-    }
-    if (current && current !== slug) permanentRedirect(`/product/${current}`);
-}
-
-/**
- * The product itself. Returns null only when the API says 404 — any other failure throws, so a
- * blip can't be baked into a cached "Product Not Found" page for the next 12 hours.
- *
- * `cachedGet` memoizes on the request, so `generateMetadata` and the page body below share one
- * fetch even though both call this.
- */
-async function getProduct(slug: string): Promise<CachedResult<ProductDetail> | null> {
-    const result = await cachedGetOrNull<ProductDetail>(api.products.bySlug(slug), {
-        tags: [productTag(slug)],
-    });
-    return result?.data ? result : null;
-}
-
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ProductPageProps) {
     const { slug } = await params;
@@ -98,7 +65,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
     if (!product) {
         await redirectIfRenamed(slug);
         return {
-            title: `Product Not Found | ${storeName}`,
+            title: `Product Not Found`,
             description: 'The product you are looking for does not exist.',
         };
     }
@@ -194,12 +161,10 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
     const { slug } = await params;
-    const fetched = await getProduct(slug);
-    // Renamed product → 301 to its current URL; otherwise the not-found page.
-    if (!fetched) {
-        await redirectIfRenamed(slug);
-        notFound();
-    }
+    // A missing or renamed product never gets this far: layout.tsx has already answered with a 404 or
+    // a 308, which is the only place that can set the status code (this page renders inside
+    // loading.tsx's Suspense boundary). This call just reads the same memoized result.
+    const fetched = await requireProduct(slug);
     const product = fetched.data;
 
     // Seeded under the key `useProduct(slug)` reads, so MainProduct renders from this data during

@@ -71,6 +71,8 @@ export default async function IntentPage({
 }) {
     const { intentSlug } = await params;
     const intent = await getIntent(intentSlug);
+    // Both notFound() calls here send a real 404 only while no `loading.tsx` sits above this page. To
+    // give this route one, move these checks into a layout first; see app/product/[slug]/layout.tsx.
     if (!intent) notFound();
 
     // Curated products, already in admin-defined display order, with archived or

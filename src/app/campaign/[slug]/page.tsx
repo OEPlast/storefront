@@ -109,7 +109,9 @@ export default async function CampaignPage({
     const { slug } = await params;
     const serverSearchParams = searchParams ? await searchParams : undefined;
 
-    // Fetch campaign on server; a missing campaign is a real 404 (proper status code).
+    // Fetch campaign on server; a missing campaign is a real 404 (proper status code) — as long as no
+    // `loading.tsx` sits above this page. To give this route one, move this check into a layout
+    // first; see app/product/[slug]/layout.tsx.
     const fetched = await getCampaign(slug);
     if (!fetched) {
         notFound();
